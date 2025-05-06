@@ -1,10 +1,13 @@
 // Import the functions you need from the SDKs you need
-import { initializeApp } from "firebase/app";
-import { getFirestore } from 'firebase/firestore';
-import { getStorage } from 'firebase/storage';
-import { getAuth } from "firebase/auth";
+import { initializeApp, getApps, FirebaseApp } from "firebase/app";
+import { getFirestore, Firestore } from 'firebase/firestore';
+import { getStorage, FirebaseStorage } from 'firebase/storage';
+import { getAuth, Auth } from "firebase/auth";
 
-// Your web app's Firebase configuration
+/**
+ * Firebase configuration object
+ * All values are loaded from environment variables
+ */
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
@@ -14,13 +17,32 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID
 };
 
-// Initialize Firebase App
-const app = initializeApp(firebaseConfig);
+/**
+ * Initialize Firebase only if it hasn't been initialized already
+ * This prevents multiple initializations in development
+ */
+let app: FirebaseApp;
+if (!getApps().length) {
+  try {
+    app = initializeApp(firebaseConfig);
+  } catch (error) {
+    console.error('Error initializing Firebase:', error);
+    throw error;
+  }
+} else {
+  app = getApps()[0];
+}
 
-// Initialize and Export Firestore Database
-export const db = getFirestore(app);
+/**
+ * Initialize and export Firebase services
+ */
+export const db: Firestore = getFirestore(app);
+export const storage: FirebaseStorage = getStorage(app);
+export const auth: Auth = getAuth(app);
 
-// Initialize and Export Firebase Storage
-export const storage = getStorage(app);
-
-export const auth = getAuth(app);
+/**
+ * Helper function to check if Firebase is properly initialized
+ */
+export const isFirebaseInitialized = (): boolean => {
+  return !!app && !!db && !!storage && !!auth;
+};

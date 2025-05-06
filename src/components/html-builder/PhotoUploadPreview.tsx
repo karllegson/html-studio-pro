@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from 'react';
+import { useRef, useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Download, Upload, X, Eye, Loader2 } from 'lucide-react';
 import {
@@ -11,17 +11,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { uploadImage } from '@/utils/imageUpload';
+import { uploadImage, deleteImage } from '@/utils/imageUpload';
 import { useTaskContext } from '@/context/TaskContext';
-import { db } from '@/firebase';
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { TaskImage } from '@/types';
 
-interface PreviewImage {
+interface PreviewImage extends TaskImage {
   file?: File;
-  url: string;
-  name: string;
-  size?: number;
-  uploadedAt?: string;
   uploading?: boolean;
   error?: string;
 }
@@ -41,114 +36,147 @@ export const PhotoUploadPreview: React.FC<PhotoUploadPreviewProps> = ({ companyN
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Helper to reload images from Firestore
-  const reloadImagesFromFirestore = async () => {
-    if (taskId) {
-      const docRef = doc(db, 'tasks', taskId);
-      const snap = await getDoc(docRef);
-      const data = snap.data();
-      if (data && data.images) {
-        setImages(data.images.map((img: any) => ({ ...img, uploading: false })));
-      } else {
-        setImages([]);
-      }
+  const reloadImagesFromFirestore = useCallback(async () => {
+    if (!taskId) return;
+    
+    try {
+      const taskImages = currentTask?.images || [];
+      setImages(taskImages.map(img => ({ ...img, uploading: false })));
+    } catch (error) {
+      console.error('Error reloading images:', error);
     }
-  };
+  }, [taskId, currentTask?.images]);
 
   // Load images from Firestore when task changes
   useEffect(() => {
     reloadImagesFromFirestore();
-    // eslint-disable-next-line
-  }, [taskId, currentTask?.images]);
+  }, [reloadImagesFromFirestore]);
 
+  // Cleanup object URLs on unmount or when images change
   useEffect(() => {
-    // Cleanup object URLs on unmount or when images change
     return () => {
       images.forEach(img => img.file && URL.revokeObjectURL(img.url));
     };
   }, [images]);
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && taskId) {
-      const files = Array.from(e.target.files);
-      // Add local previews immediately
-      const newImages: PreviewImage[] = files.map(file => ({ file, url: URL.createObjectURL(file), name: file.name, size: file.size, uploading: true }));
-      setImages(prev => [...prev, ...newImages]);
-      // Upload to Firebase and update Firestore
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-        const idx = images.length + i;
-        const path = `tasks/${taskId}`;
-        try {
-          const result = await uploadImage(file, path);
-          if (result.success && result.url) {
-            const uploadedAt = new Date().toISOString();
-            const meta = { url: result.url, name: file.name, size: file.size, uploadedAt };
-            setImages(prev => prev.map((img, j) => j === idx ? { ...img, ...meta, uploading: false } : img));
-            // Always fetch the latest images from Firestore before updating
-            const docRef = doc(db, 'tasks', taskId);
-            const snap = await getDoc(docRef);
-            const data = snap.data();
-            const latestImages = Array.isArray(data?.images) ? data.images : [];
-            const updatedImages = [...latestImages, meta];
-            await updateTask(taskId, { images: updatedImages });
-            await reloadImagesFromFirestore();
-          } else {
-            setImages(prev => prev.map((img, j) => j === idx ? { ...img, uploading: false, error: result.error } : img));
-          }
-        } catch (error: any) {
-          setImages(prev => prev.map((img, j) => j === idx ? { ...img, uploading: false, error: error?.message || 'Upload failed' } : img));
+    if (!e.target.files?.length || !taskId) return;
+
+    const files = Array.from(e.target.files);
+    const newImages: PreviewImage[] = files.map(file => ({
+      file,
+      url: URL.createObjectURL(file),
+      name: file.name,
+      size: file.size,
+      uploadedAt: new Date().toISOString(),
+      uploading: true
+    }));
+
+    setImages(prev => [...prev, ...newImages]);
+
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const idx = images.length + i;
+      const path = `tasks/${taskId}`;
+
+      try {
+        const result = await uploadImage(file, path);
+        if (result.success && result.url) {
+          const uploadedAt = new Date().toISOString();
+          const meta: TaskImage = {
+            url: result.url,
+            name: file.name,
+            size: file.size,
+            uploadedAt
+          };
+
+          setImages(prev => prev.map((img, j) => 
+            j === idx ? { ...img, ...meta, uploading: false } : img
+          ));
+
+          // Update Firestore with new image
+          const updatedImages = [...(currentTask?.images || []), meta];
+          await updateTask(taskId, { images: updatedImages });
+          await reloadImagesFromFirestore();
+        } else {
+          setImages(prev => prev.map((img, j) => 
+            j === idx ? { ...img, uploading: false, error: result.error } : img
+          ));
         }
+      } catch (error) {
+        setImages(prev => prev.map((img, j) => 
+          j === idx ? { ...img, uploading: false, error: 'Upload failed' } : img
+        ));
       }
     }
   };
 
   const handleRemove = async (idx: number) => {
     if (!taskId) return;
+
     const imgToRemove = images[idx];
     setImages(prev => {
       if (imgToRemove.file) URL.revokeObjectURL(imgToRemove.url);
       return prev.filter((_, i) => i !== idx);
     });
-    // Remove by both url and name for extra safety
-    const docRef = doc(db, 'tasks', taskId);
-    const snap = await getDoc(docRef);
-    const data = snap.data();
-    const latestImages = Array.isArray(data?.images) ? data.images : [];
-    const updatedImages = latestImages.filter(
-      (img: any) => !(img.url === imgToRemove.url && img.name === imgToRemove.name)
-    );
-    await updateDoc(docRef, { images: updatedImages });
-    await reloadImagesFromFirestore();
+
+    try {
+      // Remove from Storage
+      await deleteImage(imgToRemove.url);
+
+      // Update Firestore
+      const updatedImages = (currentTask?.images || []).filter(
+        img => !(img.url === imgToRemove.url && img.name === imgToRemove.name)
+      );
+      await updateTask(taskId, { images: updatedImages });
+      await reloadImagesFromFirestore();
+    } catch (error) {
+      console.error('Error removing image:', error);
+    }
   };
 
   const handleDeleteAll = async () => {
-    images.forEach(img => img.file && URL.revokeObjectURL(img.url));
-    setImages([]);
-    setShowDeleteDialog(false);
-    if (taskId) {
+    if (!taskId) return;
+
+    try {
+      // Delete all images from Storage
+      await Promise.all(images.map(img => deleteImage(img.url)));
+
+      // Clear local state
+      images.forEach(img => img.file && URL.revokeObjectURL(img.url));
+      setImages([]);
+      setShowDeleteDialog(false);
+
+      // Update Firestore
       await updateTask(taskId, { images: [] });
       await reloadImagesFromFirestore();
+    } catch (error) {
+      console.error('Error deleting all images:', error);
     }
   };
 
   const getZipFileName = () => {
-    let name = '';
-    if (companyName) name += companyName.replace(/\s+/g, '-');
-    if (pageType) name += (name ? '-' : '') + pageType.replace(/\s+/g, '-');
-    return (name ? name : 'photos') + '-photos.zip';
+    const parts = [
+      companyName?.replace(/\s+/g, '-'),
+      pageType?.replace(/\s+/g, '-')
+    ].filter(Boolean);
+    return (parts.length ? parts.join('-') : 'photos') + '-photos.zip';
   };
 
   const handleDownloadAll = async () => {
+    if (!images.length) return;
+
     setDownloading(true);
     try {
       const JSZip = (await import('jszip')).default;
       const zip = new JSZip();
-      for (const img of images) {
-        // Download the image from Firebase URL and add to zip
+
+      await Promise.all(images.map(async img => {
         const response = await fetch(img.url);
         const blob = await response.blob();
         zip.file(img.name, blob);
-      }
+      }));
+
       const blob = await zip.generateAsync({ type: 'blob' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -156,6 +184,8 @@ export const PhotoUploadPreview: React.FC<PhotoUploadPreviewProps> = ({ companyN
       a.download = getZipFileName();
       a.click();
       setTimeout(() => URL.revokeObjectURL(url), 2000);
+    } catch (error) {
+      console.error('Error downloading images:', error);
     } finally {
       setDownloading(false);
     }
@@ -177,6 +207,7 @@ export const PhotoUploadPreview: React.FC<PhotoUploadPreviewProps> = ({ companyN
           onChange={handleUpload}
         />
       </div>
+
       <div className="grid grid-cols-3 gap-2 mb-4 flex-1 min-h-0 max-h-56 overflow-y-auto">
         {images.map((img, idx) => (
           <div key={img.url + '-' + img.name} className="relative w-full aspect-square rounded overflow-hidden bg-muted flex items-center justify-center">
@@ -187,7 +218,9 @@ export const PhotoUploadPreview: React.FC<PhotoUploadPreviewProps> = ({ companyN
               </div>
             )}
             {img.error && (
-              <div className="absolute inset-0 flex items-center justify-center bg-red-700/80 text-white text-xs p-2">{img.error}</div>
+              <div className="absolute inset-0 flex items-center justify-center bg-red-700/80 text-white text-xs p-2">
+                {img.error}
+              </div>
             )}
             <button
               type="button"
@@ -208,13 +241,23 @@ export const PhotoUploadPreview: React.FC<PhotoUploadPreviewProps> = ({ companyN
           </div>
         ))}
       </div>
+
       <div className="flex justify-center mt-4">
-        <Button variant="outline" onClick={handleDownloadAll} disabled={images.length === 0 || downloading} className="w-4/5 flex items-center justify-center">
-          {downloading ? <Loader2 className="animate-spin mr-2" size={16} /> : <Download size={16} className="mr-2" />}
+        <Button
+          variant="outline"
+          onClick={handleDownloadAll}
+          disabled={!images.length || downloading}
+          className="w-4/5 flex items-center justify-center"
+        >
+          {downloading ? (
+            <Loader2 className="animate-spin mr-2" size={16} />
+          ) : (
+            <Download size={16} className="mr-2" />
+          )}
           Download All Photos
         </Button>
       </div>
-      {/* Delete Confirmation Dialog */}
+
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -225,15 +268,27 @@ export const PhotoUploadPreview: React.FC<PhotoUploadPreviewProps> = ({ companyN
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteAll} className="bg-red-600 hover:bg-red-700">Delete All</AlertDialogAction>
+            <AlertDialogAction onClick={handleDeleteAll} className="bg-red-600 hover:bg-red-700">
+              Delete All
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-      {/* Image Preview Modal */}
+
       {previewIdx !== null && images[previewIdx] && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80" onClick={() => setPreviewIdx(null)}>
-          <div className="relative max-w-2xl w-full flex flex-col items-center" onClick={e => e.stopPropagation()}>
-            <img src={images[previewIdx].url} alt={images[previewIdx].name} className="max-h-[80vh] rounded shadow-lg" />
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80"
+          onClick={() => setPreviewIdx(null)}
+        >
+          <div
+            className="relative max-w-2xl w-full flex flex-col items-center"
+            onClick={e => e.stopPropagation()}
+          >
+            <img
+              src={images[previewIdx].url}
+              alt={images[previewIdx].name}
+              className="max-h-[80vh] rounded shadow-lg"
+            />
             <div className="mt-2 text-white text-sm">{images[previewIdx].name}</div>
             <button
               type="button"
