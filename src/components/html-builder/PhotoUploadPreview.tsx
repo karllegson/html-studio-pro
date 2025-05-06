@@ -30,7 +30,15 @@ export const PhotoUploadPreview: React.FC<PhotoUploadPreviewProps> = ({
   // Load images from Firestore on mount/task change
   useEffect(() => {
     if (!taskId) return;
-    setImages(currentTask?.images || []);
+    const newImages = currentTask?.images || [];
+    // Only update if the images have actually changed (compare by url+name)
+    const isSame =
+      images.length === newImages.length &&
+      images.every((img, i) => img.url === newImages[i]?.url && img.name === newImages[i]?.name);
+    if (!isSame) {
+      setImages(newImages);
+    }
+    // else do nothing to prevent jitter
   }, [taskId, currentTask?.images]);
 
   // Clean up object URLs for local previews
@@ -67,6 +75,12 @@ export const PhotoUploadPreview: React.FC<PhotoUploadPreviewProps> = ({
             uploadedAt: new Date().toISOString(),
           };
           updatedImages.push(meta);
+          // Instantly update local preview
+          setImages(prev => {
+            // Remove the uploading preview for this file, add the uploaded image
+            const withoutUploading = prev.filter(img => img.file !== file);
+            return [...withoutUploading, meta];
+          });
         } else {
           setImages(prev => prev.map(img =>
             img.file === file ? { ...img, uploading: false, error: result.error || 'Upload failed' } : img
@@ -93,6 +107,8 @@ export const PhotoUploadPreview: React.FC<PhotoUploadPreviewProps> = ({
       img => !(img.url === imgToRemove.url && img.name === imgToRemove.name)
     );
     await updateTask(taskId, { images: updatedImages });
+    // Instantly update local preview
+    setImages(prev => prev.filter((img, i) => i !== idx));
   };
 
   // Download all handler

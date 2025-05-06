@@ -14,6 +14,7 @@ const Footer: React.FC = () => {
             <a href="https://github.com/karllegson/html-studio-pro" target="_blank" rel="noopener noreferrer" className="hover:text-gray-300 transition-colors">
               GitHub
             </a>
+            <span className="text-gray-600">•</span>
             <a href="/admin" className="ml-2 text-xs text-gray-500 hover:text-primary underline underline-offset-2 transition-colors">Admin</a>
           </div>
         </div>

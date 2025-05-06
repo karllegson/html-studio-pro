@@ -38,7 +38,7 @@ const App: React.FC = () => {
               <TooltipProvider>
                 <Routes>
                   <Route path="/" element={<Dashboard />} />
-                  <Route path="/builder" element={<HtmlBuilder />} />
+                  <Route path="/builder/:taskId" element={<HtmlBuilder />} />
                   <Route path="/admin" element={<AdminPage />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>

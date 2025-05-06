@@ -22,6 +22,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
+import { auth } from '@/firebase';
+import { signOut } from 'firebase/auth';
 
 const Dashboard: React.FC = () => {
   const {
@@ -53,7 +55,7 @@ const Dashboard: React.FC = () => {
         [TaskStatus.FINISHED]: 'finished',
         [TaskStatus.RECENTLY_DELETED]: 'recently-deleted'
       };
-      setActiveTab(statusToTabMap[currentTask.status]);
+      setActiveTab(statusToTabMap[currentTask.status] || 'ready');
     }
   }, [currentTask]);
 
@@ -64,15 +66,15 @@ const Dashboard: React.FC = () => {
     }
   };
 
-  const handleCreateTask = () => {
-    const newTask = addTask({}) as Task;
+  const handleCreateTask = async () => {
+    const newTask = await addTask({});
     setCurrentTask(newTask);
-    navigate(`/builder`);
+    navigate(`/builder/${newTask.id}`);
   };
 
   const handleEditTask = (task: Task) => {
     setCurrentTask(task);
-    navigate(`/builder`);
+    navigate(`/builder/${task.id}`);
   };
 
   const handleUpdateTaskField = (taskId: string, field: keyof Task, value: any) => {
@@ -262,94 +264,102 @@ const Dashboard: React.FC = () => {
     </Table>
   );
 
+  const handleLogout = async () => {
+    await signOut(auth);
+    window.location.reload(); // Or navigate to login if needed
+  };
+
   return (
-    <div className="container mx-auto py-8 px-px">
-      <div className="flex items-center justify-between mb-8">
-        <h1 className="text-3xl font-bold">Welcome to Workspace</h1>
-        <div className="flex items-center gap-2">
-          <Button
-            onClick={toggleSelectionMode}
-            variant={isSelectionMode ? "secondary" : "outline"}
-            className="flex items-center gap-2"
-          >
-            {isSelectionMode ? (
-              <>
-                <X size={16} />
-                Cancel Selection
-              </>
-            ) : (
-              <>
-                <CheckSquare size={16} />
-                Select Tasks
-              </>
-            )}
-          </Button>
-          <Button onClick={handleCreateTask} className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white">
-            <Plus className="mr-2 h-4 w-4" />
-            Create New Task
-          </Button>
+    <div>
+      <div className="container mx-auto py-8 px-px">
+        <div className="flex items-center justify-between mb-8">
+          <h1 className="text-3xl font-bold">Welcome to Workspace</h1>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={handleLogout}>Log out</Button>
+            <Button
+              onClick={toggleSelectionMode}
+              variant={isSelectionMode ? "secondary" : "outline"}
+              className="flex items-center gap-2"
+            >
+              {isSelectionMode ? (
+                <>
+                  <X size={16} />
+                  Cancel Selection
+                </>
+              ) : (
+                <>
+                  <CheckSquare size={16} />
+                  Select Tasks
+                </>
+              )}
+            </Button>
+            <Button onClick={handleCreateTask} className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white">
+              <Plus className="mr-2 h-4 w-4" />
+              Create New Task
+            </Button>
+          </div>
         </div>
+
+        <div className="bg-card rounded-lg shadow-lg overflow-hidden">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="grid grid-cols-4 mb-4">
+              <TabsTrigger value="ready">Ready ({readyTasks.length})</TabsTrigger>
+              <TabsTrigger value="in-progress">In Progress ({inProgressTasks.length})</TabsTrigger>
+              <TabsTrigger value="finished">Finished ({finishedTasks.length})</TabsTrigger>
+              <TabsTrigger value="recently-deleted">Recently Deleted ({recentlyDeletedTasks.length})</TabsTrigger>
+            </TabsList>
+
+            {isSelectionMode && selectedTasks.length > 0 && (
+              <div className="px-4 pb-2">
+                <Button 
+                  size="sm" 
+                  variant="destructive" 
+                  onClick={() => handleDeleteTask(selectedTasks)}
+                  className="flex items-center gap-2"
+                >
+                  <Trash2 size={16} />
+                  Delete {selectedTasks.length} tasks
+                </Button>
+              </div>
+            )}
+            
+            <TabsContent value="ready">
+              {renderTaskTable(readyTasks, 'ready')}
+            </TabsContent>
+            
+            <TabsContent value="in-progress">
+              {renderTaskTable(inProgressTasks, 'in-progress')}
+            </TabsContent>
+            
+            <TabsContent value="finished">
+              {renderTaskTable(finishedTasks, 'finished')}
+            </TabsContent>
+            
+            <TabsContent value="recently-deleted">
+              {renderTaskTable(recentlyDeletedTasks, 'recently-deleted')}
+            </TabsContent>
+          </Tabs>
+        </div>
+
+        <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+              <AlertDialogDescription>
+                {activeTab === 'recently-deleted' 
+                  ? "These tasks will be permanently deleted and cannot be recovered."
+                  : "These tasks will be moved to the Recently Deleted tab. You can restore them later if needed."}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={confirmDelete}>
+                {activeTab === 'recently-deleted' ? "Permanently Delete" : "Delete"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
-
-      <div className="bg-card rounded-lg shadow-lg overflow-hidden">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid grid-cols-4 mb-4">
-            <TabsTrigger value="ready">Ready ({readyTasks.length})</TabsTrigger>
-            <TabsTrigger value="in-progress">In Progress ({inProgressTasks.length})</TabsTrigger>
-            <TabsTrigger value="finished">Finished ({finishedTasks.length})</TabsTrigger>
-            <TabsTrigger value="recently-deleted">Recently Deleted ({recentlyDeletedTasks.length})</TabsTrigger>
-          </TabsList>
-
-          {isSelectionMode && selectedTasks.length > 0 && (
-            <div className="px-4 pb-2">
-              <Button 
-                size="sm" 
-                variant="destructive" 
-                onClick={() => handleDeleteTask(selectedTasks)}
-                className="flex items-center gap-2"
-              >
-                <Trash2 size={16} />
-                Delete {selectedTasks.length} tasks
-              </Button>
-            </div>
-          )}
-          
-          <TabsContent value="ready">
-            {renderTaskTable(readyTasks, 'ready')}
-          </TabsContent>
-          
-          <TabsContent value="in-progress">
-            {renderTaskTable(inProgressTasks, 'in-progress')}
-          </TabsContent>
-          
-          <TabsContent value="finished">
-            {renderTaskTable(finishedTasks, 'finished')}
-          </TabsContent>
-          
-          <TabsContent value="recently-deleted">
-            {renderTaskTable(recentlyDeletedTasks, 'recently-deleted')}
-          </TabsContent>
-        </Tabs>
-      </div>
-
-      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-              {activeTab === 'recently-deleted' 
-                ? "These tasks will be permanently deleted and cannot be recovered."
-                : "These tasks will be moved to the Recently Deleted tab. You can restore them later if needed."}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete}>
-              {activeTab === 'recently-deleted' ? "Permanently Delete" : "Delete"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 };

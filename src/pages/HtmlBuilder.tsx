@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useTaskContext } from '@/context/TaskContext';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -16,16 +16,18 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@
 import { Input } from '@/components/ui/input';
 import { NotesSection } from '@/components/html-builder/NotesSection';
 
-// Auto-save interval in milliseconds (5 seconds)
-const AUTO_SAVE_INTERVAL = 5000;
+// Auto-save disabled for debugging jitter issue
 
 const HtmlBuilder: React.FC = () => {
-  const { currentTask, updateTask, getCompanyById } = useTaskContext();
+  const { taskId } = useParams<{ taskId: string }>();
+  const { tasks, currentTask, setCurrentTask, updateTask, getCompanyById } = useTaskContext();
   const navigate = useNavigate();
   const { toast } = useToast();
   const isMobile = useIsMobile();
   const editorRef = useRef<EditorSectionRef>(null);
   const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const [loadingTask, setLoadingTask] = useState(true);
+  const editorContainerRef = useRef<HTMLDivElement>(null);
 
   const [htmlContent, setHtmlContent] = useState('');
   const [companyId, setCompanyId] = useState('');
@@ -37,6 +39,35 @@ const HtmlBuilder: React.FC = () => {
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
   const [reviewsTag, setReviewsTag] = useState('');
   const [faqTag, setFaqTag] = useState('');
+  const [featuredImg, setFeaturedImg] = useState<string | null>(null);
+  const [featuredTitle, setFeaturedTitle] = useState('');
+  const [featuredAlt, setFeaturedAlt] = useState('');
+  const [showFeaturedDropdown, setShowFeaturedDropdown] = useState(false);
+
+  useEffect(() => {
+    if (!taskId) {
+      setLoadingTask(false);
+      return;
+    }
+    if (!tasks.length) return; // Wait for tasks to load
+
+    const found = tasks.find(t => t.id === taskId);
+    if (found) {
+      setCurrentTask(found);
+      setLoadingTask(false);
+    } else {
+      setLoadingTask(false);
+      navigate('/', { replace: true });
+    }
+    // eslint-disable-next-line
+  }, [taskId, tasks]);
+
+  // Persist currentTask.id to localStorage
+  useEffect(() => {
+    if (currentTask?.id) {
+      localStorage.setItem('lastTaskId', currentTask.id);
+    }
+  }, [currentTask?.id]);
 
   useEffect(() => {
     if (!currentTask) {
@@ -60,27 +91,7 @@ const HtmlBuilder: React.FC = () => {
     }
   }, [currentTask, navigate, getCompanyById, updateTask]);
 
-  // Auto-save functionality
-  useEffect(() => {
-    // Clear any existing timer
-    if (autoSaveTimerRef.current) {
-      clearInterval(autoSaveTimerRef.current);
-    }
-
-    // Set up a new timer for auto-saving
-    if (currentTask) {
-      autoSaveTimerRef.current = setInterval(() => {
-        saveChanges();
-      }, AUTO_SAVE_INTERVAL);
-    }
-
-    // Cleanup on unmount
-    return () => {
-      if (autoSaveTimerRef.current) {
-        clearInterval(autoSaveTimerRef.current);
-      }
-    };
-  }, [htmlContent, companyId, notes, pageType]);
+  // Auto-save disabled for debugging jitter issue
 
   const saveChanges = () => {
     if (currentTask && currentTask.id) {
@@ -231,13 +242,22 @@ const HtmlBuilder: React.FC = () => {
     navigator.clipboard.writeText(text);
     toast({
       title: 'Copied to clipboard',
-      description: 'The tag link has been copied.',
+      description: 'The value has been copied.',
       duration: 2000,
     });
   };
 
+  // Show loading spinner while waiting for tasks
+  if (loadingTask) return <div>Loading task...</div>;
+
   return (
     <div className="min-h-screen w-full flex flex-col bg-[radial-gradient(circle,rgba(60,60,80,0.2)_1px,transparent_1px)] [background-size:32px_32px]">
+      {/* Go to bottom button at the top */}
+      <div className="w-full flex justify-center mt-4">
+        <Button variant="outline" onClick={() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' })}>
+          Go to bottom
+        </Button>
+      </div>
       <div className="max-w-full px-4 py-4 mx-auto flex-1 flex flex-col pb-8">
         <div className={`grid gap-4 ${isMobile ? "grid-cols-1" : "grid-cols-[260px_1fr]"}`}>
           {/* Left Sidebar: Back button + Tags/Components, sticky */}
@@ -345,9 +365,97 @@ const HtmlBuilder: React.FC = () => {
                   />
                 </div>
               </div>
+              {/* Featured IMG section spanning columns 2 and 3 */}
+              <div className="bg-card rounded-lg p-4 flex flex-row items-center col-span-3" style={{ gridColumn: '1 / span 3', minHeight: '110px' }}>
+                {/* Dropdown and Select button */}
+                <div className="flex flex-col items-start min-w-[180px] pr-4">
+                  <label className="font-medium mb-1">Featured IMG</label>
+                  <div className="relative flex items-center gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setShowFeaturedDropdown(v => !v)}
+                      type="button"
+                      className="w-32 justify-between"
+                    >
+                      {featuredImg ? (
+                        <span
+                          className="truncate overflow-hidden whitespace-nowrap max-w-[100px] inline-block"
+                          title={currentTask?.images?.find(img => img.url === featuredImg)?.name || ''}
+                        >
+                          {currentTask?.images?.find(img => img.url === featuredImg)?.name || 'Select image'}
+                        </span>
+                      ) : 'Select image'}
+                      <span className="ml-2">▼</span>
+                    </Button>
+                    {/* Dropdown popover */}
+                    {showFeaturedDropdown && (
+                      <div className="absolute left-0 top-full z-10 mt-1 w-40 bg-background border border-border rounded shadow-lg">
+                        <ul className="max-h-48 overflow-auto">
+                          {(currentTask?.images || []).map(img => (
+                            <li
+                              key={img.url}
+                              className={`px-3 py-2 cursor-pointer hover:bg-muted ${featuredImg === img.url ? 'bg-muted' : ''}`}
+                              onClick={() => {
+                                setFeaturedImg(img.url);
+                                setShowFeaturedDropdown(false);
+                              }}
+                            >
+                              {img.name}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                {/* Preview of selected image */}
+                <div className="flex flex-col items-center justify-center min-w-[120px] px-4">
+                  {featuredImg ? (
+                    <img src={featuredImg} alt="Featured preview" className="max-h-24 max-w-24 rounded shadow border" />
+                  ) : (
+                    <div className="w-24 h-24 flex items-center justify-center border rounded bg-muted text-muted-foreground">No image</div>
+                  )}
+                </div>
+                {/* Title and ALT fields */}
+                <div className="flex flex-col gap-2 flex-1 pl-4">
+                  <div className="flex items-center gap-2">
+                    <span className="w-12">Title:</span>
+                    <Input
+                      type="text"
+                      value={featuredTitle}
+                      onChange={e => setFeaturedTitle(e.target.value)}
+                      className="flex-1"
+                      placeholder="Enter title"
+                    />
+                    <Button size="sm" variant="outline" onClick={() => handleCopy(featuredTitle)} disabled={!featuredTitle}>copy</Button>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="w-12">ALT:</span>
+                    <Input
+                      type="text"
+                      value={featuredAlt}
+                      onChange={e => setFeaturedAlt(e.target.value)}
+                      className="flex-1"
+                      placeholder="Enter alt text"
+                    />
+                    <Button size="sm" variant="outline" onClick={() => handleCopy(featuredAlt)} disabled={!featuredAlt}>copy</Button>
+                  </div>
+                </div>
+              </div>
             </div>
             {/* HTML Editor always visible and fills remaining space */}
-            <div className="flex-1 flex flex-col">
+            <div className="flex-1 flex flex-col" ref={editorContainerRef}>
+              {/* Go to bottom button above editor */}
+              <div className="w-full flex justify-end mb-2">
+                <Button variant="outline" size="sm" onClick={() => {
+                  if (editorContainerRef.current) {
+                    editorContainerRef.current.scrollIntoView({ block: 'end', behavior: 'smooth' });
+                  }
+                }}>
+                  Go to bottom
+                </Button>
+              </div>
               <EditorSection
                 ref={editorRef}
                 htmlContent={htmlContent}
@@ -357,6 +465,16 @@ const HtmlBuilder: React.FC = () => {
                 onSave={saveChanges}
                 lastSavedAt={lastSavedAt}
               />
+              {/* Go to top button below editor */}
+              <div className="w-full flex justify-end mt-2">
+                <Button variant="outline" size="sm" onClick={() => {
+                  if (editorContainerRef.current) {
+                    editorContainerRef.current.scrollIntoView({ block: 'start', behavior: 'smooth' });
+                  }
+                }}>
+                  Go to top
+                </Button>
+              </div>
               {/* Notes section under HTML Editor */}
               <div className="max-w-lg self-center w-full mt-4">
                 <NotesSection notes={notes} onNotesChange={handleNotesChange} />
