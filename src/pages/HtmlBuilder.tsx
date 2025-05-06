@@ -20,7 +20,7 @@ import { NotesSection } from '@/components/html-builder/NotesSection';
 
 const HtmlBuilder: React.FC = () => {
   const { taskId } = useParams<{ taskId: string }>();
-  const { tasks, currentTask, setCurrentTask, updateTask, getCompanyById } = useTaskContext();
+  const { tasks, currentTask, setCurrentTask, updateTask, getCompanyById, tasksLoading } = useTaskContext();
   const navigate = useNavigate();
   const { toast } = useToast();
   const isMobile = useIsMobile();
@@ -44,23 +44,28 @@ const HtmlBuilder: React.FC = () => {
   const [featuredAlt, setFeaturedAlt] = useState('');
   const [showFeaturedDropdown, setShowFeaturedDropdown] = useState(false);
 
-  useEffect(() => {
-    if (!taskId) {
-      setLoadingTask(false);
-      return;
-    }
-    if (!tasks.length) return; // Wait for tasks to load
+  // Track if we've finished the initial load
+  const [tasksLoaded, setTasksLoaded] = useState(false);
 
+  // Mark tasks as loaded when they arrive
+  useEffect(() => {
+    if (tasks.length > 0) setTasksLoaded(true);
+  }, [tasks]);
+
+  // Wait for tasks to load before redirecting
+  useEffect(() => {
+    if (!taskId) return;
+    if (tasksLoading) return; // Wait for tasks to finish loading
+
+    // Only redirect if tasks are loaded and the task is truly not found
     const found = tasks.find(t => t.id === taskId);
     if (found) {
       setCurrentTask(found);
-      setLoadingTask(false);
-    } else {
-      setLoadingTask(false);
-      navigate('/', { replace: true });
+    } else if (!tasksLoading && tasks.length > 0) {
+      // Only redirect if tasks are loaded and the list is not empty
+      navigate("/", { replace: true });
     }
-    // eslint-disable-next-line
-  }, [taskId, tasks]);
+  }, [taskId, tasksLoading, tasks, setCurrentTask, navigate]);
 
   // Persist currentTask.id to localStorage
   useEffect(() => {
@@ -247,244 +252,250 @@ const HtmlBuilder: React.FC = () => {
     });
   };
 
-  // Show loading spinner while waiting for tasks
-  if (loadingTask) return <div>Loading task...</div>;
-
-  return (
-    <div className="min-h-screen w-full flex flex-col bg-[radial-gradient(circle,rgba(60,60,80,0.2)_1px,transparent_1px)] [background-size:32px_32px]">
-      {/* Go to bottom button at the top */}
-      <div className="w-full flex justify-center mt-4">
-        <Button variant="outline" onClick={() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' })}>
-          Go to bottom
-        </Button>
+  // Show loading spinner/message while waiting
+  if (tasksLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-lg text-muted-foreground">Loading task...</div>
       </div>
-      <div className="max-w-full px-4 py-4 mx-auto flex-1 flex flex-col pb-8">
-        <div className={`grid gap-4 ${isMobile ? "grid-cols-1" : "grid-cols-[260px_1fr]"}`}>
-          {/* Left Sidebar: Back button + Tags/Components, sticky */}
-          <div className="sticky top-4 h-[calc(100vh-2rem)] flex flex-col gap-4">
-            <Button 
-              variant="outline" 
-              onClick={() => {
-                saveChanges();
-                if (currentTask && currentTask.status !== TaskStatus.IN_PROGRESS) {
-                  updateTask(currentTask.id, { status: TaskStatus.IN_PROGRESS });
-                }
-                navigate('/');
-              }} 
-              className="shrink-0"
-            >
-              <ArrowLeft className="mr-2 h-4 w-4" /> Back to Dashboard
-            </Button>
-            <div className="flex-1 overflow-hidden">
-              <SidebarContent 
-                companyId={companyId}
-                contactLink={contactLink}
-                notes={notes}
-                pageType={pageType}
-                onTagClick={handleTagClick}
-                onInsertComponent={handleInsertComponent}
-                onCompanyChange={handleCompanyChange}
-                onContactLinkChange={setContactLink}
-                onNotesChange={handleNotesChange}
-                onCopyToClipboard={copyToClipboard}
-                onPageTypeChange={handlePageTypeChange}
-                onlyTagsAndComponents={true}
-              />
+    );
+  }
+
+  // If currentTask is set, render the builder UI
+  if (currentTask) {
+    return (
+      <div className="min-h-screen w-full flex flex-col bg-[radial-gradient(circle,rgba(60,60,80,0.2)_1px,transparent_1px)] [background-size:32px_32px]">
+        <div className="max-w-full px-4 py-4 mx-auto flex-1 flex flex-col pb-8">
+          <div className={`grid gap-4 ${isMobile ? "grid-cols-1" : "grid-cols-[260px_1fr]"}`}>
+            {/* Left Sidebar: Back button + Tags/Components, sticky */}
+            <div className="sticky top-4 h-[calc(100vh-2rem)] flex flex-col gap-4">
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  saveChanges();
+                  if (currentTask && currentTask.status !== TaskStatus.IN_PROGRESS) {
+                    updateTask(currentTask.id, { status: TaskStatus.IN_PROGRESS });
+                  }
+                  navigate('/');
+                }} 
+                className="shrink-0"
+              >
+                <ArrowLeft className="mr-2 h-4 w-4" /> Back to Dashboard
+              </Button>
+              <div className="flex-1 overflow-hidden">
+                <SidebarContent 
+                  companyId={companyId}
+                  contactLink={contactLink}
+                  notes={notes}
+                  pageType={pageType}
+                  onTagClick={handleTagClick}
+                  onInsertComponent={handleInsertComponent}
+                  onCompanyChange={handleCompanyChange}
+                  onContactLinkChange={setContactLink}
+                  onNotesChange={handleNotesChange}
+                  onCopyToClipboard={copyToClipboard}
+                  onPageTypeChange={handlePageTypeChange}
+                  onlyTagsAndComponents={true}
+                />
+              </div>
             </div>
-          </div>
-          {/* Main Content: 3 columns, grouped cards as in wireframe, notes, and editor */}
-          <div className="flex flex-col h-full">
-            <div className="grid grid-cols-3 gap-3 items-start mb-2">
-              {/* Column 1: Company card, then Tags link */}
-              <div className="flex flex-col gap-3">
-                <div className="bg-card rounded-lg p-4 flex flex-col min-h-[420px]">
-                  <CompanySection
-                    companyId={companyId}
-                    contactLink={contactLink}
-                    pageType={pageType}
-                    onCompanyChange={handleCompanyChange}
-                    onContactLinkChange={setContactLink}
-                    onCopyToClipboard={copyToClipboard}
-                    onPageTypeChange={handlePageTypeChange}
-                  />
-                </div>
-                {/* Tags Link Section under Company card */}
-                <div className="bg-card rounded-lg p-4 flex flex-col">
-                  <h3 className="text-lg font-medium mb-2">Tags link</h3>
-                  <div className="flex flex-col gap-3">
-                    <div className="flex items-center gap-2">
-                      <span className="w-32">Review</span>
-                      <Select value={reviewsTag} onValueChange={setReviewsTag}>
-                        <SelectTrigger className="w-48">
-                          <SelectValue placeholder="Select tag" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="review-tag-1">Review Tag 1</SelectItem>
-                          <SelectItem value="review-tag-2">Review Tag 2</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <Button variant="outline" onClick={() => handleCopy(reviewsTag)} disabled={!reviewsTag}>copy</Button>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="w-32">FAQ</span>
-                      <Select value={faqTag} onValueChange={setFaqTag}>
-                        <SelectTrigger className="w-48">
-                          <SelectValue placeholder="Select tag" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="faq-tag-1">FAQ Tag 1</SelectItem>
-                          <SelectItem value="faq-tag-2">FAQ Tag 2</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <Button variant="outline" onClick={() => handleCopy(faqTag)} disabled={!faqTag}>copy</Button>
+            {/* Main Content: 3 columns, grouped cards as in wireframe, notes, and editor */}
+            <div className="flex flex-col h-full">
+              <div className="grid grid-cols-3 gap-3 items-start mb-2">
+                {/* Column 1: Company card, then Tags link */}
+                <div className="flex flex-col gap-3">
+                  <div className="bg-card rounded-lg p-4 flex flex-col min-h-[420px]">
+                    <CompanySection
+                      companyId={companyId}
+                      contactLink={contactLink}
+                      pageType={pageType}
+                      onCompanyChange={handleCompanyChange}
+                      onContactLinkChange={setContactLink}
+                      onCopyToClipboard={copyToClipboard}
+                      onPageTypeChange={handlePageTypeChange}
+                    />
+                  </div>
+                  {/* Tags Link Section under Company card */}
+                  <div className="bg-card rounded-lg p-4 flex flex-col">
+                    <h3 className="text-lg font-medium mb-2">Tags link</h3>
+                    <div className="flex flex-col gap-3">
+                      <div className="flex items-center gap-2">
+                        <span className="w-32">Review</span>
+                        <Select value={reviewsTag} onValueChange={setReviewsTag}>
+                          <SelectTrigger className="w-48">
+                            <SelectValue placeholder="Select tag" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="review-tag-1">Review Tag 1</SelectItem>
+                            <SelectItem value="review-tag-2">Review Tag 2</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <Button variant="outline" onClick={() => handleCopy(reviewsTag)} disabled={!reviewsTag}>copy</Button>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="w-32">FAQ</span>
+                        <Select value={faqTag} onValueChange={setFaqTag}>
+                          <SelectTrigger className="w-48">
+                            <SelectValue placeholder="Select tag" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="faq-tag-1">FAQ Tag 1</SelectItem>
+                            <SelectItem value="faq-tag-2">FAQ Tag 2</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <Button variant="outline" onClick={() => handleCopy(faqTag)} disabled={!faqTag}>copy</Button>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-              {/* Column 2: HTML Templates card, then Image File Name Converter card */}
-              <div className="flex flex-col gap-3">
-                <div className="bg-card rounded-lg p-4 flex flex-col">
-                  <CompanyTemplateSection
-                    companyId={companyId}
-                    onInsertTemplate={handleInsertComponent}
-                  />
+                {/* Column 2: HTML Templates card, then Image File Name Converter card */}
+                <div className="flex flex-col gap-3">
+                  <div className="bg-card rounded-lg p-4 flex flex-col">
+                    <CompanyTemplateSection
+                      companyId={companyId}
+                      onInsertTemplate={handleInsertComponent}
+                    />
+                  </div>
+                  <div className="bg-card rounded-lg p-4 flex flex-col">
+                    <h3 className="text-lg font-medium mb-2">Image file name to link converter</h3>
+                    <ImageFilenameConverter companyDomain={getCompanyById(companyId)?.contactLink} />
+                  </div>
                 </div>
-                <div className="bg-card rounded-lg p-4 flex flex-col">
-                  <h3 className="text-lg font-medium mb-2">Image file name to link converter</h3>
-                  <ImageFilenameConverter companyDomain={getCompanyById(companyId)?.contactLink} />
+                {/* Column 3: Photos card (min-h to match left column) */}
+                <div>
+                  <div className="bg-card rounded-lg p-4 flex flex-col min-h-[420px]">
+                    <h3 className="text-lg font-medium mb-2">Photos</h3>
+                    <PhotoUploadPreview 
+                      companyName={getCompanyById(companyId)?.name} 
+                      pageType={pageType} 
+                      taskId={currentTask?.id} 
+                    />
+                  </div>
                 </div>
-              </div>
-              {/* Column 3: Photos card (min-h to match left column) */}
-              <div>
-                <div className="bg-card rounded-lg p-4 flex flex-col min-h-[420px]">
-                  <h3 className="text-lg font-medium mb-2">Photos</h3>
-                  <PhotoUploadPreview 
-                    companyName={getCompanyById(companyId)?.name} 
-                    pageType={pageType} 
-                    taskId={currentTask?.id} 
-                  />
-                </div>
-              </div>
-              {/* Featured IMG section spanning columns 2 and 3 */}
-              <div className="bg-card rounded-lg p-4 flex flex-row items-center col-span-3" style={{ gridColumn: '1 / span 3', minHeight: '110px' }}>
-                {/* Dropdown and Select button */}
-                <div className="flex flex-col items-start min-w-[180px] pr-4">
-                  <label className="font-medium mb-1">Featured IMG</label>
-                  <div className="relative flex items-center gap-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => setShowFeaturedDropdown(v => !v)}
-                      type="button"
-                      className="w-32 justify-between"
-                    >
-                      {featuredImg ? (
-                        <span
-                          className="truncate overflow-hidden whitespace-nowrap max-w-[100px] inline-block"
-                          title={currentTask?.images?.find(img => img.url === featuredImg)?.name || ''}
-                        >
-                          {currentTask?.images?.find(img => img.url === featuredImg)?.name || 'Select image'}
-                        </span>
-                      ) : 'Select image'}
-                      <span className="ml-2">▼</span>
-                    </Button>
-                    {/* Dropdown popover */}
-                    {showFeaturedDropdown && (
-                      <div className="absolute left-0 top-full z-10 mt-1 w-40 bg-background border border-border rounded shadow-lg">
-                        <ul className="max-h-48 overflow-auto">
-                          {(currentTask?.images || []).map(img => (
-                            <li
-                              key={img.url}
-                              className={`px-3 py-2 cursor-pointer hover:bg-muted ${featuredImg === img.url ? 'bg-muted' : ''}`}
-                              onClick={() => {
-                                setFeaturedImg(img.url);
-                                setShowFeaturedDropdown(false);
-                              }}
-                            >
-                              {img.name}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
+                {/* Featured IMG section spanning columns 2 and 3 */}
+                <div className="bg-card rounded-lg p-4 flex flex-row items-center col-span-3" style={{ gridColumn: '1 / span 3', minHeight: '110px' }}>
+                  {/* Dropdown and Select button */}
+                  <div className="flex flex-col items-start min-w-[180px] pr-4">
+                    <label className="font-medium mb-1">Featured IMG</label>
+                    <div className="relative flex items-center gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setShowFeaturedDropdown(v => !v)}
+                        type="button"
+                        className="w-32 justify-between"
+                      >
+                        {featuredImg ? (
+                          <span
+                            className="truncate overflow-hidden whitespace-nowrap max-w-[100px] inline-block"
+                            title={currentTask?.images?.find(img => img.url === featuredImg)?.name || ''}
+                          >
+                            {currentTask?.images?.find(img => img.url === featuredImg)?.name || 'Select image'}
+                          </span>
+                        ) : 'Select image'}
+                        <span className="ml-2">▼</span>
+                      </Button>
+                      {/* Dropdown popover */}
+                      {showFeaturedDropdown && (
+                        <div className="absolute left-0 top-full z-10 mt-1 w-40 bg-background border border-border rounded shadow-lg">
+                          <ul className="max-h-48 overflow-auto">
+                            {(currentTask?.images || []).map(img => (
+                              <li
+                                key={img.url}
+                                className={`px-3 py-2 cursor-pointer hover:bg-muted ${featuredImg === img.url ? 'bg-muted' : ''}`}
+                                onClick={() => {
+                                  setFeaturedImg(img.url);
+                                  setShowFeaturedDropdown(false);
+                                }}
+                              >
+                                {img.name}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  {/* Preview of selected image */}
+                  <div className="flex flex-col items-center justify-center min-w-[120px] px-4">
+                    {featuredImg ? (
+                      <img src={featuredImg} alt="Featured preview" className="max-h-24 max-w-24 rounded shadow border" />
+                    ) : (
+                      <div className="w-24 h-24 flex items-center justify-center border rounded bg-muted text-muted-foreground">No image</div>
                     )}
                   </div>
-                </div>
-                {/* Preview of selected image */}
-                <div className="flex flex-col items-center justify-center min-w-[120px] px-4">
-                  {featuredImg ? (
-                    <img src={featuredImg} alt="Featured preview" className="max-h-24 max-w-24 rounded shadow border" />
-                  ) : (
-                    <div className="w-24 h-24 flex items-center justify-center border rounded bg-muted text-muted-foreground">No image</div>
-                  )}
-                </div>
-                {/* Title and ALT fields */}
-                <div className="flex flex-col gap-2 flex-1 pl-4">
-                  <div className="flex items-center gap-2">
-                    <span className="w-12">Title:</span>
-                    <Input
-                      type="text"
-                      value={featuredTitle}
-                      onChange={e => setFeaturedTitle(e.target.value)}
-                      className="flex-1"
-                      placeholder="Enter title"
-                    />
-                    <Button size="sm" variant="outline" onClick={() => handleCopy(featuredTitle)} disabled={!featuredTitle}>copy</Button>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="w-12">ALT:</span>
-                    <Input
-                      type="text"
-                      value={featuredAlt}
-                      onChange={e => setFeaturedAlt(e.target.value)}
-                      className="flex-1"
-                      placeholder="Enter alt text"
-                    />
-                    <Button size="sm" variant="outline" onClick={() => handleCopy(featuredAlt)} disabled={!featuredAlt}>copy</Button>
+                  {/* Title and ALT fields */}
+                  <div className="flex flex-col gap-2 flex-1 pl-4">
+                    <div className="flex items-center gap-2">
+                      <span className="w-12">Title:</span>
+                      <Input
+                        type="text"
+                        value={featuredTitle}
+                        onChange={e => setFeaturedTitle(e.target.value)}
+                        className="flex-1"
+                        placeholder="Enter title"
+                      />
+                      <Button size="sm" variant="outline" onClick={() => handleCopy(featuredTitle)} disabled={!featuredTitle}>copy</Button>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="w-12">ALT:</span>
+                      <Input
+                        type="text"
+                        value={featuredAlt}
+                        onChange={e => setFeaturedAlt(e.target.value)}
+                        className="flex-1"
+                        placeholder="Enter alt text"
+                      />
+                      <Button size="sm" variant="outline" onClick={() => handleCopy(featuredAlt)} disabled={!featuredAlt}>copy</Button>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-            {/* HTML Editor always visible and fills remaining space */}
-            <div className="flex-1 flex flex-col" ref={editorContainerRef}>
-              {/* Go to bottom button above editor */}
-              <div className="w-full flex justify-end mb-2">
-                <Button variant="outline" size="sm" onClick={() => {
-                  if (editorContainerRef.current) {
-                    editorContainerRef.current.scrollIntoView({ block: 'end', behavior: 'smooth' });
-                  }
-                }}>
-                  Go to bottom
-                </Button>
-              </div>
-              <EditorSection
-                ref={editorRef}
-                htmlContent={htmlContent}
-                onHtmlChange={handleHtmlChange}
-                onUpdate={handleEditorUpdate}
-                onCopyToClipboard={copyToClipboard}
-                onSave={saveChanges}
-                lastSavedAt={lastSavedAt}
-              />
-              {/* Go to top button below editor */}
-              <div className="w-full flex justify-end mt-2">
-                <Button variant="outline" size="sm" onClick={() => {
-                  if (editorContainerRef.current) {
-                    editorContainerRef.current.scrollIntoView({ block: 'start', behavior: 'smooth' });
-                  }
-                }}>
-                  Go to top
-                </Button>
-              </div>
-              {/* Notes section under HTML Editor */}
-              <div className="max-w-lg self-center w-full mt-4">
-                <NotesSection notes={notes} onNotesChange={handleNotesChange} />
+              {/* HTML Editor always visible and fills remaining space */}
+              <div className="flex-1 flex flex-col" ref={editorContainerRef}>
+                {/* Go to bottom button above editor */}
+                <div className="w-full flex justify-end mb-2">
+                  <Button variant="outline" size="sm" onClick={() => {
+                    if (editorContainerRef.current) {
+                      editorContainerRef.current.scrollIntoView({ block: 'end', behavior: 'smooth' });
+                    }
+                  }}>
+                    Go to bottom
+                  </Button>
+                </div>
+                <EditorSection
+                  ref={editorRef}
+                  htmlContent={htmlContent}
+                  onHtmlChange={handleHtmlChange}
+                  onUpdate={handleEditorUpdate}
+                  onCopyToClipboard={copyToClipboard}
+                  onSave={saveChanges}
+                  lastSavedAt={lastSavedAt}
+                />
+                {/* Go to top button below editor */}
+                <div className="w-full flex justify-end mt-2">
+                  <Button variant="outline" size="sm" onClick={() => {
+                    if (editorContainerRef.current) {
+                      editorContainerRef.current.scrollIntoView({ block: 'start', behavior: 'smooth' });
+                    }
+                  }}>
+                    Go to top
+                  </Button>
+                </div>
+                {/* Notes section under HTML Editor */}
+                <div className="max-w-lg self-center w-full mt-4">
+                  <NotesSection notes={notes} onNotesChange={handleNotesChange} />
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  }
+
+  // If tasks are loaded and the task is not found, redirect will have already happened
+  return null;
 };
 
 export default HtmlBuilder;

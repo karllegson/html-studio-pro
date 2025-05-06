@@ -3,6 +3,8 @@ import { Task, TaskStatus, TaskType, Company } from '../types';
 import { db } from '../firebase';
 import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, getDoc } from 'firebase/firestore';
 import { deleteImage } from '@/utils/imageUpload';
+import { User } from "firebase/auth";
+import { v4 as uuidv4 } from "uuid";
 
 interface TaskContextType {
   tasks: Task[];
@@ -18,6 +20,7 @@ interface TaskContextType {
   updateCompany: (companyId: string, updates: Partial<Company>) => Promise<void>;
   deleteCompany: (companyId: string) => Promise<void>;
   addCompany: (company: Omit<Company, 'id'>) => Promise<void>;
+  tasksLoading: boolean;
 }
 
 const TaskContext = createContext<TaskContextType | undefined>(undefined);
@@ -54,15 +57,29 @@ const defaultTask: Partial<Task> = {
   images: [],
 };
 
-export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+interface TaskProviderProps {
+  children: React.ReactNode;
+  user: User | null | undefined; // undefined = not loaded yet
+}
+
+const AUTHORIZED_EMAILS = ["dklegson@gmail.com", "SECOND_EMAIL_HERE"]; // Add your emails here
+
+export const TaskProvider: React.FC<TaskProviderProps> = ({ children, user }) => {
+  console.log("TaskProvider user:", user);
+
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [localTasks, setLocalTasks] = useState<Task[]>([]);
   const [companies, setCompanies] = useState<Company[]>([]);
   const [currentTask, setCurrentTask] = useState<Task | null>(null);
+  const [tasksLoading, setTasksLoading] = useState(true);
+
+  const isAuthorized = user?.email ? AUTHORIZED_EMAILS.includes(user.email) : false;
 
   /**
    * Fetches all companies from Firestore
    */
   const fetchCompanies = async () => {
+    if (!isAuthorized) return;
     try {
       const querySnapshot = await getDocs(collection(db, 'companies'));
       setCompanies(querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Company)));
@@ -74,12 +91,13 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     fetchCompanies().catch(console.error);
-  }, []);
+  }, [isAuthorized]);
 
   /**
    * Adds a new company to Firestore
    */
   const addCompany = async (company: Omit<Company, 'id'>) => {
+    if (!isAuthorized) return;
     try {
       await addDoc(collection(db, 'companies'), company);
       await fetchCompanies();
@@ -93,6 +111,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
    * Updates an existing company in Firestore
    */
   const updateCompany = async (companyId: string, updates: Partial<Company>) => {
+    if (!isAuthorized) return;
     try {
       await updateDoc(doc(db, 'companies', companyId), updates);
       setCompanies(prev => prev.map(company =>
@@ -108,6 +127,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
    * Deletes a company and all its associated tasks from Firestore
    */
   const deleteCompany = async (companyId: string) => {
+    if (!isAuthorized) return;
     try {
       await deleteDoc(doc(db, 'companies', companyId));
       setCompanies(prev => prev.filter(company => company.id !== companyId));
@@ -124,23 +144,50 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
    * Fetches all tasks from Firestore
    */
   const fetchTasks = async () => {
+    if (!isAuthorized) {
+      setTasksLoading(false);
+      return;
+    }
+    setTasksLoading(true);
     try {
       const querySnapshot = await getDocs(collection(db, 'tasks'));
       setTasks(querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Task)));
     } catch (error) {
       console.error('Error fetching tasks:', error);
       throw error;
+    } finally {
+      setTasksLoading(false);
     }
   };
 
   useEffect(() => {
+    if (user === undefined) return;
     fetchTasks().catch(console.error);
-  }, []);
+  }, [isAuthorized, user]);
 
   /**
    * Adds a new task to Firestore
    */
   const addTask = async (task: Partial<Task>): Promise<Task> => {
+    console.log("addTask called, isAuthorized:", user, "user:", user);
+    if (!isAuthorized) {
+      console.log("Creating local task for unauthorized user", task);
+      const newTask: Task = {
+        id: uuidv4(),
+        companyId: task.companyId ?? "",
+        teamworkLink: task.teamworkLink ?? "",
+        type: task.type ?? TaskType.BLOG,
+        status: task.status ?? TaskStatus.IN_PROGRESS,
+        notes: task.notes ?? "",
+        htmlContent: task.htmlContent ?? "",
+        images: [],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      setLocalTasks(prev => [...prev, newTask]);
+      setCurrentTask(newTask);
+      return newTask;
+    }
     try {
       const newTask: Omit<Task, 'id'> = {
         companyId: task.companyId ?? defaultTask.companyId!,
@@ -156,7 +203,9 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const sanitizedTask = removeUndefined(newTask);
       const docRef = await addDoc(collection(db, 'tasks'), sanitizedTask);
       await fetchTasks();
-      return { ...sanitizedTask, id: docRef.id };
+      const createdTask = { ...sanitizedTask, id: docRef.id };
+      setCurrentTask(createdTask);
+      return createdTask;
     } catch (error) {
       console.error('Failed to add task:', error);
       throw error;
@@ -271,8 +320,8 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
   return (
     <TaskContext.Provider
       value={{
-        tasks,
-        companies,
+        tasks: isAuthorized ? tasks : localTasks,
+        companies: isAuthorized ? companies : [],
         currentTask,
         setCurrentTask,
         addTask,
@@ -284,6 +333,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
         updateCompany,
         deleteCompany,
         addCompany,
+        tasksLoading,
       }}
     >
       {children}

@@ -26,6 +26,8 @@ const App: React.FC = () => {
     });
   }, []);
 
+  console.log("App user:", user);
+
   if (loading) return <div>Loading...</div>;
   if (!user) return <Login />;
 
@@ -34,7 +36,7 @@ const App: React.FC = () => {
       <Router>
         <div className="min-h-screen flex flex-col">
           <main className="flex-grow">
-            <TaskProvider>
+            <TaskProvider user={user}>
               <TooltipProvider>
                 <Routes>
                   <Route path="/" element={<Dashboard />} />
