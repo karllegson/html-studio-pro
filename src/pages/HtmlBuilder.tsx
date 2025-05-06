@@ -83,7 +83,7 @@ const HtmlBuilder: React.FC = () => {
   }, [htmlContent, companyId, notes, pageType]);
 
   const saveChanges = () => {
-    if (currentTask) {
+    if (currentTask && currentTask.id) {
       updateTask(currentTask.id, {
         htmlContent,
         companyId,
@@ -91,7 +91,6 @@ const HtmlBuilder: React.FC = () => {
         type: pageType,
       });
       setLastSavedAt(new Date());
-      // Do not show toast for manual saves or auto-saves
     }
   };
 

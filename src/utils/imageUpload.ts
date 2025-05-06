@@ -43,10 +43,12 @@ const validateFile = (file: File): string | undefined => {
  * @returns Promise resolving to the upload result
  */
 export const uploadImage = async (file: File, path: string): Promise<UploadResult> => {
+  console.log('[uploadImage] called', { file, path });
   try {
     // Validate file
     const validationError = validateFile(file);
     if (validationError) {
+      console.log('[uploadImage] validation error', validationError);
       return { success: false, error: validationError };
     }
 
@@ -70,13 +72,30 @@ export const uploadImage = async (file: File, path: string): Promise<UploadResul
       uploadedAt: new Date().toISOString()
     };
 
+    console.log('[uploadImage] success', imageData);
     return { success: true, url: imageData.url };
   } catch (error) {
-    console.error('Error uploading image:', error);
+    console.error('[uploadImage] error', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to upload image'
     };
+  }
+};
+
+/**
+ * Extracts the storage path from a Firebase Storage download URL
+ * @param url - The download URL
+ * @returns The storage path
+ */
+const getStoragePathFromUrl = (url: string): string | null => {
+  try {
+    // Example: https://firebasestorage.googleapis.com/v0/b/your-app.appspot.com/o/tasks%2FtaskId%2Ffilename.jpg?alt=media&token=...
+    const match = url.match(/\/o\/([^?]+)/);
+    if (!match) return null;
+    return decodeURIComponent(match[1]);
+  } catch {
+    return null;
   }
 };
 
@@ -87,7 +106,9 @@ export const uploadImage = async (file: File, path: string): Promise<UploadResul
  */
 export const deleteImage = async (url: string): Promise<boolean> => {
   try {
-    const storageRef = ref(storage, url);
+    const storagePath = getStoragePathFromUrl(url);
+    if (!storagePath) throw new Error('Invalid storage URL');
+    const storageRef = ref(storage, storagePath);
     await deleteObject(storageRef);
     return true;
   } catch (error) {

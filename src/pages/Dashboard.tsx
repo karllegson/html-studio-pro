@@ -31,7 +31,8 @@ const Dashboard: React.FC = () => {
     updateTask,
     deleteTask,
     setCurrentTask,
-    currentTask
+    currentTask,
+    hardDeleteTask
   } = useTaskContext();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -92,7 +93,7 @@ const Dashboard: React.FC = () => {
       
       if (isRecentlyDeletedTab) {
         // Permanently delete tasks
-        deleteTask(taskToDelete);
+        hardDeleteTask(taskToDelete);
         toast({
           title: "Tasks permanently deleted",
           description: `${taskToDelete.length} tasks have been permanently deleted.`,

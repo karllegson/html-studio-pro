@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Task, TaskStatus, TaskType, Company } from '../types';
 import { db } from '../firebase';
 import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, getDoc } from 'firebase/firestore';
+import { deleteImage } from '@/utils/imageUpload';
 
 interface TaskContextType {
   tasks: Task[];
@@ -11,6 +12,8 @@ interface TaskContextType {
   addTask: (task: Partial<Task>) => Promise<Task>;
   updateTask: (taskId: string, updates: Partial<Task>) => Promise<void>;
   deleteTask: (taskId: string | string[]) => Promise<void>;
+  hardDeleteTask: (taskId: string | string[]) => Promise<void>;
+  restoreTask: (taskId: string) => Promise<void>;
   getCompanyById: (id: string) => Company | undefined;
   updateCompany: (companyId: string, updates: Partial<Company>) => Promise<void>;
   deleteCompany: (companyId: string) => Promise<void>;
@@ -26,7 +29,8 @@ const TaskContext = createContext<TaskContextType | undefined>(undefined);
  */
 function removeUndefined<T>(obj: T): T {
   if (Array.isArray(obj)) {
-    return obj.map(removeUndefined) as T;
+    // Remove undefined from arrays and recursively sanitize
+    return obj.filter(v => v !== undefined).map(removeUndefined) as T;
   }
   if (obj && typeof obj === 'object') {
     return Object.fromEntries(
@@ -163,6 +167,10 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
    * Updates an existing task in Firestore
    */
   const updateTask = async (taskId: string, updates: Partial<Task>) => {
+    if (!taskId) {
+      console.error('[updateTask] taskId is undefined or empty!', { taskId, updates });
+      return;
+    }
     try {
       const taskDoc = doc(db, 'tasks', taskId);
       const snap = await getDoc(taskDoc);
@@ -175,6 +183,11 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
         updatedAt: new Date().toISOString()
       };
       const sanitized = removeUndefined(merged);
+
+      // Debug log to catch undefineds
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('[updateTask] sanitized data:', JSON.stringify(sanitized, null, 2));
+      }
 
       await updateDoc(taskDoc, sanitized);
       await fetchTasks();
@@ -189,11 +202,44 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   /**
-   * Deletes one or more tasks from Firestore
+   * Soft deletes one or more tasks by marking them as RECENTLY_DELETED
    */
   const deleteTask = async (taskId: string | string[]) => {
     try {
       const ids = Array.isArray(taskId) ? taskId : [taskId];
+      await Promise.all(ids.map(id => 
+        updateDoc(doc(db, 'tasks', id), {
+          status: TaskStatus.RECENTLY_DELETED,
+          updatedAt: new Date().toISOString()
+        })
+      ));
+      await fetchTasks();
+      
+      if (currentTask && ids.includes(currentTask.id)) {
+        setCurrentTask(null);
+      }
+    } catch (error) {
+      console.error('Failed to soft delete task(s):', error);
+      throw error;
+    }
+  };
+
+  /**
+   * Permanently deletes one or more tasks from Firestore
+   */
+  const hardDeleteTask = async (taskId: string | string[]) => {
+    try {
+      const ids = Array.isArray(taskId) ? taskId : [taskId];
+      
+      // First, get all tasks to be deleted to handle their images
+      const tasksToDelete = tasks.filter(task => ids.includes(task.id));
+      
+      // Delete all associated images from Storage
+      await Promise.all(tasksToDelete.flatMap(task => 
+        task.images.map(img => deleteImage(img.url))
+      ));
+      
+      // Delete the tasks from Firestore
       await Promise.all(ids.map(id => deleteDoc(doc(db, 'tasks', id))));
       await fetchTasks();
       
@@ -201,7 +247,23 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setCurrentTask(null);
       }
     } catch (error) {
-      console.error('Failed to delete task(s):', error);
+      console.error('Failed to hard delete task(s):', error);
+      throw error;
+    }
+  };
+
+  /**
+   * Restores a soft-deleted task by setting its status back to IN_PROGRESS
+   */
+  const restoreTask = async (taskId: string) => {
+    try {
+      await updateDoc(doc(db, 'tasks', taskId), {
+        status: TaskStatus.IN_PROGRESS,
+        updatedAt: new Date().toISOString()
+      });
+      await fetchTasks();
+    } catch (error) {
+      console.error('Failed to restore task:', error);
       throw error;
     }
   };
@@ -216,6 +278,8 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
         addTask,
         updateTask,
         deleteTask,
+        hardDeleteTask,
+        restoreTask,
         getCompanyById,
         updateCompany,
         deleteCompany,
