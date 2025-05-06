@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Task, TaskStatus, TaskType, Company } from '../types';
 import { companies, sampleTasks } from '../data/mockData';
 import { db } from '../firebase';
-import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
+import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, getDoc } from 'firebase/firestore';
 
 interface TaskContextType {
   tasks: Task[];
@@ -76,6 +76,31 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     fetchTasks();
   }, []);
 
+  const defaultTask: Partial<Task> = {
+    companyId: '',
+    teamworkLink: '',
+    type: TaskType.BLOG,
+    status: TaskStatus.IN_PROGRESS,
+    notes: '',
+    htmlContent: '',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    images: [],
+  };
+
+  function removeUndefined(obj: any): any {
+    if (Array.isArray(obj)) {
+      return obj.map(removeUndefined);
+    } else if (obj && typeof obj === 'object') {
+      return Object.fromEntries(
+        Object.entries(obj)
+          .filter(([_, v]) => v !== undefined)
+          .map(([k, v]) => [k, removeUndefined(v)])
+      );
+    }
+    return obj;
+  }
+
   // Add task
   const addTask = async (task: Partial<Task>): Promise<Task> => {
     const newTask: Omit<Task, 'id'> = {
@@ -95,10 +120,17 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Update task
   const updateTask = async (taskId: string, updates: Partial<Task>) => {
-    await updateDoc(doc(db, 'tasks', taskId), {
-      ...updates,
-      updatedAt: new Date().toISOString(),
-    });
+    // Get the current task data
+    const taskDoc = doc(db, 'tasks', taskId);
+    const snap = await getDoc(taskDoc);
+    const prevData = snap.data() || {};
+
+    // Merge with defaults, previous data, and updates
+    const merged = { ...defaultTask, ...prevData, ...updates, updatedAt: new Date().toISOString() };
+    const sanitized = removeUndefined(merged);
+    console.log("Updating Firestore with:", sanitized);
+
+    await updateDoc(taskDoc, sanitized);
     await fetchTasks();
     // Update currentTask if it's the one being updated
     if (currentTask && currentTask.id === taskId) {

@@ -247,6 +247,9 @@ const HtmlBuilder: React.FC = () => {
               variant="outline" 
               onClick={() => {
                 saveChanges();
+                if (currentTask && currentTask.status !== TaskStatus.IN_PROGRESS) {
+                  updateTask(currentTask.id, { status: TaskStatus.IN_PROGRESS });
+                }
                 navigate('/');
               }} 
               className="shrink-0"
@@ -336,7 +339,11 @@ const HtmlBuilder: React.FC = () => {
               <div>
                 <div className="bg-card rounded-lg p-4 flex flex-col min-h-[420px]">
                   <h3 className="text-lg font-medium mb-2">Photos</h3>
-                  <PhotoUploadPreview companyName={getCompanyById(companyId)?.name} pageType={pageType} />
+                  <PhotoUploadPreview 
+                    companyName={getCompanyById(companyId)?.name} 
+                    pageType={pageType} 
+                    taskId={currentTask?.id} 
+                  />
                 </div>
               </div>
             </div>

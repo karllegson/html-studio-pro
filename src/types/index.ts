@@ -14,6 +14,7 @@ export interface Task {
   htmlContent: string;
   createdAt: string;
   updatedAt: string;
+  images?: { url: string; name: string; size?: number; uploadedAt?: string }[];
 }
 
 export enum TaskType {
