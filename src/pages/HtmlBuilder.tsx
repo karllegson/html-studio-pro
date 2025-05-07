@@ -301,70 +301,35 @@ const HtmlBuilder: React.FC = () => {
             </div>
             {/* Main Content: 3 columns, grouped cards as in wireframe, notes, and editor */}
             <div className="flex flex-col h-full">
-              <div className="grid grid-cols-3 gap-3 items-start mb-2">
-                {/* Column 1: Company card, then Tags link */}
-                <div className="flex flex-col gap-3">
-                  <div className="bg-card rounded-lg p-4 flex flex-col min-h-[420px]">
-                    <CompanySection
-                      companyId={companyId}
-                      contactLink={contactLink}
-                      pageType={pageType}
-                      onCompanyChange={handleCompanyChange}
-                      onContactLinkChange={setContactLink}
-                      onCopyToClipboard={copyToClipboard}
-                      onPageTypeChange={handlePageTypeChange}
-                    />
-                  </div>
-                  {/* Tags Link Section under Company card */}
-                  <div className="bg-card rounded-lg p-4 flex flex-col">
-                    <h3 className="text-lg font-medium mb-2">Tags link</h3>
-                    <div className="flex flex-col gap-3">
-                      <div className="flex items-center gap-2">
-                        <span className="w-32">Review</span>
-                        <Select value={reviewsTag} onValueChange={setReviewsTag}>
-                          <SelectTrigger className="w-48">
-                            <SelectValue placeholder="Select tag" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="review-tag-1">Review Tag 1</SelectItem>
-                            <SelectItem value="review-tag-2">Review Tag 2</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <Button variant="outline" onClick={() => handleCopy(reviewsTag)} disabled={!reviewsTag}>copy</Button>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="w-32">FAQ</span>
-                        <Select value={faqTag} onValueChange={setFaqTag}>
-                          <SelectTrigger className="w-48">
-                            <SelectValue placeholder="Select tag" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="faq-tag-1">FAQ Tag 1</SelectItem>
-                            <SelectItem value="faq-tag-2">FAQ Tag 2</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <Button variant="outline" onClick={() => handleCopy(faqTag)} disabled={!faqTag}>copy</Button>
-                      </div>
-                    </div>
-                  </div>
+              <div className="grid grid-cols-3 gap-3 mb-2">
+                {/* Row 1 */}
+                <div className="bg-card rounded-lg p-4 flex flex-col min-h-[420px]">
+                  {/* Company Section */}
+                  <CompanySection
+                    companyId={companyId}
+                    contactLink={contactLink}
+                    pageType={pageType}
+                    onCompanyChange={handleCompanyChange}
+                    onContactLinkChange={setContactLink}
+                    onCopyToClipboard={copyToClipboard}
+                    onPageTypeChange={handlePageTypeChange}
+                  />
                 </div>
-                {/* Column 2: HTML Templates card, then Image File Name Converter card */}
-                <div className="flex flex-col gap-3">
-                  <div className="bg-card rounded-lg p-4 flex flex-col">
-                    <CompanyTemplateSection
-                      companyId={companyId}
-                      onInsertTemplate={handleInsertComponent}
-                    />
-                  </div>
-                  <div className="bg-card rounded-lg p-4 flex flex-col">
+                <div className="bg-card rounded-lg p-4 flex flex-col">
+                  {/* HTML Templates */}
+                  <CompanyTemplateSection
+                    companyId={companyId}
+                    onInsertTemplate={handleInsertComponent}
+                  />
+                  {/* Image file name to link converter */}
+                  <div className="mt-3">
                     <h3 className="text-lg font-medium mb-2">Image file name to link converter</h3>
                     <ImageFilenameConverter companyDomain={getCompanyById(companyId)?.contactLink} />
                   </div>
                 </div>
-                {/* Column 3: Photos card (min-h to match left column) */}
-                <div>
-                  <div className="bg-card rounded-lg p-4 flex flex-col min-h-[420px]">
-                    <h3 className="text-lg font-medium mb-2">Photos</h3>
+                <div className="bg-card rounded-lg p-4 flex flex-col h-[420px]">
+                  <h3 className="text-lg font-medium mb-2">Photos</h3>
+                  <div className="overflow-auto h-full">
                     <PhotoUploadPreview 
                       companyName={getCompanyById(companyId)?.name} 
                       pageType={pageType} 
@@ -372,82 +337,120 @@ const HtmlBuilder: React.FC = () => {
                     />
                   </div>
                 </div>
-                {/* Featured IMG section spanning columns 2 and 3 */}
-                <div className="bg-card rounded-lg p-4 flex flex-row items-center col-span-3" style={{ gridColumn: '1 / span 3', minHeight: '110px' }}>
-                  {/* Dropdown and Select button */}
-                  <div className="flex flex-col items-start min-w-[180px] pr-4">
-                    <label className="font-medium mb-1">Featured IMG</label>
-                    <div className="relative flex items-center gap-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => setShowFeaturedDropdown(v => !v)}
-                        type="button"
-                        className="w-32 justify-between"
-                      >
-                        {featuredImg ? (
-                          <span
-                            className="truncate overflow-hidden whitespace-nowrap max-w-[100px] inline-block"
-                            title={currentTask?.images?.find(img => img.url === featuredImg)?.name || ''}
-                          >
-                            {currentTask?.images?.find(img => img.url === featuredImg)?.name || 'Select image'}
-                          </span>
-                        ) : 'Select image'}
-                        <span className="ml-2">▼</span>
-                      </Button>
-                      {/* Dropdown popover */}
-                      {showFeaturedDropdown && (
-                        <div className="absolute left-0 top-full z-10 mt-1 w-40 bg-background border border-border rounded shadow-lg">
-                          <ul className="max-h-48 overflow-auto">
-                            {(currentTask?.images || []).map(img => (
-                              <li
-                                key={img.url}
-                                className={`px-3 py-2 cursor-pointer hover:bg-muted ${featuredImg === img.url ? 'bg-muted' : ''}`}
-                                onClick={() => {
-                                  setFeaturedImg(img.url);
-                                  setShowFeaturedDropdown(false);
-                                }}
-                              >
-                                {img.name}
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
+
+                {/* Row 2 */}
+                <div className="bg-card rounded-lg p-4 flex flex-col">
+                  {/* Tags link */}
+                  <h3 className="text-lg font-medium mb-2">Tags link</h3>
+                  <div className="flex flex-col gap-3">
+                    <div className="flex items-center gap-2">
+                      <span className="w-32">Review</span>
+                      <Select value={reviewsTag} onValueChange={setReviewsTag}>
+                        <SelectTrigger className="w-48">
+                          <SelectValue placeholder="Select tag" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="review-tag-1">Review Tag 1</SelectItem>
+                          <SelectItem value="review-tag-2">Review Tag 2</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Button variant="outline" onClick={() => handleCopy(reviewsTag)} disabled={!reviewsTag}>copy</Button>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="w-32">FAQ</span>
+                      <Select value={faqTag} onValueChange={setFaqTag}>
+                        <SelectTrigger className="w-48">
+                          <SelectValue placeholder="Select tag" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="faq-tag-1">FAQ Tag 1</SelectItem>
+                          <SelectItem value="faq-tag-2">FAQ Tag 2</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Button variant="outline" onClick={() => handleCopy(faqTag)} disabled={!faqTag}>copy</Button>
                     </div>
                   </div>
-                  {/* Preview of selected image */}
-                  <div className="flex flex-col items-center justify-center min-w-[120px] px-4">
-                    {featuredImg ? (
-                      <img src={featuredImg} alt="Featured preview" className="max-h-24 max-w-24 rounded shadow border" />
-                    ) : (
-                      <div className="w-24 h-24 flex items-center justify-center border rounded bg-muted text-muted-foreground">No image</div>
+                </div>
+                <div className="col-span-2 bg-card rounded-lg p-4 flex items-center justify-center border-2 border-red-500 border-solid">
+                  {/* Debug Empty Section */}
+                  <span className="text-red-500 font-bold">DEBUG: Empty Section</span>
+                </div>
+              </div>
+              {/* Featured IMG section spanning columns 2 and 3 */}
+              <div className="bg-card rounded-lg p-4 flex flex-row items-center col-span-3" style={{ gridColumn: '1 / span 3', minHeight: '110px' }}>
+                {/* Dropdown and Select button */}
+                <div className="flex flex-col items-start min-w-[180px] pr-4">
+                  <label className="font-medium mb-1">Featured IMG</label>
+                  <div className="relative flex items-center gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setShowFeaturedDropdown(v => !v)}
+                      type="button"
+                      className="w-32 justify-between"
+                    >
+                      {featuredImg ? (
+                        <span
+                          className="truncate overflow-hidden whitespace-nowrap max-w-[100px] inline-block"
+                          title={currentTask?.images?.find(img => img.url === featuredImg)?.name || ''}
+                        >
+                          {currentTask?.images?.find(img => img.url === featuredImg)?.name || 'Select image'}
+                        </span>
+                      ) : 'Select image'}
+                      <span className="ml-2">▼</span>
+                    </Button>
+                    {/* Dropdown popover */}
+                    {showFeaturedDropdown && (
+                      <div className="absolute left-0 top-full z-10 mt-1 w-40 bg-background border border-border rounded shadow-lg">
+                        <ul className="max-h-48 overflow-auto">
+                          {(currentTask?.images || []).map(img => (
+                            <li
+                              key={img.url}
+                              className={`px-3 py-2 cursor-pointer hover:bg-muted ${featuredImg === img.url ? 'bg-muted' : ''}`}
+                              onClick={() => {
+                                setFeaturedImg(img.url);
+                                setShowFeaturedDropdown(false);
+                              }}
+                            >
+                              {img.name}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
                     )}
                   </div>
-                  {/* Title and ALT fields */}
-                  <div className="flex flex-col gap-2 flex-1 pl-4">
-                    <div className="flex items-center gap-2">
-                      <span className="w-12">Title:</span>
-                      <Input
-                        type="text"
-                        value={featuredTitle}
-                        onChange={e => setFeaturedTitle(e.target.value)}
-                        className="flex-1"
-                        placeholder="Enter title"
-                      />
-                      <Button size="sm" variant="outline" onClick={() => handleCopy(featuredTitle)} disabled={!featuredTitle}>copy</Button>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="w-12">ALT:</span>
-                      <Input
-                        type="text"
-                        value={featuredAlt}
-                        onChange={e => setFeaturedAlt(e.target.value)}
-                        className="flex-1"
-                        placeholder="Enter alt text"
-                      />
-                      <Button size="sm" variant="outline" onClick={() => handleCopy(featuredAlt)} disabled={!featuredAlt}>copy</Button>
-                    </div>
+                </div>
+                {/* Preview of selected image */}
+                <div className="flex flex-col items-center justify-center min-w-[120px] px-4">
+                  {featuredImg ? (
+                    <img src={featuredImg} alt="Featured preview" className="max-h-24 max-w-24 rounded shadow border" />
+                  ) : (
+                    <div className="w-24 h-24 flex items-center justify-center border rounded bg-muted text-muted-foreground">No image</div>
+                  )}
+                </div>
+                {/* Title and ALT fields */}
+                <div className="flex flex-col gap-2 flex-1 pl-4">
+                  <div className="flex items-center gap-2">
+                    <span className="w-12">Title:</span>
+                    <Input
+                      type="text"
+                      value={featuredTitle}
+                      onChange={e => setFeaturedTitle(e.target.value)}
+                      className="flex-1"
+                      placeholder="Enter title"
+                    />
+                    <Button size="sm" variant="outline" onClick={() => handleCopy(featuredTitle)} disabled={!featuredTitle}>copy</Button>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="w-12">ALT:</span>
+                    <Input
+                      type="text"
+                      value={featuredAlt}
+                      onChange={e => setFeaturedAlt(e.target.value)}
+                      className="flex-1"
+                      placeholder="Enter alt text"
+                    />
+                    <Button size="sm" variant="outline" onClick={() => handleCopy(featuredAlt)} disabled={!featuredAlt}>copy</Button>
                   </div>
                 </div>
               </div>

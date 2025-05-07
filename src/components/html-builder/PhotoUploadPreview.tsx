@@ -138,7 +138,7 @@ export const PhotoUploadPreview: React.FC<PhotoUploadPreviewProps> = ({
   };
 
   return (
-    <div className="p-4 border rounded bg-muted">
+    <div className="p-4 border rounded bg-muted h-full flex flex-col">
       <div className="flex items-center gap-2 mb-4">
         <button
           type="button"
@@ -166,13 +166,13 @@ export const PhotoUploadPreview: React.FC<PhotoUploadPreviewProps> = ({
         </button>
       </div>
       {/* Image previews */}
-      <div className="grid grid-cols-3 gap-2 mb-2">
+      <div className="flex flex-wrap gap-2 mb-2 overflow-auto">
         {images.map((img, idx) => (
-          <div key={img.url + '-' + idx} className="relative w-full aspect-square rounded overflow-hidden bg-muted flex items-center justify-center">
+          <div key={img.url + '-' + idx} className="relative rounded overflow-hidden bg-muted flex items-center justify-center">
             <img
               src={img.url}
               alt={img.name}
-              className="object-cover w-full h-full opacity-80 cursor-pointer"
+              className="opacity-80 cursor-pointer max-w-[120px] max-h-[120px]"
               onClick={() => setPreviewIdx(idx)}
             />
             {img.uploading && (
