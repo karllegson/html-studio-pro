@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useTaskContext } from '@/context/TaskContext';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Copy, Check } from 'lucide-react';
+import { ArrowLeft, Copy, Check, Loader2 } from 'lucide-react';
 import { TaskStatus, TaskType } from '@/types';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { EditorSection, EditorSectionRef } from '@/components/html-builder/EditorSection';
@@ -704,10 +704,6 @@ const HtmlBuilder: React.FC = () => {
                   <div className="flex flex-col items-center">
                     <div className="flex items-center gap-2 mb-2">
                       <label className="font-medium">Featured IMG</label>
-                      <GreenCircleCheckbox
-                        checked={featuredImgChecked}
-                        onChange={e => setFeaturedImgChecked(e.target.checked)}
-                      />
                     </div>
                     <div className="relative flex items-center justify-center w-full">
                       <Button
@@ -784,6 +780,14 @@ const HtmlBuilder: React.FC = () => {
                       <CopyButton value={featuredAlt} />
                     </div>
                   </div>
+                  {/* Featured Image Checkbox */}
+                  <div className="flex items-center justify-center gap-2 mt-10">
+                    <label className="text-sm font-medium">Applied Featured Image</label>
+                    <GreenCircleCheckbox
+                      checked={featuredImgChecked}
+                      onChange={e => setFeaturedImgChecked(e.target.checked)}
+                    />
+                  </div>
                 </div>
 
                 {/* Row 2 */}
@@ -794,22 +798,26 @@ const HtmlBuilder: React.FC = () => {
                     { label: 'Meta URL', key: 'metaUrl', value: metaUrl, handler: handleMetaUrlChange },
                     { label: 'Meta Description', key: 'metaDescription', value: metaDescription, handler: handleMetaDescriptionChange },
                   ].map((item, idx) => (
-                    <div key={item.key} className="flex items-center gap-2 mb-3 last:mb-0">
+                    <div key={item.key} className="flex items-center gap-1 mb-2 last:mb-0">
                       <span className="w-28">{item.label}</span>
                       <Input
                         type="text"
-                        className="flex-1"
+                        className="w-64 px-3 py-2 text-sm rounded-md border"
                         value={item.value}
                         onChange={e => item.handler(e.target.value)}
                         placeholder={item.label}
                       />
                       <CopyButton value={item.value} />
-                      <GreenCircleCheckbox
-                        checked={!!checkedFields[item.key]}
-                        onChange={e => setCheckedFields(f => ({ ...f, [item.key]: e.target.checked }))}
-                      />
                     </div>
                   ))}
+                  {/* Meta Info Checkbox */}
+                  <div className="flex items-center justify-center gap-2 mt-10">
+                    <label className="text-sm font-medium">Applied Meta Info and Title</label>
+                    <GreenCircleCheckbox
+                      checked={!!checkedFields['widgetTitle']}
+                      onChange={e => setCheckedFields(f => ({ ...f, widgetTitle: e.target.checked }))}
+                    />
+                  </div>
                 </div>
                 <div className="bg-card rounded-lg p-4 flex flex-col max-h-[400px] col-span-2">
                   <div className="flex items-center justify-between mb-2">
@@ -824,10 +832,18 @@ const HtmlBuilder: React.FC = () => {
                       </button>
                       <button
                         type="button"
-                        className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+                        className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                         onClick={() => (document.querySelector('[data-download-all]') as HTMLButtonElement)?.click()}
+                        disabled={document.querySelector('[data-download-all]')?.hasAttribute('disabled')}
                       >
-                        Download All
+                        {document.querySelector('[data-download-all]')?.hasAttribute('disabled') ? (
+                          <>
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            <span>Downloading...</span>
+                          </>
+                        ) : (
+                          'Download All'
+                        )}
                       </button>
                     </div>
                   </div>

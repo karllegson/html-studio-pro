@@ -1,0 +1,9 @@
+[
+    {
+      "origin": ["http://localhost:8080", "https://html-studio-pro.vercel.app/"],
+      "method": ["GET"],
+      "maxAgeSeconds": 3600,
+      "responseHeader": ["Content-Type"]
+    }
+  ]
+  

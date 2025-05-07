@@ -2,6 +2,8 @@ import React, { useRef, useState, useEffect } from 'react';
 import { uploadImage, deleteImage } from '@/utils/imageUpload';
 import { useTaskContext } from '@/context/TaskContext';
 import { TaskImage } from '@/types';
+import { Loader2, Copy } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 interface PhotoUploadPreviewProps {
   companyName?: string;
@@ -26,6 +28,7 @@ export const PhotoUploadPreview: React.FC<PhotoUploadPreviewProps> = ({
   const [uploading, setUploading] = useState(false);
   const [previewIdx, setPreviewIdx] = useState<number | null>(null);
   const [downloading, setDownloading] = useState(false);
+  const { toast } = useToast();
 
   // Load images from Firestore on mount/task change
   useEffect(() => {
@@ -128,13 +131,16 @@ export const PhotoUploadPreview: React.FC<PhotoUploadPreviewProps> = ({
       await Promise.all(images.map(async img => {
         const response = await fetch(img.url);
         const blob = await response.blob();
-        zip.file(img.name, blob);
+        // Create filename with the requested convention
+        const fileName = `${companyName || 'Unknown'}_${pageType || 'Unknown'}_${img.name}`;
+        zip.file(fileName, blob);
       }));
       const blob = await zip.generateAsync({ type: 'blob' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'photos.zip';
+      // Set zip file name with company name and page type
+      a.download = `${companyName || 'Unknown'}_${pageType || 'Unknown'}_photos.zip`;
       a.click();
       setTimeout(() => URL.revokeObjectURL(url), 2000);
     } catch (error) {
@@ -142,6 +148,17 @@ export const PhotoUploadPreview: React.FC<PhotoUploadPreviewProps> = ({
     } finally {
       setDownloading(false);
     }
+  };
+
+  const handleCopyFilename = (filename: string) => {
+    // Remove file extension
+    const filenameWithoutExtension = filename.replace(/\.[^/.]+$/, '');
+    navigator.clipboard.writeText(filenameWithoutExtension);
+    toast({
+      title: 'Copied to clipboard',
+      description: 'Filename has been copied.',
+      duration: 2000,
+    });
   };
 
   return (
@@ -162,14 +179,24 @@ export const PhotoUploadPreview: React.FC<PhotoUploadPreviewProps> = ({
             {img.error && (
               <div className="absolute inset-0 flex items-center justify-center bg-red-700/80 text-white text-xs p-2">{img.error}</div>
             )}
-            <button
-              type="button"
-              className="absolute top-2 right-2 bg-red-600 hover:bg-red-700 rounded-full p-1 text-white shadow"
-              onClick={() => handleRemove(idx)}
-              title="Remove image"
-            >
-              ×
-            </button>
+            <div className="absolute top-2 right-2 flex gap-1">
+              <button
+                type="button"
+                className="bg-blue-600 hover:bg-blue-700 rounded-full p-1 text-white shadow"
+                onClick={() => handleCopyFilename(img.name)}
+                title="Copy filename"
+              >
+                <Copy className="h-4 w-4" />
+              </button>
+              <button
+                type="button"
+                className="bg-red-600 hover:bg-red-700 rounded-full p-1 text-white shadow"
+                onClick={() => handleRemove(idx)}
+                title="Remove image"
+              >
+                ×
+              </button>
+            </div>
           </div>
         ))}
       </div>
@@ -182,13 +209,23 @@ export const PhotoUploadPreview: React.FC<PhotoUploadPreviewProps> = ({
         className="hidden"
         onChange={handleUpload}
       />
-      {/* Hidden button for download all */}
+      {/* Download all button with loading state */}
       <button
         type="button"
         className="hidden"
         data-download-all
         onClick={handleDownloadAll}
-      />
+        disabled={downloading}
+      >
+        {downloading ? (
+          <div className="flex items-center gap-2">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            <span>Downloading...</span>
+          </div>
+        ) : (
+          'Download All'
+        )}
+      </button>
       {/* Modal preview */}
       {previewIdx !== null && images[previewIdx] && (
         <div
