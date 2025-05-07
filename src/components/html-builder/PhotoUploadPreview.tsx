@@ -9,6 +9,7 @@ interface PhotoUploadPreviewProps {
   companyName?: string;
   pageType?: string;
   taskId?: string;
+  onImagesChange?: (images: PreviewImage[]) => void;
 }
 
 interface PreviewImage extends TaskImage {
@@ -21,6 +22,7 @@ export const PhotoUploadPreview: React.FC<PhotoUploadPreviewProps> = ({
   companyName,
   pageType,
   taskId,
+  onImagesChange,
 }) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const { currentTask, updateTask } = useTaskContext();
@@ -42,6 +44,12 @@ export const PhotoUploadPreview: React.FC<PhotoUploadPreviewProps> = ({
       setImages(newImages);
     }
   }, [taskId, currentTask?.images]);
+
+  useEffect(() => {
+    if (onImagesChange) {
+      onImagesChange(images);
+    }
+  }, [images, onImagesChange]);
 
   // Clean up object URLs for local previews
   useEffect(() => {

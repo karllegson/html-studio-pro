@@ -4,7 +4,7 @@ import { useTaskContext } from '@/context/TaskContext';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft, Copy, Check, Loader2 } from 'lucide-react';
-import { TaskStatus, TaskType } from '@/types';
+import { TaskStatus, TaskType, TaskImage } from '@/types';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { EditorSection, EditorSectionRef } from '@/components/html-builder/EditorSection';
 import { SidebarContent } from '@/components/html-builder/SidebarContent';
@@ -79,6 +79,9 @@ const HtmlBuilder: React.FC = () => {
   const retryCount = useRef<Record<string, number>>({});
   const MAX_RETRIES = 3;
   const MAX_HISTORY = 50;
+
+  const [images, setImages] = useState<TaskImage[]>([]);
+  const [downloading, setDownloading] = useState(false);
 
   // Offline detection
   useEffect(() => {
@@ -607,6 +610,39 @@ const HtmlBuilder: React.FC = () => {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [currentTask, saveChanges]);
 
+  // Download all images logic
+  const handleDownloadAll = async () => {
+    if (!images.length) return;
+    setDownloading(true);
+    try {
+      for (const image of images) {
+        const response = await fetch(image.url);
+        const blob = await response.blob();
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = image.name;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(a.href);
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+      toast({
+        title: 'Downloads started',
+        description: 'Your images are being downloaded.',
+      });
+    } catch (error) {
+      console.error('Error downloading images:', error);
+      toast({
+        title: 'Download failed',
+        description: 'There was an error downloading your images.',
+        variant: 'destructive',
+      });
+    } finally {
+      setDownloading(false);
+    }
+  };
+
   // Remove the useEffect from inside the if (currentTask) block
   if (tasksLoading) {
     return null;
@@ -833,10 +869,10 @@ const HtmlBuilder: React.FC = () => {
                       <button
                         type="button"
                         className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                        onClick={() => (document.querySelector('[data-download-all]') as HTMLButtonElement)?.click()}
-                        disabled={document.querySelector('[data-download-all]')?.hasAttribute('disabled')}
+                        onClick={handleDownloadAll}
+                        disabled={!images.length || downloading}
                       >
-                        {document.querySelector('[data-download-all]')?.hasAttribute('disabled') ? (
+                        {downloading ? (
                           <>
                             <Loader2 className="h-4 w-4 animate-spin" />
                             <span>Downloading...</span>
@@ -852,6 +888,7 @@ const HtmlBuilder: React.FC = () => {
                       companyName={getCompanyById(companyId)?.name} 
                       pageType={pageType} 
                       taskId={currentTask?.id} 
+                      onImagesChange={setImages}
                     />
                   </div>
                 </div>
