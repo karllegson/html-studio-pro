@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Task, TaskStatus, TaskType, Company, HtmlTemplate } from '../types';
 import { db } from '../firebase';
-import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, getDoc } from 'firebase/firestore';
+import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, getDoc, onSnapshot, setDoc } from 'firebase/firestore';
 import { deleteImage } from '@/utils/imageUpload';
 import { User } from "firebase/auth";
 import { v4 as uuidv4 } from "uuid";
@@ -27,6 +27,9 @@ interface TaskContextType {
   getTemplatesByCompany: (companyId: string) => HtmlTemplate[];
   getTemplatesByPageType: (pageType: TaskType) => HtmlTemplate[];
   tasksLoading: boolean;
+  getCompanyTags: (companyId: string) => Promise<CompanyTags | null>;
+  setCompanyTags: (companyId: string, tags: CompanyTags) => Promise<void>;
+  subscribeToCompanyTags: (companyId: string, callback: (tags: CompanyTags | null) => void) => () => void;
 }
 
 const TaskContext = createContext<TaskContextType | undefined>(undefined);
@@ -76,6 +79,37 @@ const DEFAULT_COMPANY = {
   basePath: 'https://ocboston.com/wp-content/uploads/',
   prefix: 'ocboston_Landing-Page_',
   fileSuffix: '-image.webp'
+};
+
+// Tag management for company tags
+export interface CompanyTags {
+  reviewTags: string[];
+  faqTags: string[];
+}
+
+const getCompanyTags = async (companyId: string): Promise<CompanyTags | null> => {
+  const ref = doc(db, 'companyTags', companyId);
+  const snap = await getDoc(ref);
+  if (snap.exists()) {
+    return snap.data() as CompanyTags;
+  }
+  return null;
+};
+
+const setCompanyTags = async (companyId: string, tags: CompanyTags): Promise<void> => {
+  const ref = doc(db, 'companyTags', companyId);
+  await setDoc(ref, tags, { merge: true });
+};
+
+const subscribeToCompanyTags = (companyId: string, callback: (tags: CompanyTags | null) => void) => {
+  const ref = doc(db, 'companyTags', companyId);
+  return onSnapshot(ref, (snap) => {
+    if (snap.exists()) {
+      callback(snap.data() as CompanyTags);
+    } else {
+      callback(null);
+    }
+  });
 };
 
 export const TaskProvider: React.FC<TaskProviderProps> = ({ children, user }) => {
@@ -466,6 +500,9 @@ export const TaskProvider: React.FC<TaskProviderProps> = ({ children, user }) =>
         getTemplatesByCompany,
         getTemplatesByPageType,
         tasksLoading,
+        getCompanyTags,
+        setCompanyTags,
+        subscribeToCompanyTags,
       }}
     >
       {children}

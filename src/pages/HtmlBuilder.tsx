@@ -20,6 +20,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { CompanyTemplateList } from '@/components/html-builder/CompanyTemplateSection';
+import { subscribeToCompanyTags, CompanyTags } from '@/utils/companyTags';
 
 // Auto-save disabled for debugging jitter issue
 
@@ -82,6 +83,9 @@ const HtmlBuilder: React.FC = () => {
 
   const [images, setImages] = useState<TaskImage[]>([]);
   const [downloading, setDownloading] = useState(false);
+
+  const [companyTags, setCompanyTags] = useState<CompanyTags | null>(null);
+  const [tagsLoading, setTagsLoading] = useState(false);
 
   // Offline detection
   useEffect(() => {
@@ -650,6 +654,16 @@ const HtmlBuilder: React.FC = () => {
 
   // If currentTask is set, render the builder UI
   if (currentTask) {
+    useEffect(() => {
+      if (!companyId) return;
+      setTagsLoading(true);
+      const unsub = subscribeToCompanyTags(companyId, (tags) => {
+        setCompanyTags(tags);
+        setTagsLoading(false);
+      });
+      return () => unsub();
+    }, [companyId]);
+
     return (
       <div className="min-h-screen w-full flex flex-col bg-[radial-gradient(circle,rgba(60,60,80,0.2)_1px,transparent_1px)] [background-size:32px_32px]">
         <div className="max-w-full px-4 py-4 mx-auto flex-1 flex flex-col pb-8">
@@ -923,26 +937,32 @@ const HtmlBuilder: React.FC = () => {
                     <div className="flex flex-col gap-3">
                       <div className="flex items-center gap-2">
                         <span className="w-32">Review</span>
-                        <Select value={reviewsTag} onValueChange={setReviewsTag}>
+                        <Select value={reviewsTag} onValueChange={setReviewsTag} disabled={tagsLoading}>
                           <SelectTrigger className="w-48">
-                            <SelectValue placeholder="Select tag" />
+                            <SelectValue placeholder={tagsLoading ? 'Loading...' : 'Select tag'} />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="review-tag-1">Review Tag 1</SelectItem>
-                            <SelectItem value="review-tag-2">Review Tag 2</SelectItem>
+                            {(companyTags && companyTags.reviewTags && companyTags.reviewTags.length > 0)
+                              ? companyTags.reviewTags.map(tag => (
+                                  <SelectItem key={tag} value={tag}>{tag}</SelectItem>
+                                ))
+                              : <SelectItem value="no-tags" disabled>No tags</SelectItem>}
                           </SelectContent>
                         </Select>
                         <CopyButton value={reviewsTag} />
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="w-32">FAQ</span>
-                        <Select value={faqTag} onValueChange={setFaqTag}>
+                        <Select value={faqTag} onValueChange={setFaqTag} disabled={tagsLoading}>
                           <SelectTrigger className="w-48">
-                            <SelectValue placeholder="Select tag" />
+                            <SelectValue placeholder={tagsLoading ? 'Loading...' : 'Select tag'} />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="faq-tag-1">FAQ Tag 1</SelectItem>
-                            <SelectItem value="faq-tag-2">FAQ Tag 2</SelectItem>
+                            {(companyTags && companyTags.faqTags && companyTags.faqTags.length > 0)
+                              ? companyTags.faqTags.map(tag => (
+                                  <SelectItem key={tag} value={tag}>{tag}</SelectItem>
+                                ))
+                              : <SelectItem value="no-tags" disabled>No tags</SelectItem>}
                           </SelectContent>
                         </Select>
                         <CopyButton value={faqTag} />
