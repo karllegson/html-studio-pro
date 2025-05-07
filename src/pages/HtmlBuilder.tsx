@@ -22,6 +22,15 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 // Auto-save disabled for debugging jitter issue
 
+// Debounce utility
+function debounce(func, wait) {
+  let timeout;
+  return function (...args) {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => func.apply(this, args), wait);
+  };
+}
+
 const HtmlBuilder: React.FC = () => {
   const { taskId } = useParams<{ taskId: string }>();
   const { tasks, currentTask, setCurrentTask, updateTask, getCompanyById, tasksLoading } = useTaskContext();
@@ -68,6 +77,12 @@ const HtmlBuilder: React.FC = () => {
 
   const [featuredImgChecked, setFeaturedImgChecked] = useState(false);
 
+  const [saving, setSaving] = useState(false);
+  const saveTimeouts = useRef({});
+
+  // Debounced save for each field
+  const debouncedSave = useRef<Record<string, (value: any) => void>>({});
+
   // Mark tasks as loaded when they arrive
   useEffect(() => {
     if (tasks.length > 0) setTasksLoaded(true);
@@ -106,6 +121,83 @@ const HtmlBuilder: React.FC = () => {
       setContactLink(company.contactLink);
     }
   }, [currentTask, navigate, getCompanyById, updateTask]);
+
+  useEffect(() => {
+    debouncedSave.current = {
+      teamworkLink: debounce((value) => {
+        if (currentTask?.id) {
+          setSaving(true);
+          updateTask(currentTask.id, { teamworkLink: value }).finally(() => setSaving(false));
+        }
+      }, 500),
+      googleDocLink: debounce((value) => {
+        if (currentTask?.id) {
+          setSaving(true);
+          updateTask(currentTask.id, { googleDocLink: value }).finally(() => setSaving(false));
+        }
+      }, 500),
+      featuredTitle: debounce((value) => {
+        if (currentTask?.id) {
+          setSaving(true);
+          updateTask(currentTask.id, { featuredTitle: value }).finally(() => setSaving(false));
+        }
+      }, 500),
+      featuredAlt: debounce((value) => {
+        if (currentTask?.id) {
+          setSaving(true);
+          updateTask(currentTask.id, { featuredAlt: value }).finally(() => setSaving(false));
+        }
+      }, 500),
+      htmlContent: debounce((value) => {
+        if (currentTask?.id) {
+          setSaving(true);
+          updateTask(currentTask.id, { htmlContent: value }).finally(() => setSaving(false));
+        }
+      }, 500),
+      widgetTitle: debounce((value) => {
+        if (currentTask?.id) {
+          setSaving(true);
+          updateTask(currentTask.id, { widgetTitle: value }).finally(() => setSaving(false));
+        }
+      }, 500),
+      metaTitle: debounce((value) => {
+        if (currentTask?.id) {
+          setSaving(true);
+          updateTask(currentTask.id, { metaTitle: value }).finally(() => setSaving(false));
+        }
+      }, 500),
+      metaUrl: debounce((value) => {
+        if (currentTask?.id) {
+          setSaving(true);
+          updateTask(currentTask.id, { metaUrl: value }).finally(() => setSaving(false));
+        }
+      }, 500),
+      metaDescription: debounce((value) => {
+        if (currentTask?.id) {
+          setSaving(true);
+          updateTask(currentTask.id, { metaDescription: value }).finally(() => setSaving(false));
+        }
+      }, 500),
+      instructionsToLink: debounce((value) => {
+        if (currentTask?.id) {
+          setSaving(true);
+          updateTask(currentTask.id, { instructionsToLink: value }).finally(() => setSaving(false));
+        }
+      }, 500),
+      notes: debounce((value) => {
+        if (currentTask?.id) {
+          setSaving(true);
+          updateTask(currentTask.id, { notes: value }).finally(() => setSaving(false));
+        }
+      }, 500),
+      mapsEmbedCode: debounce((value) => {
+        if (currentTask?.id) {
+          setSaving(true);
+          updateTask(currentTask.id, { mapsEmbedCode: value }).finally(() => setSaving(false));
+        }
+      }, 500),
+    };
+  }, [currentTask?.id, updateTask]);
 
   const saveChanges = () => {
     if (currentTask && currentTask.id) {
@@ -151,6 +243,7 @@ const HtmlBuilder: React.FC = () => {
 
   const handleHtmlChange = (value: string) => {
     setHtmlContent(value);
+    debouncedSave.current.htmlContent?.(value);
   };
 
   const handleTagClick = (openTag: string, closeTag: string | null) => {
@@ -310,7 +403,10 @@ const HtmlBuilder: React.FC = () => {
                       <Input
                         type="text"
                         value={contactLink}
-                        onChange={e => setContactLink(e.target.value)}
+                        onChange={e => {
+                          setContactLink(e.target.value);
+                          debouncedSave.current.googleDocLink?.(e.target.value);
+                        }}
                         className="font-mono text-xs flex-1"
                         placeholder="Paste Contact Us link"
                       />
@@ -431,7 +527,10 @@ const HtmlBuilder: React.FC = () => {
                       <Input
                         type="text"
                         value={featuredTitle}
-                        onChange={e => setFeaturedTitle(e.target.value)}
+                        onChange={e => {
+                          setFeaturedTitle(e.target.value);
+                          debouncedSave.current.featuredTitle?.(e.target.value);
+                        }}
                         className="flex-1"
                         placeholder="Enter title"
                       />
@@ -442,7 +541,10 @@ const HtmlBuilder: React.FC = () => {
                       <Input
                         type="text"
                         value={featuredAlt}
-                        onChange={e => setFeaturedAlt(e.target.value)}
+                        onChange={e => {
+                          setFeaturedAlt(e.target.value);
+                          debouncedSave.current.featuredAlt?.(e.target.value);
+                        }}
                         className="flex-1"
                         placeholder="Enter alt text"
                       />
@@ -489,7 +591,10 @@ const HtmlBuilder: React.FC = () => {
                           type="text"
                           className="flex-1"
                           value={item.value}
-                          onChange={e => item.setValue(e.target.value)}
+                          onChange={e => {
+                            item.setValue(e.target.value);
+                            debouncedSave.current[item.key]?.(e.target.value);
+                          }}
                           placeholder={item.label}
                         />
                         <CopyButton value={item.value} />
@@ -514,7 +619,10 @@ const HtmlBuilder: React.FC = () => {
                     <Input
                       type="text"
                       value={mapsLocation}
-                      onChange={e => setMapsLocation(e.target.value)}
+                      onChange={e => {
+                        setMapsLocation(e.target.value);
+                        debouncedSave.current.mapsEmbedCode?.(e.target.value);
+                      }}
                       placeholder="e.g., Acton, MA"
                       className="mb-2"
                     />
@@ -536,7 +644,10 @@ const HtmlBuilder: React.FC = () => {
                       <Textarea
                         rows={3}
                         value={mapsEmbedCode}
-                        onChange={e => setMapsEmbedCode(e.target.value)}
+                        onChange={e => {
+                          setMapsEmbedCode(e.target.value);
+                          debouncedSave.current.mapsEmbedCode?.(e.target.value);
+                        }}
                         placeholder="Paste your iframe code here..."
                         className="flex-1"
                       />
@@ -549,7 +660,10 @@ const HtmlBuilder: React.FC = () => {
                       <span className="mx-auto font-medium text-center w-full">Instructions to Link</span>
                       <GreenCircleCheckbox
                         checked={instructionsChecked}
-                        onChange={e => setInstructionsChecked(e.target.checked)}
+                        onChange={e => {
+                          setInstructionsChecked(e.target.checked);
+                          debouncedSave.current.instructionsToLink?.(e.target.checked ? 'Checked' : '');
+                        }}
                         className="ml-2"
                       />
                     </div>
@@ -557,7 +671,10 @@ const HtmlBuilder: React.FC = () => {
                       className="rounded-lg border p-2 mt-2 flex-1 resize-none"
                       rows={4}
                       value={instructionsToLink}
-                      onChange={e => setInstructionsToLink(e.target.value)}
+                      onChange={e => {
+                        setInstructionsToLink(e.target.value);
+                        debouncedSave.current.instructionsToLink?.(e.target.value);
+                      }}
                       placeholder="Enter instructions..."
                     />
                   </div>
@@ -569,6 +686,11 @@ const HtmlBuilder: React.FC = () => {
                     <Textarea
                       className="rounded-lg border p-2 mt-2 flex-1 resize-none"
                       rows={4}
+                      value={notes}
+                      onChange={e => {
+                        setNotes(e.target.value);
+                        debouncedSave.current.notes?.(e.target.value);
+                      }}
                       placeholder="Enter notes..."
                     />
                   </div>
@@ -612,6 +734,7 @@ const HtmlBuilder: React.FC = () => {
             </DialogContent>
           </Dialog>
         </div>
+        {saving && <div className="text-xs text-muted-foreground ml-2">Saving...</div>}
       </div>
     );
   }
