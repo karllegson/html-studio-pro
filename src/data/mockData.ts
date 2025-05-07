@@ -1,54 +1,5 @@
 import { Company, Task, TaskStatus, TaskType } from "../types";
 
-export const companies: Company[] = [
-  { id: "1", name: "OCBoston", contactLink: "https://ocboston.com/contact/" },
-  { id: "2", name: "JMRoofing", contactLink: "https://jmroofing.com/contact-us/" },
-  { id: "3", name: "Boston Movers", contactLink: "https://bostonmovers.com/contact/" },
-  { id: "4", name: "CamdenRoofing", contactLink: "https://camdenroofing.com/contact/" },
-  { id: "5", name: "GreenTech", contactLink: "https://greentech.com/reach-out/" },
-  { id: "6", name: "Premium Panes", contactLink: "https://premiumpanes.com/contact/" },
-  { id: "7", name: "Harbor Services", contactLink: "https://harborservices.com/contact/" },
-  { id: "8", name: "Urban Lights", contactLink: "https://urbanlights.com/contact-us/" },
-  { id: "9", name: "Tree Experts", contactLink: "https://treeexperts.com/get-a-quote/" },
-  { id: "10", name: "Reliable Plumbing", contactLink: "https://reliableplumbing.com/contact/" }
-];
-
-export const sampleTasks: Task[] = [
-  {
-    id: "task1",
-    companyId: "1",
-    teamworkLink: "teamwork.com/tasks/123",
-    type: TaskType.SUB_PAGE,
-    status: TaskStatus.READY,
-    notes: "Need this page by EOD",
-    htmlContent: "<h1>Sample Page</h1><p>This is sample content.</p>",
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
-  },
-  {
-    id: "task2",
-    companyId: "3",
-    teamworkLink: "teamwork.com/tasks/456",
-    type: TaskType.LANDING_PAGE,
-    status: TaskStatus.FINISHED,
-    notes: "Landing page for summer campaign",
-    htmlContent: "<h1>Moving Services</h1><p>Professional moving services in Boston.</p>",
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
-  },
-  {
-    id: "task3",
-    companyId: "2",
-    teamworkLink: "teamwork.com/tasks/789",
-    type: TaskType.BLOG,
-    status: TaskStatus.RECENTLY_DELETED,
-    notes: "Blog post about roofing maintenance",
-    htmlContent: "<h1>Roofing Maintenance</h1><p>Tips for maintaining your roof.</p>",
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
-  }
-];
-
 export const htmlTags: Record<string, string[]> = {
   "H1": ["<h1>", "</h1>"],
   "H2": ["<h2>", "</h2>"],
@@ -74,7 +25,7 @@ export const htmlComponents: Record<string, string> = {
   <a href="{contactLink}" class="cta-button">Get in Touch</a>
 </div>`,
   "Site Button": `<a href="{contactLink}" class="site-button">Learn More</a>`,
-  "Image Card Left": `<div class="image-card left">
+  "Image Card Left": `<div class="image-f left">
   <img src="image.jpg" alt="Description">
   <div class="content">
     <h3>Title Here</h3>

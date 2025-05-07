@@ -13,7 +13,36 @@ import { closeBrackets, autocompletion, closeBracketsKeymap, completionKeymap } 
 import { lintKeymap } from '@codemirror/lint';
 import { foldKeymap } from '@codemirror/language';
 import { html } from '@codemirror/lang-html';
+import { tags } from '@lezer/highlight';
+import { HighlightStyle } from '@codemirror/language';
 import CopyButton from '@/components/ui/CopyButton';
+
+// Custom syntax highlighting theme
+const customHighlightStyle = HighlightStyle.define([
+  { tag: tags.tagName, color: '#ff79c6' }, // HTML tags
+  { tag: tags.attributeName, color: '#8be9fd' }, // Attributes
+  { tag: tags.string, color: '#f1fa8c' }, // Strings
+  { tag: tags.comment, color: '#6272a4' }, // Comments
+  { tag: tags.number, color: '#bd93f9' }, // Numbers
+  { tag: tags.keyword, color: '#ff79c6' }, // Keywords
+  { tag: tags.operator, color: '#ff79c6' }, // Operators
+  { tag: tags.bracket, color: '#ff79c6' }, // Brackets
+  { tag: tags.className, color: '#8be9fd' }, // Classes
+  { tag: tags.propertyName, color: '#8be9fd' }, // Properties
+  { tag: tags.variableName, color: '#f8f8f2' }, // Variables
+  { tag: tags.definition(tags.variableName), color: '#50fa7b' }, // Variable definitions
+  { tag: tags.regexp, color: '#ffb86c' }, // Regular expressions
+  { tag: tags.escape, color: '#ffb86c' }, // Escape sequences
+  { tag: tags.meta, color: '#6272a4' }, // Meta tags
+  { tag: tags.link, color: '#8be9fd' }, // Links
+  { tag: tags.heading, color: '#ff79c6', fontWeight: 'bold' }, // Headings
+  { tag: tags.strong, color: '#ff79c6', fontWeight: 'bold' }, // Strong text
+  { tag: tags.emphasis, color: '#ff79c6', fontStyle: 'italic' }, // Emphasized text
+  { tag: tags.strikethrough, color: '#ff79c6', textDecoration: 'line-through' }, // Strikethrough
+  { tag: tags.list, color: '#f8f8f2' }, // Lists
+  { tag: tags.quote, color: '#f1fa8c', fontStyle: 'italic' }, // Quotes
+  { tag: tags.invalid, color: '#ff5555' }, // Invalid syntax
+]);
 
 export interface EditorSectionRef {
   getView: () => EditorView | undefined;
@@ -73,12 +102,69 @@ export const EditorSection = forwardRef<EditorSectionRef, EditorSectionProps>(({
   // Conditional class for text wrapping
   const wrapClass = !isExtended ? 'cm-wrap-lines' : '';
 
-  // Minimal extensions: no tag or bracket matching
-  const minimalExtensions = [
+  // Enhanced extensions with syntax highlighting
+  const extensions = [
     html(),
-    keymap.of(defaultKeymap),
+    lineNumbers(),
+    highlightActiveLineGutter(),
+    highlightSpecialChars(),
+    drawSelection(),
+    dropCursor(),
+    rectangularSelection(),
+    crosshairCursor(),
+    highlightActiveLine(),
+    indentOnInput(),
+    syntaxHighlighting(customHighlightStyle),
+    foldGutter(),
+    closeBrackets(),
+    autocompletion(),
+    keymap.of([
+      ...defaultKeymap,
+      ...historyKeymap,
+      ...foldKeymap,
+      ...closeBracketsKeymap,
+      ...completionKeymap,
+      ...searchKeymap,
+      ...lintKeymap,
+    ]),
     EditorView.lineWrapping,
-    EditorState.tabSize.of(2)
+    EditorState.tabSize.of(2),
+    EditorView.theme({
+      '&': {
+        fontSize: `${fontSize}px`,
+      },
+      '.cm-scroller': {
+        fontFamily: 'monospace',
+      },
+      '.cm-content': {
+        padding: '0.5rem 0',
+      },
+      '.cm-line': {
+        padding: '0 0.5rem',
+      },
+      '.cm-activeLine': {
+        backgroundColor: 'rgba(255, 255, 255, 0.05)',
+      },
+      '.cm-activeLineGutter': {
+        backgroundColor: 'rgba(255, 255, 255, 0.05)',
+      },
+      '.cm-gutters': {
+        backgroundColor: '#1a1a2e',
+        color: '#6272a4',
+        border: 'none',
+      },
+      '.cm-gutterElement': {
+        padding: '0 0.5rem',
+      },
+      '.cm-matchingBracket': {
+        color: '#50fa7b',
+        fontWeight: 'bold',
+      },
+      '.cm-nonmatchingBracket': {
+        color: '#ff5555',
+        fontWeight: 'bold',
+      },
+    }),
   ];
 
   return (
@@ -170,7 +256,7 @@ export const EditorSection = forwardRef<EditorSectionRef, EditorSectionProps>(({
           ref={editorRef}
           value={htmlContent}
           theme={oneDark}
-          extensions={minimalExtensions}
+          extensions={extensions}
           onChange={onHtmlChange}
           className={`text-editor-foreground cm-s-dark ${wrapClass}`}
           onUpdate={onUpdate}

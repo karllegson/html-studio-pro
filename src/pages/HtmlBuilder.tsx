@@ -21,6 +21,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { CompanyTemplateList } from '@/components/html-builder/CompanyTemplateSection';
 import { subscribeToCompanyTags, CompanyTags } from '@/utils/companyTags';
+import { LinkDialog } from '@/components/html-builder/LinkDialog';
 
 // Auto-save disabled for debugging jitter issue
 
@@ -84,6 +85,8 @@ const HtmlBuilder: React.FC = () => {
 
   const [companyTags, setCompanyTags] = useState<CompanyTags | null>(null);
   const [tagsLoading, setTagsLoading] = useState(false);
+
+  const [linkDialogOpen, setLinkDialogOpen] = useState(false);
 
   // Offline detection
   useEffect(() => {
@@ -539,11 +542,13 @@ const HtmlBuilder: React.FC = () => {
     if (!view) return;
     
     const selection = view.state.selection.main;
-    
-    // Store the current cursor position
-    const currentPosition = { from: selection.from, to: selection.to };
-    
     const selectedContent = view.state.doc.sliceString(selection.from, selection.to);
+    
+    // Special handling for link tag
+    if (openTag.includes('href=""')) {
+      setLinkDialogOpen(true);
+      return;
+    }
     
     // If text is selected, wrap it with tags
     if (selectedContent && closeTag) {
@@ -556,7 +561,6 @@ const HtmlBuilder: React.FC = () => {
       // Restore cursor position after the tag + selected content
       setTimeout(() => {
         if (view) {
-          // Focus on editor and place cursor after the inserted tags and content
           view.focus();
           const newPosition = selection.from + openTag.length + selectedContent.length;
           view.dispatch({
@@ -576,7 +580,6 @@ const HtmlBuilder: React.FC = () => {
       // Restore cursor position after the inserted tag
       setTimeout(() => {
         if (view) {
-          // Focus on editor and place cursor after the inserted tag
           view.focus();
           const newPosition = selection.from + openTag.length;
           view.dispatch({
@@ -683,6 +686,56 @@ const HtmlBuilder: React.FC = () => {
       }
       return updated;
     });
+  };
+
+  const handleLinkConfirm = (url: string) => {
+    const view = editorRef.current?.getView();
+    if (!view) return;
+    
+    const selection = view.state.selection.main;
+    const selectedContent = view.state.doc.sliceString(selection.from, selection.to);
+    
+    const openTag = `<a href="${url}">`;
+    const closeTag = "</a>";
+    
+    // If text is selected, wrap it with the link tags
+    if (selectedContent) {
+      const updatedContent = view.state.doc.toString().slice(0, selection.from) + 
+        openTag + selectedContent + closeTag + 
+        view.state.doc.toString().slice(selection.to);
+      
+      setHtmlContent(updatedContent);
+      
+      // Restore cursor position after the link
+      setTimeout(() => {
+        if (view) {
+          view.focus();
+          const newPosition = selection.from + openTag.length + selectedContent.length;
+          view.dispatch({
+            selection: { anchor: newPosition, head: newPosition }
+          });
+        }
+      }, 0);
+    } 
+    // If no text is selected, insert the link tags at cursor position
+    else {
+      const updatedContent = view.state.doc.toString().slice(0, selection.from) + 
+        openTag + "link text" + closeTag + 
+        view.state.doc.toString().slice(selection.from);
+      
+      setHtmlContent(updatedContent);
+      
+      // Restore cursor position after the opening tag
+      setTimeout(() => {
+        if (view) {
+          view.focus();
+          const newPosition = selection.from + openTag.length;
+          view.dispatch({
+            selection: { anchor: newPosition, head: newPosition + 9 } // Select "link text"
+          });
+        }
+      }, 0);
+    }
   };
 
   // Remove the useEffect from inside the if (currentTask) block
@@ -1122,6 +1175,12 @@ const HtmlBuilder: React.FC = () => {
             {saveError}
           </div>
         )}
+        <LinkDialog
+          open={linkDialogOpen}
+          onOpenChange={setLinkDialogOpen}
+          onConfirm={handleLinkConfirm}
+          selectedText={selectedText}
+        />
       </div>
     );
   }
