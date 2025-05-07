@@ -88,6 +88,9 @@ const HtmlBuilder: React.FC = () => {
 
   const [linkDialogOpen, setLinkDialogOpen] = useState(false);
 
+  // Add a ref to track the last inserted range
+  const lastInsertRange = useRef<{start: number, end: number} | null>(null);
+
   // Offline detection
   useEffect(() => {
     const handleOnline = () => setIsOffline(false);
@@ -595,24 +598,16 @@ const HtmlBuilder: React.FC = () => {
     if (!view) return;
     
     const selection = view.state.selection.main;
-    
+    const start = selection.from;
+    const end = start + html.length;
+
     // Insert at cursor position
-    const updatedContent = view.state.doc.toString().slice(0, selection.from) + 
+    const updatedContent = view.state.doc.toString().slice(0, start) + 
       html + 
-      view.state.doc.toString().slice(selection.from);
+      view.state.doc.toString().slice(start);
     
     setHtmlContent(updatedContent);
-    
-    // Maintain cursor position
-    setTimeout(() => {
-      if (view) {
-        view.focus();
-        const newPosition = selection.from + html.length;
-        view.dispatch({
-          selection: { anchor: newPosition, head: newPosition }
-        });
-      }
-    }, 0);
+    lastInsertRange.current = { start, end };
   };
 
   const handleEditorUpdate = (viewUpdate: any) => {
@@ -621,6 +616,28 @@ const HtmlBuilder: React.FC = () => {
     setSelectedText(state.doc.sliceString(selection.from, selection.to));
     setCursorPosition({ from: selection.from, to: selection.to });
   };
+
+  // useEffect to highlight after htmlContent changes
+  useEffect(() => {
+    if (!lastInsertRange.current) return;
+    const view = editorRef.current?.getView();
+    if (!view) return;
+    const { start, end } = lastInsertRange.current;
+    setTimeout(() => {
+      view.focus();
+      view.dispatch({
+        selection: { anchor: start, head: end },
+        scrollIntoView: true
+      });
+      // Remove highlight after 1.5s
+      setTimeout(() => {
+        view.dispatch({
+          selection: { anchor: end, head: end }
+        });
+        lastInsertRange.current = null;
+      }, 1500);
+    }, 0);
+  }, [htmlContent]);
 
   // Add the useEffect here, at the top level
   useEffect(() => {

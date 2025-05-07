@@ -70,116 +70,345 @@ export const htmlComponents: Record<string, string> = {
   </div>
 </div> <!-- End Image Card -->
 </div> <!-- End Three Column Grid -->`,
-  "3x1 Image Card Grid": `<div class='image-card-grid-3x1'>3x1 Image Card Grid Placeholder</div>`,
-  "Image Card w/ Icon Grid": `<div class='image-card-icon-grid'>Image Card w/ Icon Grid Placeholder</div>`,
-  "3x1 Image Card w/ Ribbon": `<div class='image-card-ribbon-3x1'>3x1 Image Card w/ Ribbon Placeholder</div>`,
-  "3x1 Mini CTA w/ Ribbon": `<div class='mini-cta-ribbon-3x1'>3x1 Mini CTA w/ Ribbon Placeholder</div>`,
-  "3x1 Mini Icon CTA Grid": `<div class='mini-icon-cta-grid-3x1'>3x1 Mini Icon CTA Grid Placeholder</div>`,
-  "Accordion": `<div class="accordion">
-  <div class="accordion-item">
-    <h3 class="accordion-header">Section 1</h3>
-    <div class="accordion-content">
-      <p>Content for section 1.</p>
-    </div>
+  "3x1 Image Card Grid": `<div class="site-grid site-grid--3x1 triple"> <!-- Start Three Column Grid -->
+  
+<div class="image-card"> <!-- Start Image Card -->
+  <div class="image-card--image">
+    <img src="" alt="">
   </div>
-  <div class="accordion-item">
-    <h3 class="accordion-header">Section 2</h3>
-    <div class="accordion-content">
-      <p>Content for section 2.</p>
-    </div>
+  <div class="image-card--content">
+    <h3 class="title">Title</h3>
+    <p>Body</p>
+    <div class="site-btn"><a href="/">CTA</a></div>
   </div>
-</div>`,
-  "Auto BR Fix": `<div class='auto-br-fix'>Auto BR Fix Placeholder</div>`,
-  "Auto Quicks Link ID": `<div class='auto-quicks-link-id'>Auto Quicks Link ID Placeholder</div>`,
-  "Badge CTA": `<div class='badge-cta'>Badge CTA Placeholder</div>`,
-  "Badge CTA (no image)": `<div class='badge-cta-no-image'>Badge CTA (no image) Placeholder</div>`,
-  "Before After Slider": `<div class='before-after-slider'>Before After Slider Placeholder</div>`,
-  "CTA": `<div class="cta-container">
-  <h3>Ready to Get Started?</h3>
-  <p>Contact us today for a free consultation and quote.</p>
-  <a href="{contactLink}" class="cta-button">Get in Touch</a>
-</div>`,
-  "CTA Button": `<a href="{contactLink}" class="cta-button">CTA Button</a>`,
-  "FAQs": `<div class="faq-section">
-  <h2>Frequently Asked Questions</h2>
-  <div class="faq-item">
-    <h3>Question 1?</h3>
-    <p>Answer to question 1.</p>
+</div> <!-- End Image Card -->
+  
+<div class="image-card"> <!-- Start Image Card -->
+  <div class="image-card--image">
+    <img src="" alt="">
   </div>
-  <div class="faq-item">
-    <h3>Question 2?</h3>
-    <p>Answer to question 2.</p>
+  <div class="image-card--content">
+    <h3 class="title">Title</h3>
+    <p>Body</p>
+    <div class="site-btn"><a href="/">CTA</a></div>
   </div>
-</div>`,
-  "Highlight Box": `<div class='highlight-box'>Highlight Box Placeholder</div>`,
-  "Horizontal Image Card": `<div class='horizontal-image-card'>Horizontal Image Card Placeholder</div>`,
-  "Icon Box Alt": `<div class='icon-box-alt'>Icon Box Alt Placeholder</div>`,
-  "Icon Box Alt 2": `<div class='icon-box-alt-2'>Icon Box Alt 2 Placeholder</div>`,
-  "Icon CTA Box": `<div class='icon-cta-box'>Icon CTA Box Placeholder</div>`,
-  "Image Card": `<div class='image-card'>Image Card Placeholder</div>`,
-  "Image Card Left": `<div class="image-f left">
-  <img src="image.jpg" alt="Description">
+</div> <!-- End Image Card -->
+  
+<div class="image-card"> <!-- Start Image Card -->
+  <div class="image-card--image">
+    <img src="" alt="">
+  </div>
+  <div class="image-card--content">
+    <h3 class="title">Title</h3>
+    <p>Body</p>
+    <div class="site-btn"><a href="/">CTA</a></div>
+  </div>
+</div> <!-- End Image Card -->
+</div> <!-- End Three Column Grid -->`,
+  "3x1 Image Card w/ Icon Grid": `<div class="site-grid site-grid--3x1 triple"> <!-- Start Three Column Grid -->
+  
+<div class="image-card"> <!-- Start Image Card -->
+  <div class="image-card--image">
+    <img src="" alt="">
+  </div>
+  <div class="image-card--icon">
+    <div><i class="fas fa-house"></i></div>
+  </div>
+  <div class="image-card--content">
+    <h3 class="title">Title</h3>
+    <p>Body</p>
+    <div class="site-btn"><a href="/">CTA</a></div>
+  </div>
+</div> <!-- End Image Card -->
+  
+<div class="image-card"> <!-- Start Image Card -->
+  <div class="image-card--image">
+    <img src="" alt="">
+  </div>
+  <div class="image-card--icon">
+    <div><i class="fas fa-house"></i></div>
+  </div>
+  <div class="image-card--content">
+    <h3 class="title">Title</h3>
+    <p>Body</p>
+    <div class="site-btn"><a href="/">CTA</a></div>
+  </div>
+</div> <!-- End Image Card -->
+  
+<div class="image-card"> <!-- Start Image Card -->
+  <div class="image-card--image">
+    <img src="" alt="">
+  </div>
+  <div class="image-card--icon">
+    <div><i class="fas fa-house"></i></div>
+  </div>
+  <div class="image-card--content">
+    <h3 class="title">Title</h3>
+    <p>Body</p>
+    <div class="site-btn"><a href="/">CTA</a></div>
+  </div>
+</div> <!-- End Image Card -->
+</div> <!-- End Three Column Grid -->`,
+  "3x1 Image Card w/ Ribbon": `<div class="site-grid site-grid--3x1 mini-cta-grid"> <!-- Start Three Column Grid -->
+  
+<div class="image-card"> <!-- Start Image Card -->
+  <span class="image-card--ribbon" style="top: .8rem; left: -3.5rem; ">New</span>
+  <div class="image-card--image">
+    <img src="" alt="">
+  </div>
+  <div class="image-card--icon">
+    <div><i class="fas fa-house"></i></div>
+  </div>
+  <div class="image-card--content">
+    <h3 class="title">Title</h3>
+    <p>Body</p>
+    <div class="site-btn"><a href="/">CTA</a></div>
+  </div>
+</div> <!-- End Image Card -->
+  
+<div class="image-card"> <!-- Start Image Card -->
+  <span class="image-card--ribbon" style="top: .8rem; left: -3.5rem; ">New</span>
+  <div class="image-card--image">
+    <img src="" alt="">
+  </div>
+  <div class="image-card--icon">
+    <div><i class="fas fa-house"></i></div>
+  </div>
+  <div class="image-card--content">
+    <h3 class="title">Title</h3>
+    <p>Body</p>
+    <div class="site-btn"><a href="/">CTA</a></div>
+  </div>
+</div> <!-- End Image Card -->
+  
+<div class="image-card"> <!-- Start Image Card -->
+  <span class="image-card--ribbon" style="top: .8rem; left: -3.5rem; ">New</span>
+  <div class="image-card--image">
+    <img src="" alt="">
+  </div>
+  <div class="image-card--icon">
+    <div><i class="fas fa-house"></i></div>
+  </div>
+  <div class="image-card--content">
+    <h3 class="title">Title</h3>
+    <p>Body</p>
+    <div class="site-btn"><a href="/">CTA</a></div>
+  </div>
+</div> <!-- End Image Card -->
+</div> <!-- End Three Column Grid -->`,
+  "3x1 Mini CTA w/ Ribbon": `<div class="site-grid site-grid--3x1 mini-cta-grid"> <!-- Start Three Column Grid -->
+  
+<div class="mini-cta">
+  <div class="icon"><i class="fal fa-heart"></i></div>
+  <hr>
+  <span class="ribbon">New</span>
+  <h3 class="title">Title</h3>
+  <p>Body</p>
+  <div class="site-btn">
+    <a href="#">CTA Text</a>
+  </div>
+</div> <!-- End Mini CTA -->
+  
+<div class="mini-cta">
+  <div class="icon"><i class="fal fa-heart"></i></div>
+  <hr>
+  <span class="ribbon">New</span>
+  <h3 class="title">Title</h3>
+  <p>Body</p>
+  <div class="site-btn">
+    <a href="#">CTA Text</a>
+  </div>
+</div> <!-- End Mini CTA -->
+  
+<div class="mini-cta">
+  <div class="icon"><i class="fal fa-heart"></i></div>
+  <hr>
+  <span class="ribbon">New</span>
+  <h3 class="title">Title</h3>
+  <p>Body</p>
+  <div class="site-btn">
+    <a href="#">CTA Text</a>
+  </div>
+</div> <!-- End Mini CTA -->
+</div> <!-- End Three Column Grid -->`,
+  "3x1 Mini Icon CTA Grid": `<div class="site-grid site-grid--3x1 mini-cta-grid"> <!-- Start Three Column Grid -->
+  
+<div class="mini-cta">
+  <div class="icon"><i class="fal fa-heart"></i></div>
+  <hr>
+  <h3 class="title">Title</h3>
+  <p>Body</p>
+  <div class="site-btn">
+    <a href="#">CTA Text</a>
+  </div>
+</div> <!-- End Mini CTA -->
+  
+<div class="mini-cta">
+  <div class="icon"><i class="fal fa-heart"></i></div>
+  <hr>
+  <h3 class="title">Title</h3>
+  <p>Body</p>
+  <div class="site-btn">
+    <a href="#">CTA Text</a>
+  </div>
+</div> <!-- End Mini CTA -->
+  
+<div class="mini-cta">
+  <div class="icon"><i class="fal fa-heart"></i></div>
+  <hr>
+  <h3 class="title">Title</h3>
+  <p>Body</p>
+  <div class="site-btn">
+    <a href="#">CTA Text</a>
+  </div>
+</div> <!-- End Mini CTA -->
+</div> <!-- End Three Column Grid -->`,
+  "CTA": "[cta]",
+  "CTA Button": `[cta-btn`,
+  "FAQs": `[faqs category=""]`,
+  "Highlight": `<div class="highlight-box"> <!-- Start Highlight Box -->
+  <h3 class="title">Title</h3>
+  <p>Body</p>
+</div> <!-- End Highlight Box -->`,
+  "Horizontal Image Card": `<div class="image-card single horizontal"> <!-- Start Image Card -->
+  <div class="image-card--image">
+    <img src="" alt="">
+  </div>
+  <div class="image-card--content">
+    <h3 class="title">Title</h3>
+    <p>Body</p>
+    <div class="site-btn"><a href="/">CTA</a></div>
+  </div>
+</div> <!-- End Image Card -->`,
+  "Icon Box Alt": `<div class="icon-box-alt"> <!-- Start Icon Box Alt -->
+  <i class="icon fal fa-circle"></i>
+  <h3 class="title">Title</h3>
+  <hr>
   <div class="content">
-    <h3>Title Here</h3>
-    <p>Description text goes here.</p>
+    <p>Text</p>
+    <div class="site-btn"><a href="#">Learn More</a></div>
   </div>
-</div>`,
-  "Image Card Right": `<div class="image-card right">
+</div> <!-- End Icon Box Alt -->`,
+  "Icon Box Alt 2": `<div class="icon-box-alt icon-box-alt-2"> <!-- Start Icon Box Alt -->
+  <div class="icon">
+    <i class="icon fal fa-circle"></i>
+  </div>
   <div class="content">
-    <h3>Title Here</h3>
-    <p>Description text goes here.</p>
+    <h3 class="title">Title</h3>
+    <p>Text</p>
+    <div class="site-btn"><a href="#">Learn More</a></div>
   </div>
-  <img src="image.jpg" alt="Description">
-</div>`,
+</div> <!-- End Icon Box Alt -->`,
+  "Icon CTA Box": `<div class="icon-cta-box"> <!-- Start Icon CTA Box -->
+  <i class="icon-cta-box--icon fal fa-phone"></i>
+  <h3 class="title">Title</h3>
+  <p>Body</p>
+  <div class="site-btn"><a href="/">CTA</a></div>
+</div> <!-- End Icon CTA Box -->`,
+  "Image Card": `<div class="image-card single"> <!-- Start Image Card -->
+  <div class="image-card--image">
+    <img src="" alt="">
+  </div>
+  <div class="image-card--content">
+    <h3 class="title">Title</h3>
+    <p>Body</p>
+    <div class="site-btn"><a href="/">CTA</a></div>
+  </div>
+</div> <!-- End Image Card -->`,
+  "Image Card Left": `<div class="image-card single left--image"> <!-- Start Image Card -->
+  <div class="image-card--image">
+    <img src="" alt="">
+  </div>
+  <div class="image-card--content">
+    <h3 class="title">Title</h3>
+    <p>Body</p>
+    <div class="site-btn"><a href="/">CTA</a></div>
+  </div>
+</div> <!-- End Image Card -->`,
+  "Image Card Right": `<div class="image-card single right--image"> <!-- Start Image Card -->
+  <div class="image-card--image">
+    <img src="" alt="">
+  </div>
+  <div class="image-card--content">
+    <h3 class="title">Title</h3>
+    <p>Body</p>
+    <div class="site-btn"><a href="/">CTA</a></div>
+  </div>
+</div> <!-- End Image Card -->`,
   "Image Highlights": `<div class='image-highlights'>Image Highlights Placeholder</div>`,
-  "Quick Links": `<div class="quick-links">
-  <h3>Quick Links</h3>
+  "Quick Links": `<div class="quick-links" id="quick-links" data-sticky-active-offset=""> <!--Start Quick Links-->
+  
+  <div class="title">Quick Links</div>
+  
+  <div class="links">
+    
+    <a href="#linkid" data-sticky-label="">Link 1</a>
+    <a href="#linkid" data-sticky-label="">Link 2</a>
+    <a href="#linkid" data-sticky-label="">Link 3</a>
+    <a href="#linkid" data-sticky-label="">Link 4</a>
+    <a href="#linkid" data-sticky-label="">Link 5</a>
+    <a href="#linkid" data-sticky-label="">Link 6</a>
+    
+  </div>
+  
+</div> <!--End Quick Links-->`,
+  "Related Posts": `<div class="related-links">  <!--Start Related Posts-->
+  
+  <h5>Related Posts</h5> 
   <ul>
-    <li><a href="#">Link 1</a></li>
-    <li><a href="#">Link 2</a></li>
-    <li><a href="#">Link 3</a></li>
+    
+    <li> <a href="link">First Related Post Title</a> </li>
+    <li> <a href="link">Second Related Post Title</a> </li>
+    <li> <a href="link">Third Related Post Title</a> </li>
+    
   </ul>
+</div> <!--End Related Posts-->`,
+  "Reviews": `[reviews amount="" category=""]`,
+  "Site Button": `<div class="site-btn">
+  <a href="#">Text</a>
 </div>`,
-  "Related Posts": `<div class='related-posts'>Related Posts Placeholder</div>`,
-  "Reviews": `<div class="reviews">
-  <h2>Customer Reviews</h2>
-  <div class="review-item">
-    <div class="stars">★★★★★</div>
-    <p>"Great service! Highly recommend."</p>
-    <p class="reviewer">- John D.</p>
-  </div>
-  <div class="review-item">
-    <div class="stars">★★★★★</div>
-    <p>"Professional and efficient."</p>
-    <p class="reviewer">- Sarah M.</p>
-  </div>
-</div>`,
-  "Scrolling Gallery": `<div class="scrolling-gallery">
-  <div class="gallery-container">
-    <img src="image1.jpg" alt="Gallery Image 1">
-    <img src="image2.jpg" alt="Gallery Image 2">
-    <img src="image3.jpg" alt="Gallery Image 3">
-    <img src="image4.jpg" alt="Gallery Image 4">
-  </div>
-</div>`,
-  "Site Button": `<a href="{contactLink}" class="site-button">Learn More</a>`,
   "Staff": `<div class='staff'>Staff Placeholder</div>`,
-  "Tabbed Content": `<div class="tabbed-content">
-  <div class="tabs">
-    <button class="tab-button active" data-tab="tab1">Tab 1</button>
-    <button class="tab-button" data-tab="tab2">Tab 2</button>
-    <button class="tab-button" data-tab="tab3">Tab 3</button>
+  "Tabbed Content": `<div class="site-tabs">
+  <div class="tabs" role="tablist">
+    <div class="tab" tabindex="0" role="tab">Tab 1 Title</div>
+    <div class="tab" role="tab">Tab 2 Title</div>
+    <div class="tab" role="tab">Tab 3 Title</div>
+    <div class="tab" role="tab">Tab 4 Title</div>
+    <!-- Add/remove tabs as needed -->
   </div>
-  <div class="tab-content active" id="tab1">
-    <p>Content for tab 1</p>
-  </div>
-  <div class="tab-content" id="tab2">
-    <p>Content for tab 2</p>
-  </div>
-  <div class="tab-content" id="tab3">
-    <p>Content for tab 3</p>
+
+  <div class="tab-contents">
+    <div class="content" role="tabpanel">
+      <img src="" alt="Alt text for Tab 1 image">
+      <h4>Tab 1 Heading</h4>
+      <p>Tab 1 description paragraph 1.</p>
+      <p>Tab 1 description paragraph 2 (optional).</p>
+      <a href="" class="button">Tab 1 Button Text</a>
+    </div>
+
+    <div class="content" role="tabpanel">
+      <img src="" alt="Alt text for Tab 2 image">
+      <h4>Tab 2 Heading</h4>
+      <p>Tab 2 description paragraph.</p>
+      <a href="" class="button">Tab 2 Button Text</a>
+    </div>
+
+    <div class="content" role="tabpanel">
+      <img src="" alt="Alt text for Tab 3 image">
+      <h4>Tab 3 Heading</h4>
+      <p>Tab 3 description paragraph.</p>
+      <a href="" class="button">Tab 3 Button Text</a>
+    </div>
+
+    <div class="content" role="tabpanel">
+      <img src="" alt="Alt text for Tab 4 image">
+      <h4>Tab 4 Heading</h4>
+      <p>Tab 4 description paragraph.</p>
+      <a href="" class="button">Tab 4 Button Text</a>
+    </div>
+
+    <!-- Add/remove .content blocks for more/fewer tabs -->
   </div>
 </div>`,
-  "Tagged Posts": `<div class='tagged-posts'>Tagged Posts Placeholder</div>`,
-  "Tel": `<a href='tel:' class='tel-link'>Tel Placeholder</a>`
+  "Tel": `[tel text=""]`
 };
