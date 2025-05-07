@@ -3,7 +3,7 @@ import CodeMirror, { ReactCodeMirrorRef } from '@uiw/react-codemirror';
 import { oneDark } from '@codemirror/theme-one-dark';
 import { EditorView, ViewUpdate } from '@codemirror/view';
 import { Button } from '@/components/ui/button';
-import { Copy, Save, Maximize2, Minimize2, Plus, Minus } from 'lucide-react';
+import { Copy, Save, Maximize2, Minimize2, Plus, Minus, ArrowDown } from 'lucide-react';
 import { lineNumbers, highlightActiveLineGutter, highlightSpecialChars, drawSelection, dropCursor, rectangularSelection, crosshairCursor, highlightActiveLine, keymap } from '@codemirror/view';
 import { EditorState } from '@codemirror/state';
 import { foldGutter, indentOnInput, syntaxHighlighting, defaultHighlightStyle } from '@codemirror/language';
@@ -134,6 +134,39 @@ export const EditorSection = forwardRef<EditorSectionRef, EditorSectionProps>(({
             >
               <Save size={14} />
               Save
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={() => {
+                try {
+                  const view = editorRef.current?.view;
+                  if (view) {
+                    // Get the last line number
+                    const lastLine = view.state.doc.lines;
+                    // Move cursor to the end of the last line
+                    const pos = view.state.doc.line(lastLine).to;
+                    // Scroll into view and focus
+                    view.dispatch({
+                      selection: { anchor: pos, head: pos },
+                      scrollIntoView: true
+                    });
+                    view.focus();
+                  } else {
+                    // Fallback to DOM scrolling if view is not available
+                    const scroller = document.querySelector('.cm-scroller') as HTMLElement;
+                    if (scroller) {
+                      scroller.scrollTo({ top: scroller.scrollHeight, behavior: 'smooth' });
+                    }
+                  }
+                } catch (error) {
+                  console.error('Error scrolling to bottom:', error);
+                }
+              }}
+              className="flex items-center gap-1"
+            >
+              <ArrowDown size={14} />
+              Scroll Bottom
             </Button>
           </div>
         </div>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useTaskContext } from '@/context/TaskContext';
 import { Button } from '@/components/ui/button';
@@ -25,8 +25,6 @@ const HtmlBuilder: React.FC = () => {
   const { toast } = useToast();
   const isMobile = useIsMobile();
   const editorRef = useRef<EditorSectionRef>(null);
-  const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const [loadingTask, setLoadingTask] = useState(true);
   const editorContainerRef = useRef<HTMLDivElement>(null);
 
   const [htmlContent, setHtmlContent] = useState('');
@@ -36,7 +34,6 @@ const HtmlBuilder: React.FC = () => {
   const [pageType, setPageType] = useState<TaskType>(TaskType.BLOG);
   const [selectedText, setSelectedText] = useState('');
   const [cursorPosition, setCursorPosition] = useState({ from: 0, to: 0 });
-  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
   const [reviewsTag, setReviewsTag] = useState('');
   const [faqTag, setFaqTag] = useState('');
   const [featuredImg, setFeaturedImg] = useState<string | null>(null);
@@ -55,24 +52,15 @@ const HtmlBuilder: React.FC = () => {
   // Wait for tasks to load before redirecting
   useEffect(() => {
     if (!taskId) return;
-    if (tasksLoading) return; // Wait for tasks to finish loading
+    if (tasksLoading) return;
 
-    // Only redirect if tasks are loaded and the task is truly not found
     const found = tasks.find(t => t.id === taskId);
     if (found) {
       setCurrentTask(found);
     } else if (!tasksLoading && tasks.length > 0) {
-      // Only redirect if tasks are loaded and the list is not empty
       navigate("/", { replace: true });
     }
   }, [taskId, tasksLoading, tasks, setCurrentTask, navigate]);
-
-  // Persist currentTask.id to localStorage
-  useEffect(() => {
-    if (currentTask?.id) {
-      localStorage.setItem('lastTaskId', currentTask.id);
-    }
-  }, [currentTask?.id]);
 
   useEffect(() => {
     if (!currentTask) {
@@ -80,7 +68,6 @@ const HtmlBuilder: React.FC = () => {
       return;
     }
 
-    // Set the task to "IN_PROGRESS" when opened
     if (currentTask.status === TaskStatus.RECENTLY_DELETED) {
       updateTask(currentTask.id, { status: TaskStatus.IN_PROGRESS });
     }
@@ -96,8 +83,6 @@ const HtmlBuilder: React.FC = () => {
     }
   }, [currentTask, navigate, getCompanyById, updateTask]);
 
-  // Auto-save disabled for debugging jitter issue
-
   const saveChanges = () => {
     if (currentTask && currentTask.id) {
       updateTask(currentTask.id, {
@@ -106,7 +91,6 @@ const HtmlBuilder: React.FC = () => {
         notes,
         type: pageType,
       });
-      setLastSavedAt(new Date());
     }
   };
 
@@ -124,7 +108,6 @@ const HtmlBuilder: React.FC = () => {
   };
 
   const handlePageTypeChange = (value: string) => {
-    // Map string to TaskType enum
     let mappedType: TaskType = TaskType.BLOG;
     if (value === TaskType.SUB_PAGE) mappedType = TaskType.SUB_PAGE;
     else if (value === TaskType.LANDING_PAGE) mappedType = TaskType.LANDING_PAGE;
@@ -144,9 +127,6 @@ const HtmlBuilder: React.FC = () => {
 
   const handleHtmlChange = (value: string) => {
     setHtmlContent(value);
-    
-    // Don't update the task here to avoid too many updates
-    // The auto-save will handle it
   };
 
   const copyToClipboard = (text: string) => {
@@ -252,13 +232,9 @@ const HtmlBuilder: React.FC = () => {
     });
   };
 
-  // Show loading spinner/message while waiting
+  // Remove the loading spinner/message
   if (tasksLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-lg text-muted-foreground">Loading task...</div>
-      </div>
-    );
+    return null;
   }
 
   // If currentTask is set, render the builder UI
@@ -371,101 +347,86 @@ const HtmlBuilder: React.FC = () => {
                     </div>
                   </div>
                 </div>
-                <div className="col-span-2 bg-card rounded-lg p-4 flex items-center justify-center border-2 border-red-500 border-solid">
-                  {/* Debug Empty Section */}
-                  <span className="text-red-500 font-bold">DEBUG: Empty Section</span>
-                </div>
-              </div>
-              {/* Featured IMG section spanning columns 2 and 3 */}
-              <div className="bg-card rounded-lg p-4 flex flex-row items-center col-span-3" style={{ gridColumn: '1 / span 3', minHeight: '110px' }}>
-                {/* Dropdown and Select button */}
-                <div className="flex flex-col items-start min-w-[180px] pr-4">
-                  <label className="font-medium mb-1">Featured IMG</label>
-                  <div className="relative flex items-center gap-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => setShowFeaturedDropdown(v => !v)}
-                      type="button"
-                      className="w-32 justify-between"
-                    >
-                      {featuredImg ? (
-                        <span
-                          className="truncate overflow-hidden whitespace-nowrap max-w-[100px] inline-block"
-                          title={currentTask?.images?.find(img => img.url === featuredImg)?.name || ''}
-                        >
-                          {currentTask?.images?.find(img => img.url === featuredImg)?.name || 'Select image'}
-                        </span>
-                      ) : 'Select image'}
-                      <span className="ml-2">▼</span>
-                    </Button>
-                    {/* Dropdown popover */}
-                    {showFeaturedDropdown && (
-                      <div className="absolute left-0 top-full z-10 mt-1 w-40 bg-background border border-border rounded shadow-lg">
-                        <ul className="max-h-48 overflow-auto">
-                          {(currentTask?.images || []).map(img => (
-                            <li
-                              key={img.url}
-                              className={`px-3 py-2 cursor-pointer hover:bg-muted ${featuredImg === img.url ? 'bg-muted' : ''}`}
-                              onClick={() => {
-                                setFeaturedImg(img.url);
-                                setShowFeaturedDropdown(false);
-                              }}
-                            >
-                              {img.name}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
+                <div className="col-span-2 bg-card rounded-lg p-4 flex flex-row items-center">
+                  {/* Featured IMG section */}
+                  <div className="flex flex-col items-start min-w-[180px] pr-4">
+                    <label className="font-medium mb-1">Featured IMG</label>
+                    <div className="relative flex items-center gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setShowFeaturedDropdown(v => !v)}
+                        type="button"
+                        className="w-32 justify-between"
+                      >
+                        {featuredImg ? (
+                          <span
+                            className="truncate overflow-hidden whitespace-nowrap max-w-[100px] inline-block"
+                            title={currentTask?.images?.find(img => img.url === featuredImg)?.name || ''}
+                          >
+                            {currentTask?.images?.find(img => img.url === featuredImg)?.name || 'Select image'}
+                          </span>
+                        ) : 'Select image'}
+                        <span className="ml-2">▼</span>
+                      </Button>
+                      {/* Dropdown popover */}
+                      {showFeaturedDropdown && (
+                        <div className="absolute left-0 top-full z-10 mt-1 w-40 bg-background border border-border rounded shadow-lg">
+                          <ul className="max-h-48 overflow-auto">
+                            {(currentTask?.images || []).map(img => (
+                              <li
+                                key={img.url}
+                                className={`px-3 py-2 cursor-pointer hover:bg-muted ${featuredImg === img.url ? 'bg-muted' : ''}`}
+                                onClick={() => {
+                                  setFeaturedImg(img.url);
+                                  setShowFeaturedDropdown(false);
+                                }}
+                              >
+                                {img.name}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  {/* Preview of selected image */}
+                  <div className="flex flex-col items-center justify-center min-w-[120px] px-4">
+                    {featuredImg ? (
+                      <img src={featuredImg} alt="Featured preview" className="max-h-24 max-w-24 rounded shadow border" />
+                    ) : (
+                      <div className="w-24 h-24 flex items-center justify-center border rounded bg-muted text-muted-foreground">No image</div>
                     )}
                   </div>
-                </div>
-                {/* Preview of selected image */}
-                <div className="flex flex-col items-center justify-center min-w-[120px] px-4">
-                  {featuredImg ? (
-                    <img src={featuredImg} alt="Featured preview" className="max-h-24 max-w-24 rounded shadow border" />
-                  ) : (
-                    <div className="w-24 h-24 flex items-center justify-center border rounded bg-muted text-muted-foreground">No image</div>
-                  )}
-                </div>
-                {/* Title and ALT fields */}
-                <div className="flex flex-col gap-2 flex-1 pl-4">
-                  <div className="flex items-center gap-2">
-                    <span className="w-12">Title:</span>
-                    <Input
-                      type="text"
-                      value={featuredTitle}
-                      onChange={e => setFeaturedTitle(e.target.value)}
-                      className="flex-1"
-                      placeholder="Enter title"
-                    />
-                    <Button size="sm" variant="outline" onClick={() => handleCopy(featuredTitle)} disabled={!featuredTitle}>copy</Button>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="w-12">ALT:</span>
-                    <Input
-                      type="text"
-                      value={featuredAlt}
-                      onChange={e => setFeaturedAlt(e.target.value)}
-                      className="flex-1"
-                      placeholder="Enter alt text"
-                    />
-                    <Button size="sm" variant="outline" onClick={() => handleCopy(featuredAlt)} disabled={!featuredAlt}>copy</Button>
+                  {/* Title and ALT fields */}
+                  <div className="flex flex-col gap-2 flex-1 pl-4">
+                    <div className="flex items-center gap-2">
+                      <span className="w-12">Title:</span>
+                      <Input
+                        type="text"
+                        value={featuredTitle}
+                        onChange={e => setFeaturedTitle(e.target.value)}
+                        className="flex-1"
+                        placeholder="Enter title"
+                      />
+                      <Button size="sm" variant="outline" onClick={() => handleCopy(featuredTitle)} disabled={!featuredTitle}>copy</Button>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="w-12">ALT:</span>
+                      <Input
+                        type="text"
+                        value={featuredAlt}
+                        onChange={e => setFeaturedAlt(e.target.value)}
+                        className="flex-1"
+                        placeholder="Enter alt text"
+                      />
+                      <Button size="sm" variant="outline" onClick={() => handleCopy(featuredAlt)} disabled={!featuredAlt}>copy</Button>
+                    </div>
                   </div>
                 </div>
               </div>
               {/* HTML Editor always visible and fills remaining space */}
               <div className="flex-1 flex flex-col" ref={editorContainerRef}>
-                {/* Go to bottom button above editor */}
-                <div className="w-full flex justify-end mb-2">
-                  <Button variant="outline" size="sm" onClick={() => {
-                    if (editorContainerRef.current) {
-                      editorContainerRef.current.scrollIntoView({ block: 'end', behavior: 'smooth' });
-                    }
-                  }}>
-                    Go to bottom
-                  </Button>
-                </div>
                 <EditorSection
                   ref={editorRef}
                   htmlContent={htmlContent}
@@ -473,13 +434,15 @@ const HtmlBuilder: React.FC = () => {
                   onUpdate={handleEditorUpdate}
                   onCopyToClipboard={copyToClipboard}
                   onSave={saveChanges}
-                  lastSavedAt={lastSavedAt}
                 />
                 {/* Go to top button below editor */}
                 <div className="w-full flex justify-end mt-2">
                   <Button variant="outline" size="sm" onClick={() => {
-                    if (editorContainerRef.current) {
-                      editorContainerRef.current.scrollIntoView({ block: 'start', behavior: 'smooth' });
+                    try {
+                      // Scroll to the very top of the page
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    } catch (error) {
+                      console.error('Error scrolling to top:', error);
                     }
                   }}>
                     Go to top
