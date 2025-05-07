@@ -9,7 +9,6 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { EditorSection, EditorSectionRef } from '@/components/html-builder/EditorSection';
 import { SidebarContent } from '@/components/html-builder/SidebarContent';
 import { CompanySection } from '@/components/html-builder/CompanySection';
-import { CompanyTemplateSection } from '@/components/html-builder/CompanyTemplateSection';
 import { ImageFilenameConverter } from '@/components/html-builder/ImageFilenameConverter';
 import { PhotoUploadPreview } from '@/components/html-builder/PhotoUploadPreview';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
@@ -597,7 +596,17 @@ const HtmlBuilder: React.FC = () => {
     setCursorPosition({ from: selection.from, to: selection.to });
   };
 
-  // Remove the loading spinner/message
+  // Add the useEffect here, at the top level
+  useEffect(() => {
+    if (!currentTask) return;
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      saveChanges();
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [currentTask, saveChanges]);
+
+  // Remove the useEffect from inside the if (currentTask) block
   if (tasksLoading) {
     return null;
   }
