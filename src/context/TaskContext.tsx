@@ -70,6 +70,14 @@ interface TaskProviderProps {
 
 const AUTHORIZED_EMAILS = ["dklegson@gmail.com", "SECOND_EMAIL_HERE"]; // Add your emails here
 
+const DEFAULT_COMPANY = {
+  name: 'ocboston',
+  contactLink: 'https://ocboston.com/contact/',
+  basePath: 'https://ocboston.com/wp-content/uploads/',
+  prefix: 'ocboston_Landing-Page_',
+  fileSuffix: '-image.webp'
+};
+
 export const TaskProvider: React.FC<TaskProviderProps> = ({ children, user }) => {
   console.log("TaskProvider user:", user);
 
@@ -89,7 +97,20 @@ export const TaskProvider: React.FC<TaskProviderProps> = ({ children, user }) =>
     if (!isAuthorized) return;
     try {
       const querySnapshot = await getDocs(collection(db, 'companies'));
-      setCompanies(querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Company)));
+      const companiesList = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Company));
+      
+      // Check if default company exists
+      const defaultCompanyExists = companiesList.some(company => company.name === DEFAULT_COMPANY.name);
+      
+      if (!defaultCompanyExists) {
+        // Add default company if it doesn't exist
+        await addDoc(collection(db, 'companies'), DEFAULT_COMPANY);
+        // Fetch companies again to include the new default company
+        const updatedSnapshot = await getDocs(collection(db, 'companies'));
+        setCompanies(updatedSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Company)));
+      } else {
+        setCompanies(companiesList);
+      }
     } catch (error) {
       console.error('Error fetching companies:', error);
       throw error;

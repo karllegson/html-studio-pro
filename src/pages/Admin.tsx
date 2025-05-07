@@ -7,6 +7,8 @@ import { useTaskContext } from '@/context/TaskContext';
 import { useNavigate } from 'react-router-dom';
 import { Home, Tag, Building, FileCode } from 'lucide-react';
 import { TemplateManager } from '@/components/admin/TemplateManager';
+import { toast } from '@/components/ui/use-toast';
+import { Label } from '@/components/ui/label';
 
 const SIDEBAR_ITEMS = [
   { key: 'tags', label: 'Tags & Components', icon: <Tag className="mr-2" /> },
@@ -14,10 +16,24 @@ const SIDEBAR_ITEMS = [
   { key: 'templates', label: 'HTML Templates', icon: <FileCode className="mr-2" /> },
 ];
 
+const validateCompanyRules = (rules: { basePath: string; prefix: string; fileSuffix: string }) => {
+  const errors: string[] = [];
+
+  if (!rules.basePath.endsWith('/')) {
+    errors.push('Base path must end with a forward slash (/)');
+  }
+
+  if (!rules.fileSuffix.startsWith('-')) {
+    errors.push('File suffix must start with a hyphen (-)');
+  }
+
+  return errors;
+};
+
 export default function AdminPage() {
   const [activeTab, setActiveTab] = useState('tags');
   const [selectedCompany, setSelectedCompany] = useState<string | null>(null);
-  const [editCompany, setEditCompany] = useState<{ contactLink: string } | null>(null);
+  const [editCompany, setEditCompany] = useState<{ contactLink: string, basePath: string, prefix: string, fileSuffix: string } | null>(null);
   const navigate = useNavigate();
 
   // Use real companies from context
@@ -29,13 +45,24 @@ export default function AdminPage() {
 
   // State for add company form
   const [showAddForm, setShowAddForm] = useState(false);
-  const [newCompany, setNewCompany] = useState({ name: '', contactLink: '' });
+  const [newCompany, setNewCompany] = useState({
+    name: '',
+    contactLink: '',
+    basePath: '',
+    prefix: '',
+    fileSuffix: ''
+  });
 
   // Update edit fields when company changes
   React.useEffect(() => {
     if (selectedCompany) {
       const company = getCompanyById(selectedCompany);
-      setEditCompany(company ? { contactLink: company.contactLink } : null);
+      setEditCompany(company ? {
+        contactLink: company.contactLink,
+        basePath: company.basePath,
+        prefix: company.prefix,
+        fileSuffix: company.fileSuffix
+      } : null);
     } else {
       setEditCompany(null);
     }
@@ -109,12 +136,36 @@ export default function AdminPage() {
 
   // --- Companies Content ---
   const handleCompanyFieldChange = (field: string, value: string) => {
-    setEditCompany(prev => prev ? { ...prev, [field]: value } : prev);
+    if (editCompany) {
+      setEditCompany(prev => ({ ...prev, [field]: value }));
+    }
   };
 
-  const handleSaveCompany = () => {
+  const handleSaveCompany = async () => {
     if (selectedCompany && editCompany) {
-      updateCompany(selectedCompany, editCompany);
+      const errors = validateCompanyRules(editCompany);
+      if (errors.length > 0) {
+        toast({
+          title: "Validation Error",
+          description: errors.join('\n'),
+          variant: "destructive"
+        });
+        return;
+      }
+
+      try {
+        await updateCompany(selectedCompany, editCompany);
+        toast({
+          title: "Company updated",
+          description: "The company settings have been updated successfully.",
+        });
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "Failed to update company settings. Please try again.",
+          variant: "destructive"
+        });
+      }
     }
   };
 
@@ -132,9 +183,37 @@ export default function AdminPage() {
   const handleAddCompanySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (newCompany.name && newCompany.contactLink) {
-      await addCompany(newCompany);
-      setNewCompany({ name: '', contactLink: '' });
-      setShowAddForm(false);
+      const errors = validateCompanyRules(newCompany);
+      if (errors.length > 0) {
+        toast({
+          title: "Validation Error",
+          description: errors.join('\n'),
+          variant: "destructive"
+        });
+        return;
+      }
+
+      try {
+        await addCompany(newCompany);
+        setNewCompany({
+          name: '',
+          contactLink: '',
+          basePath: '',
+          prefix: '',
+          fileSuffix: ''
+        });
+        setShowAddForm(false);
+        toast({
+          title: "Company added",
+          description: "The company has been added successfully.",
+        });
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "Failed to add company. Please try again.",
+          variant: "destructive"
+        });
+      }
     }
   };
 
@@ -174,6 +253,27 @@ export default function AdminPage() {
                   onChange={e => handleAddCompanyChange('contactLink', e.target.value)}
                   required
                 />
+                <Input
+                  type="text"
+                  placeholder="Base Path (e.g., https://example.com/wp-content/uploads/)"
+                  value={newCompany.basePath}
+                  onChange={e => handleAddCompanyChange('basePath', e.target.value)}
+                  required
+                />
+                <Input
+                  type="text"
+                  placeholder="Prefix (e.g., company_Landing-Page_)"
+                  value={newCompany.prefix}
+                  onChange={e => handleAddCompanyChange('prefix', e.target.value)}
+                  required
+                />
+                <Input
+                  type="text"
+                  placeholder="File Suffix (e.g., -image.webp)"
+                  value={newCompany.fileSuffix}
+                  onChange={e => handleAddCompanyChange('fileSuffix', e.target.value)}
+                  required
+                />
                 <Button type="submit" className="bg-primary text-white rounded px-2 py-1">Add</Button>
               </form>
             )}
@@ -184,17 +284,45 @@ export default function AdminPage() {
           <Card>
             <CardContent className="pt-6">
               <h3 className="text-lg font-medium mb-2">Settings</h3>
-              <div className="mb-4">
-                <label className="block mb-1 font-medium">Contact Link</label>
-                <Input
-                  placeholder="Contact link..."
-                  value={editCompany.contactLink}
-                  onChange={e => handleCompanyFieldChange('contactLink', e.target.value)}
-                />
-              </div>
-              <div className="flex gap-2">
-                <Button variant="default" onClick={handleSaveCompany}>Save</Button>
-                <Button variant="destructive" onClick={handleDeleteCompany}>Delete</Button>
+              <div className="space-y-4">
+                <div>
+                  <Label className="block mb-1 font-medium">Contact Link</Label>
+                  <Input
+                    placeholder="Contact link..."
+                    value={editCompany.contactLink}
+                    onChange={e => handleCompanyFieldChange('contactLink', e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label className="block mb-1 font-medium">Base Path</Label>
+                  <Input
+                    placeholder="Base path for images..."
+                    value={editCompany.basePath}
+                    onChange={e => handleCompanyFieldChange('basePath', e.target.value)}
+                  />
+                  <p className="text-sm text-muted-foreground mt-1">Must end with a forward slash (/)</p>
+                </div>
+                <div>
+                  <Label className="block mb-1 font-medium">Prefix</Label>
+                  <Input
+                    placeholder="Prefix for filenames..."
+                    value={editCompany.prefix}
+                    onChange={e => handleCompanyFieldChange('prefix', e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label className="block mb-1 font-medium">File Suffix</Label>
+                  <Input
+                    placeholder="Suffix for filenames..."
+                    value={editCompany.fileSuffix}
+                    onChange={e => handleCompanyFieldChange('fileSuffix', e.target.value)}
+                  />
+                  <p className="text-sm text-muted-foreground mt-1">Must start with a hyphen (-)</p>
+                </div>
+                <div className="flex gap-2">
+                  <Button variant="default" onClick={handleSaveCompany}>Save</Button>
+                  <Button variant="destructive" onClick={handleDeleteCompany}>Delete</Button>
+                </div>
               </div>
             </CardContent>
           </Card>

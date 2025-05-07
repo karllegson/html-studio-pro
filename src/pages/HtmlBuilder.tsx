@@ -693,7 +693,7 @@ const HtmlBuilder: React.FC = () => {
                         {/* Image file name to link converter */}
                         <div className="mt-3">
                           <h3 className="text-lg font-medium mb-2">Image file name to link converter</h3>
-                          <ImageFilenameConverter companyDomain={getCompanyById(companyId)?.contactLink} />
+                          <ImageFilenameConverter companyId={companyId} />
                         </div>
                       </div>
                     </ScrollArea>

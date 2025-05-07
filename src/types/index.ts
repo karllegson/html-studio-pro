@@ -8,6 +8,12 @@ export interface Company {
   name: string;
   /** URL or link to company contact information */
   contactLink: string;
+  /** Base path for image URLs */
+  basePath: string;
+  /** Prefix for image filenames */
+  prefix: string;
+  /** Suffix for image filenames */
+  fileSuffix: string;
 }
 
 /**

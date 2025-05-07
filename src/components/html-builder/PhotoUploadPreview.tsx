@@ -124,29 +124,39 @@ export const PhotoUploadPreview: React.FC<PhotoUploadPreviewProps> = ({
   // Download all handler
   const handleDownloadAll = async () => {
     if (!images.length) return;
-    setDownloading(true);
+
     try {
-      const JSZip = (await import('jszip')).default;
-      const zip = new JSZip();
-      await Promise.all(images.map(async img => {
-        const response = await fetch(img.url);
+      for (const image of images) {
+        // Fetch the image first
+        const response = await fetch(image.url);
         const blob = await response.blob();
-        // Create filename with the requested convention
-        const fileName = `${companyName || 'Unknown'}_${pageType || 'Unknown'}_${img.name}`;
-        zip.file(fileName, blob);
-      }));
-      const blob = await zip.generateAsync({ type: 'blob' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      // Set zip file name with company name and page type
-      a.download = `${companyName || 'Unknown'}_${pageType || 'Unknown'}_photos.zip`;
-      a.click();
-      setTimeout(() => URL.revokeObjectURL(url), 2000);
+        
+        // Create a download link
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = image.name;
+        document.body.appendChild(a);
+        a.click();
+        
+        // Cleanup
+        document.body.removeChild(a);
+        URL.revokeObjectURL(a.href);
+        
+        // Small delay between downloads
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+
+      toast({
+        title: "Downloads started",
+        description: "Your images are being downloaded.",
+      });
     } catch (error) {
-      // ignore
-    } finally {
-      setDownloading(false);
+      console.error('Error downloading images:', error);
+      toast({
+        title: "Download failed",
+        description: "There was an error downloading your images.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -209,23 +219,6 @@ export const PhotoUploadPreview: React.FC<PhotoUploadPreviewProps> = ({
         className="hidden"
         onChange={handleUpload}
       />
-      {/* Download all button with loading state */}
-      <button
-        type="button"
-        className="hidden"
-        data-download-all
-        onClick={handleDownloadAll}
-        disabled={downloading}
-      >
-        {downloading ? (
-          <div className="flex items-center gap-2">
-            <Loader2 className="h-4 w-4 animate-spin" />
-            <span>Downloading...</span>
-          </div>
-        ) : (
-          'Download All'
-        )}
-      </button>
       {/* Modal preview */}
       {previewIdx !== null && images[previewIdx] && (
         <div
