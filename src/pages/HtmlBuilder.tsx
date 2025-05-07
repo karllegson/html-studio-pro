@@ -68,8 +68,6 @@ const HtmlBuilder: React.FC = () => {
   const [teamworkLink, setTeamworkLink] = useState('');
   const [googleDocLink, setGoogleDocLink] = useState('');
 
-  const [featuredImgChecked, setFeaturedImgChecked] = useState(false);
-
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
@@ -170,6 +168,12 @@ const HtmlBuilder: React.FC = () => {
         // Ensure all fields are properly initialized
         const updates = {
           ...updateQueue.current,
+          // Add checkbox states
+          featuredImgChecked: updateQueue.current.featuredImgChecked ?? false,
+          mapsChecked: updateQueue.current.mapsChecked ?? false,
+          instructionsChecked: updateQueue.current.instructionsChecked ?? false,
+          // Add the checked fields object
+          checkedFields: updateQueue.current.checkedFields ?? {},
           // Ensure optional fields are explicitly set to empty string if undefined
           googleDocLink: updateQueue.current.googleDocLink || '',
           teamworkLink: updateQueue.current.teamworkLink || '',
@@ -419,6 +423,9 @@ const HtmlBuilder: React.FC = () => {
       setMapsEmbedCode(currentTask.mapsEmbedCode || '');
       setFeaturedImg(currentTask.featuredImg || '');
       
+      // Restore checkmark states from currentTask
+      setCheckedFields(currentTask.checkedFields || {});
+
       // Load saved tags
       setReviewsTag(currentTask.selectedReviewTag || '');
       setFaqTag(currentTask.selectedFaqTag || '');
@@ -666,6 +673,18 @@ const HtmlBuilder: React.FC = () => {
     return () => unsub();
   }, [companyId, currentTask]);
 
+  // Unified handler for all checkmarks
+  const handleCheckmarkChange = (field: string, checked: boolean) => {
+    setCheckedFields(prev => {
+      const updated = { ...prev, [field]: checked };
+      if (currentTask) {
+        // Only update checkedFields, never touch other fields
+        updateTask(currentTask.id, { checkedFields: updated });
+      }
+      return updated;
+    });
+  };
+
   // Remove the useEffect from inside the if (currentTask) block
   if (tasksLoading) {
     return null;
@@ -843,8 +862,8 @@ const HtmlBuilder: React.FC = () => {
                   <div className="flex items-center justify-center gap-2 mt-10">
                     <label className="text-sm font-medium">Applied Featured Image</label>
                     <GreenCircleCheckbox
-                      checked={featuredImgChecked}
-                      onChange={e => setFeaturedImgChecked(e.target.checked)}
+                      checked={!!checkedFields.featuredImg}
+                      onChange={e => handleCheckmarkChange('featuredImg', e.target.checked)}
                     />
                   </div>
                 </div>
@@ -873,8 +892,8 @@ const HtmlBuilder: React.FC = () => {
                   <div className="flex items-center justify-center gap-2 mt-10">
                     <label className="text-sm font-medium">Applied Meta Info and Title</label>
                     <GreenCircleCheckbox
-                      checked={!!checkedFields['widgetTitle']}
-                      onChange={e => setCheckedFields(f => ({ ...f, widgetTitle: e.target.checked }))}
+                      checked={!!checkedFields.widgetTitle}
+                      onChange={e => handleCheckmarkChange('widgetTitle', e.target.checked)}
                     />
                   </div>
                 </div>
@@ -983,8 +1002,8 @@ const HtmlBuilder: React.FC = () => {
                     <div className="flex items-center justify-between mb-2">
                       <span className="mx-auto font-medium text-center w-full">Google Maps Embed</span>
                       <GreenCircleCheckbox
-                        checked={mapsChecked}
-                        onChange={e => setMapsChecked(e.target.checked)}
+                        checked={!!checkedFields.maps}
+                        onChange={e => handleCheckmarkChange('maps', e.target.checked)}
                         className="ml-2"
                       />
                     </div>
@@ -1026,10 +1045,8 @@ const HtmlBuilder: React.FC = () => {
                     <div className="flex items-center justify-between mb-2">
                       <span className="mx-auto font-medium text-center w-full">Instructions to Link</span>
                       <GreenCircleCheckbox
-                        checked={instructionsChecked}
-                        onChange={e => {
-                          setInstructionsChecked(e.target.checked);
-                        }}
+                        checked={!!checkedFields.instructions}
+                        onChange={e => handleCheckmarkChange('instructions', e.target.checked)}
                         className="ml-2"
                       />
                     </div>
