@@ -353,70 +353,26 @@ const HtmlBuilder: React.FC = () => {
                   </div>
                 </div>
                 <div className="bg-card rounded-lg p-4 flex flex-col max-h-[400px]">
-                  <h3 className="text-lg font-medium mb-2">Photos</h3>
-                  <div className="overflow-auto h-full">
-                    <PhotoUploadPreview 
-                      companyName={getCompanyById(companyId)?.name} 
-                      pageType={pageType} 
-                      taskId={currentTask?.id} 
-                    />
-                  </div>
-                </div>
-
-                {/* Row 2 */}
-                <div className="bg-card rounded-lg p-4 flex flex-col">
-                  {/* Tags link */}
-                  <h3 className="text-lg font-medium mb-2">Tags link</h3>
-                  <div className="flex flex-col gap-3">
-                    <div className="flex items-center gap-2">
-                      <span className="w-32">Review</span>
-                      <Select value={reviewsTag} onValueChange={setReviewsTag}>
-                        <SelectTrigger className="w-48">
-                          <SelectValue placeholder="Select tag" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="review-tag-1">Review Tag 1</SelectItem>
-                          <SelectItem value="review-tag-2">Review Tag 2</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <CopyButton value={reviewsTag} />
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="w-32">FAQ</span>
-                      <Select value={faqTag} onValueChange={setFaqTag}>
-                        <SelectTrigger className="w-48">
-                          <SelectValue placeholder="Select tag" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="faq-tag-1">FAQ Tag 1</SelectItem>
-                          <SelectItem value="faq-tag-2">FAQ Tag 2</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <CopyButton value={faqTag} />
-                    </div>
-                  </div>
-                </div>
-                <div className="col-span-2 bg-card rounded-lg p-4 flex flex-row items-center">
                   {/* Featured IMG section */}
-                  <div className="flex flex-col items-start min-w-[180px] pr-4">
-                    <div className="flex items-center gap-2 mb-1">
+                  <div className="flex flex-col items-center">
+                    <div className="flex items-center gap-2 mb-2">
                       <label className="font-medium">Featured IMG</label>
                       <GreenCircleCheckbox
                         checked={featuredImgChecked}
                         onChange={e => setFeaturedImgChecked(e.target.checked)}
                       />
                     </div>
-                    <div className="relative flex items-center gap-2">
+                    <div className="relative flex items-center justify-center w-full">
                       <Button
                         size="sm"
                         variant="outline"
                         onClick={() => setShowFeaturedDropdown(v => !v)}
                         type="button"
-                        className="w-32 justify-between"
+                        className="w-48 justify-between"
                       >
                         {featuredImg ? (
                           <span
-                            className="truncate overflow-hidden whitespace-nowrap max-w-[100px] inline-block"
+                            className="truncate overflow-hidden whitespace-nowrap max-w-[180px] inline-block"
                             title={currentTask?.images?.find(img => img.url === featuredImg)?.name || ''}
                           >
                             {currentTask?.images?.find(img => img.url === featuredImg)?.name || 'Select image'}
@@ -426,7 +382,7 @@ const HtmlBuilder: React.FC = () => {
                       </Button>
                       {/* Dropdown popover */}
                       {showFeaturedDropdown && (
-                        <div className="absolute left-0 top-full z-10 mt-1 w-40 bg-background border border-border rounded shadow-lg">
+                        <div className="absolute left-1/2 -translate-x-1/2 top-full z-10 mt-1 w-48 bg-background border border-border rounded shadow-lg">
                           <ul className="max-h-48 overflow-auto">
                             {(currentTask?.images || []).map(img => (
                               <li
@@ -446,7 +402,7 @@ const HtmlBuilder: React.FC = () => {
                     </div>
                   </div>
                   {/* Preview of selected image */}
-                  <div className="flex flex-col items-center justify-center min-w-[120px] px-4">
+                  <div className="flex flex-col items-center justify-center mt-3">
                     {featuredImg ? (
                       <img src={featuredImg} alt="Featured preview" className="max-h-24 max-w-24 rounded shadow border" />
                     ) : (
@@ -454,7 +410,7 @@ const HtmlBuilder: React.FC = () => {
                     )}
                   </div>
                   {/* Title and ALT fields */}
-                  <div className="flex flex-col gap-2 flex-1 pl-4">
+                  <div className="flex flex-col gap-2 mt-3">
                     <div className="flex items-center gap-2">
                       <span className="w-12">Title:</span>
                       <Input
@@ -481,27 +437,62 @@ const HtmlBuilder: React.FC = () => {
                       />
                       <CopyButton value={featuredAlt} />
                     </div>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => {
-                        if (currentTask?.id) {
-                          setSaving(true);
-                          updateTask(currentTask.id, { 
-                            featuredTitle,
-                            featuredAlt
-                          }).finally(() => setSaving(false));
-                        }
-                      }}
-                      className="mt-2"
-                    >
-                      Save Featured Image
-                    </Button>
-                    {saving && (
-                      <div className="text-sm text-muted-foreground mt-2">
-                        Saving changes...
-                      </div>
-                    )}
+                  </div>
+                </div>
+
+                {/* Row 2 */}
+                <div className="border rounded p-4 min-h-[80px] flex flex-col justify-center">
+                  {[
+                    { label: 'Widget Title', key: 'widgetTitle', value: widgetTitle, setValue: setWidgetTitle },
+                    { label: 'Meta Title', key: 'metaTitle', value: metaTitle, setValue: setMetaTitle },
+                    { label: 'Meta URL', key: 'metaUrl', value: metaUrl, setValue: setMetaUrl },
+                    { label: 'Meta Description', key: 'metaDescription', value: metaDescription, setValue: setMetaDescription },
+                  ].map((item, idx) => (
+                    <div key={item.key} className="flex items-center gap-2 mb-3 last:mb-0">
+                      <span className="w-28">{item.label}</span>
+                      <Input
+                        type="text"
+                        className="flex-1"
+                        value={item.value}
+                        onChange={e => {
+                          item.setValue(e.target.value);
+                        }}
+                        placeholder={item.label}
+                      />
+                      <CopyButton value={item.value} />
+                      <GreenCircleCheckbox
+                        checked={!!checkedFields[item.key]}
+                        onChange={e => setCheckedFields(f => ({ ...f, [item.key]: e.target.checked }))}
+                      />
+                    </div>
+                  ))}
+                </div>
+                <div className="bg-card rounded-lg p-4 flex flex-col max-h-[400px] col-span-2">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-lg font-medium">Photos</h3>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                        onClick={() => (document.querySelector('input[type="file"]') as HTMLInputElement)?.click()}
+                      >
+                        Upload Photos
+                      </button>
+                      <button
+                        type="button"
+                        className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+                        onClick={() => (document.querySelector('[data-download-all]') as HTMLButtonElement)?.click()}
+                      >
+                        Download All
+                      </button>
+                    </div>
+                  </div>
+                  <div className="overflow-auto h-full">
+                    <PhotoUploadPreview 
+                      companyName={getCompanyById(companyId)?.name} 
+                      pageType={pageType} 
+                      taskId={currentTask?.id} 
+                    />
                   </div>
                 </div>
               </div>
@@ -529,40 +520,37 @@ const HtmlBuilder: React.FC = () => {
                 </div>
                 {/* 2x2 Section Grid with Notes in bottom right as the cell itself */}
                 <div className="w-full max-w-4xl mx-auto mt-6 grid grid-cols-2 grid-rows-2 gap-4">
-                  {/* Top-left cell: Widget/Meta fields */}
-                  <div className="border rounded p-4 min-h-[80px] flex flex-col justify-center">
-                    {[
-                      { label: 'Widget Title', key: 'widgetTitle', value: widgetTitle, setValue: setWidgetTitle },
-                      { label: 'Meta Title', key: 'metaTitle', value: metaTitle, setValue: setMetaTitle },
-                      { label: 'Meta URL', key: 'metaUrl', value: metaUrl, setValue: setMetaUrl },
-                      { label: 'Meta Description', key: 'metaDescription', value: metaDescription, setValue: setMetaDescription },
-                    ].map((item, idx) => (
-                      <div key={item.key} className="flex items-center gap-2 mb-3 last:mb-0">
-                        <span className="w-28">{item.label}</span>
-                        <Input
-                          type="text"
-                          className="flex-1"
-                          value={item.value}
-                          onChange={e => {
-                            item.setValue(e.target.value);
-                          }}
-                          placeholder={item.label}
-                        />
-                        <CopyButton value={item.value} />
-                        <GreenCircleCheckbox
-                          checked={!!checkedFields[item.key]}
-                          onChange={e => setCheckedFields(f => ({ ...f, [item.key]: e.target.checked }))}
-                        />
+                  {/* Top-left cell: Tags link */}
+                  <div className="border rounded p-4 min-h-[80px] flex flex-col">
+                    <h3 className="text-lg font-medium mb-2">Tags link</h3>
+                    <div className="flex flex-col gap-3">
+                      <div className="flex items-center gap-2">
+                        <span className="w-32">Review</span>
+                        <Select value={reviewsTag} onValueChange={setReviewsTag}>
+                          <SelectTrigger className="w-48">
+                            <SelectValue placeholder="Select tag" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="review-tag-1">Review Tag 1</SelectItem>
+                            <SelectItem value="review-tag-2">Review Tag 2</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <CopyButton value={reviewsTag} />
                       </div>
-                    ))}
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={saveChanges}
-                      className="mt-2"
-                    >
-                      Save Meta Fields
-                    </Button>
+                      <div className="flex items-center gap-2">
+                        <span className="w-32">FAQ</span>
+                        <Select value={faqTag} onValueChange={setFaqTag}>
+                          <SelectTrigger className="w-48">
+                            <SelectValue placeholder="Select tag" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="faq-tag-1">FAQ Tag 1</SelectItem>
+                            <SelectItem value="faq-tag-2">FAQ Tag 2</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <CopyButton value={faqTag} />
+                      </div>
+                    </div>
                   </div>
                   {/* Top-right cell: Google Maps Embed */}
                   <div className="border rounded p-4 min-h-[80px] flex flex-col gap-2">
@@ -610,14 +598,6 @@ const HtmlBuilder: React.FC = () => {
                       />
                       <CopyButton value={mapsEmbedCode} />
                     </div>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={saveChanges}
-                      className="mt-2"
-                    >
-                      Save Maps
-                    </Button>
                   </div>
                   {/* Bottom-left cell: Instructions to Link */}
                   <div className="border rounded p-4 min-h-[80px] flex flex-col justify-between">
@@ -640,14 +620,6 @@ const HtmlBuilder: React.FC = () => {
                       }}
                       placeholder="Enter instructions..."
                     />
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={saveChanges}
-                      className="mt-2"
-                    >
-                      Save Instructions
-                    </Button>
                   </div>
                   {/* Bottom-right cell: Notes */}
                   <div className="border rounded p-4 min-h-[80px] flex flex-col justify-between">
@@ -663,14 +635,6 @@ const HtmlBuilder: React.FC = () => {
                       }}
                       placeholder="Enter notes..."
                     />
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={saveChanges}
-                      className="mt-2"
-                    >
-                      Save Notes
-                    </Button>
                   </div>
                 </div>
               </div>

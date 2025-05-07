@@ -238,11 +238,23 @@ export const TaskProvider: React.FC<TaskProviderProps> = ({ children, user }) =>
         console.log('[updateTask] sanitized data:', JSON.stringify(sanitized, null, 2));
       }
 
-      await updateDoc(taskDoc, sanitized);
-      await fetchTasks();
+      // Update Firebase in the background
+      updateDoc(taskDoc, sanitized).catch(error => {
+        console.error('Failed to update task in Firebase:', error);
+      });
+      
+      // Update tasks state locally immediately
+      setTasks(prevTasks => 
+        prevTasks.map(task => 
+          task.id === taskId 
+            ? { ...task, ...updates, updatedAt: new Date().toISOString() }
+            : task
+        )
+      );
 
+      // Update current task if it's the one being modified
       if (currentTask?.id === taskId) {
-        setCurrentTask({ ...currentTask, ...updates, updatedAt: new Date().toISOString() });
+        setCurrentTask(prev => ({ ...prev!, ...updates, updatedAt: new Date().toISOString() }));
       }
     } catch (error) {
       console.error('Failed to update task:', error);

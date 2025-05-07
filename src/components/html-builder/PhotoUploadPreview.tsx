@@ -38,7 +38,6 @@ export const PhotoUploadPreview: React.FC<PhotoUploadPreviewProps> = ({
     if (!isSame) {
       setImages(newImages);
     }
-    // else do nothing to prevent jitter
   }, [taskId, currentTask?.images]);
 
   // Clean up object URLs for local previews
@@ -53,7 +52,8 @@ export const PhotoUploadPreview: React.FC<PhotoUploadPreviewProps> = ({
     if (!e.target.files?.length || !taskId) return;
     const files = Array.from(e.target.files);
     setUploading(true);
-    let updatedImages = currentTask?.images ? [...currentTask.images] : [];
+    
+    // Create new images array with uploading state
     const newImages: PreviewImage[] = files.map(file => ({
       file,
       url: URL.createObjectURL(file),
@@ -62,7 +62,12 @@ export const PhotoUploadPreview: React.FC<PhotoUploadPreviewProps> = ({
       uploadedAt: new Date().toISOString(),
       uploading: true,
     }));
-    setImages(prev => [...updatedImages, ...newImages]);
+
+    // Update local state immediately
+    setImages(prev => [...prev, ...newImages]);
+
+    // Upload to Firebase in the background
+    const updatedImages = [...images];
     await Promise.all(files.map(async (file, i) => {
       const path = `tasks/${taskId}`;
       try {
@@ -75,9 +80,8 @@ export const PhotoUploadPreview: React.FC<PhotoUploadPreviewProps> = ({
             uploadedAt: new Date().toISOString(),
           };
           updatedImages.push(meta);
-          // Instantly update local preview
+          // Update local state with uploaded image
           setImages(prev => {
-            // Remove the uploading preview for this file, add the uploaded image
             const withoutUploading = prev.filter(img => img.file !== file);
             return [...withoutUploading, meta];
           });
@@ -92,6 +96,8 @@ export const PhotoUploadPreview: React.FC<PhotoUploadPreviewProps> = ({
         ));
       }
     }));
+
+    // Update Firebase once all uploads are complete
     await updateTask(taskId, { images: updatedImages });
     setUploading(false);
     if (inputRef.current) inputRef.current.value = '';
@@ -102,13 +108,14 @@ export const PhotoUploadPreview: React.FC<PhotoUploadPreviewProps> = ({
     if (!taskId) return;
     const imgToRemove = images[idx];
     if (!imgToRemove.url) return;
+
+    // Update local state immediately
+    const updatedImages = images.filter((img, i) => i !== idx);
+    setImages(updatedImages);
+
+    // Update Firebase in the background
     await deleteImage(imgToRemove.url);
-    const updatedImages = (currentTask?.images || []).filter(
-      img => !(img.url === imgToRemove.url && img.name === imgToRemove.name)
-    );
     await updateTask(taskId, { images: updatedImages });
-    // Instantly update local preview
-    setImages(prev => prev.filter((img, i) => i !== idx));
   };
 
   // Download all handler
@@ -138,41 +145,15 @@ export const PhotoUploadPreview: React.FC<PhotoUploadPreviewProps> = ({
   };
 
   return (
-    <div className="p-4 border rounded bg-muted h-full flex flex-col">
-      <div className="flex items-center gap-2 mb-4">
-        <button
-          type="button"
-          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-          onClick={() => inputRef.current?.click()}
-          disabled={uploading}
-        >
-          Upload Photos
-        </button>
-        <input
-          ref={inputRef}
-          type="file"
-          accept="image/*"
-          multiple
-          className="hidden"
-          onChange={handleUpload}
-        />
-        <button
-          type="button"
-          className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 ml-auto"
-          onClick={handleDownloadAll}
-          disabled={!images.length || downloading}
-        >
-          {downloading ? 'Downloading...' : 'Download All'}
-        </button>
-      </div>
+    <div className="h-full flex flex-col">
       {/* Image previews */}
-      <div className="grid grid-cols-2 gap-4 p-2 mb-2 overflow-auto">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 p-4 overflow-auto flex-1">
         {images.map((img, idx) => (
-          <div key={img.url + '-' + idx} className="relative rounded overflow-hidden bg-muted flex items-center justify-center w-[140px] h-[140px] mx-auto">
+          <div key={img.url + '-' + idx} className="relative aspect-square rounded-lg overflow-hidden bg-muted">
             <img
               src={img.url}
               alt={img.name}
-              className="opacity-80 cursor-pointer w-[140px] h-[140px] object-cover"
+              className="w-full h-full object-cover hover:opacity-90 transition-opacity cursor-pointer"
               onClick={() => setPreviewIdx(idx)}
             />
             {img.uploading && (
@@ -192,6 +173,22 @@ export const PhotoUploadPreview: React.FC<PhotoUploadPreviewProps> = ({
           </div>
         ))}
       </div>
+      {/* Hidden input for file upload */}
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*"
+        multiple
+        className="hidden"
+        onChange={handleUpload}
+      />
+      {/* Hidden button for download all */}
+      <button
+        type="button"
+        className="hidden"
+        data-download-all
+        onClick={handleDownloadAll}
+      />
       {/* Modal preview */}
       {previewIdx !== null && images[previewIdx] && (
         <div
