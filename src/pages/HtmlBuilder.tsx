@@ -22,15 +22,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 // Auto-save disabled for debugging jitter issue
 
-// Debounce utility
-function debounce(func, wait) {
-  let timeout;
-  return function (...args) {
-    clearTimeout(timeout);
-    timeout = setTimeout(() => func.apply(this, args), wait);
-  };
-}
-
 const HtmlBuilder: React.FC = () => {
   const { taskId } = useParams<{ taskId: string }>();
   const { tasks, currentTask, setCurrentTask, updateTask, getCompanyById, tasksLoading } = useTaskContext();
@@ -80,9 +71,6 @@ const HtmlBuilder: React.FC = () => {
   const [saving, setSaving] = useState(false);
   const saveTimeouts = useRef({});
 
-  // Debounced save for each field
-  const debouncedSave = useRef<Record<string, (value: any) => void>>({});
-
   // Mark tasks as loaded when they arrive
   useEffect(() => {
     if (tasks.length > 0) setTasksLoaded(true);
@@ -111,102 +99,49 @@ const HtmlBuilder: React.FC = () => {
       updateTask(currentTask.id, { status: TaskStatus.IN_PROGRESS });
     }
 
-    setHtmlContent(currentTask.htmlContent);
-    setCompanyId(currentTask.companyId);
-    setNotes(currentTask.notes);
+    // Load all field values from currentTask
+    setHtmlContent(currentTask.htmlContent || '');
+    setCompanyId(currentTask.companyId || '');
+    setNotes(currentTask.notes || '');
     setPageType(currentTask.type || TaskType.BLOG);
+    setTeamworkLink(currentTask.teamworkLink || '');
+    setGoogleDocLink(currentTask.googleDocLink || '');
+    setFeaturedTitle(currentTask.featuredTitle || '');
+    setFeaturedAlt(currentTask.featuredAlt || '');
+    setWidgetTitle(currentTask.widgetTitle || '');
+    setMetaTitle(currentTask.metaTitle || '');
+    setMetaUrl(currentTask.metaUrl || '');
+    setMetaDescription(currentTask.metaDescription || '');
+    setInstructionsToLink(currentTask.instructionsToLink || '');
+    setMapsLocation(currentTask.mapsLocation || '');
+    setMapsEmbedCode(currentTask.mapsEmbedCode || '');
 
     const company = getCompanyById(currentTask.companyId);
     if (company) {
-      setContactLink(company.contactLink);
+      setContactLink(company.contactLink || '');
     }
   }, [currentTask, navigate, getCompanyById, updateTask]);
 
-  useEffect(() => {
-    debouncedSave.current = {
-      teamworkLink: debounce((value) => {
-        if (currentTask?.id) {
-          setSaving(true);
-          updateTask(currentTask.id, { teamworkLink: value }).finally(() => setSaving(false));
-        }
-      }, 500),
-      googleDocLink: debounce((value) => {
-        if (currentTask?.id) {
-          setSaving(true);
-          updateTask(currentTask.id, { googleDocLink: value }).finally(() => setSaving(false));
-        }
-      }, 500),
-      featuredTitle: debounce((value) => {
-        if (currentTask?.id) {
-          setSaving(true);
-          updateTask(currentTask.id, { featuredTitle: value }).finally(() => setSaving(false));
-        }
-      }, 500),
-      featuredAlt: debounce((value) => {
-        if (currentTask?.id) {
-          setSaving(true);
-          updateTask(currentTask.id, { featuredAlt: value }).finally(() => setSaving(false));
-        }
-      }, 500),
-      htmlContent: debounce((value) => {
-        if (currentTask?.id) {
-          setSaving(true);
-          updateTask(currentTask.id, { htmlContent: value }).finally(() => setSaving(false));
-        }
-      }, 500),
-      widgetTitle: debounce((value) => {
-        if (currentTask?.id) {
-          setSaving(true);
-          updateTask(currentTask.id, { widgetTitle: value }).finally(() => setSaving(false));
-        }
-      }, 500),
-      metaTitle: debounce((value) => {
-        if (currentTask?.id) {
-          setSaving(true);
-          updateTask(currentTask.id, { metaTitle: value }).finally(() => setSaving(false));
-        }
-      }, 500),
-      metaUrl: debounce((value) => {
-        if (currentTask?.id) {
-          setSaving(true);
-          updateTask(currentTask.id, { metaUrl: value }).finally(() => setSaving(false));
-        }
-      }, 500),
-      metaDescription: debounce((value) => {
-        if (currentTask?.id) {
-          setSaving(true);
-          updateTask(currentTask.id, { metaDescription: value }).finally(() => setSaving(false));
-        }
-      }, 500),
-      instructionsToLink: debounce((value) => {
-        if (currentTask?.id) {
-          setSaving(true);
-          updateTask(currentTask.id, { instructionsToLink: value }).finally(() => setSaving(false));
-        }
-      }, 500),
-      notes: debounce((value) => {
-        if (currentTask?.id) {
-          setSaving(true);
-          updateTask(currentTask.id, { notes: value }).finally(() => setSaving(false));
-        }
-      }, 500),
-      mapsEmbedCode: debounce((value) => {
-        if (currentTask?.id) {
-          setSaving(true);
-          updateTask(currentTask.id, { mapsEmbedCode: value }).finally(() => setSaving(false));
-        }
-      }, 500),
-    };
-  }, [currentTask?.id, updateTask]);
-
   const saveChanges = () => {
     if (currentTask && currentTask.id) {
+      setSaving(true);
       updateTask(currentTask.id, {
         htmlContent,
         companyId,
         notes,
         type: pageType,
-      });
+        teamworkLink,
+        googleDocLink,
+        featuredTitle,
+        featuredAlt,
+        widgetTitle,
+        metaTitle,
+        metaUrl,
+        metaDescription,
+        instructionsToLink,
+        mapsLocation,
+        mapsEmbedCode
+      }).finally(() => setSaving(false));
     }
   };
 
@@ -243,7 +178,6 @@ const HtmlBuilder: React.FC = () => {
 
   const handleHtmlChange = (value: string) => {
     setHtmlContent(value);
-    debouncedSave.current.htmlContent?.(value);
   };
 
   const handleTagClick = (openTag: string, closeTag: string | null) => {
@@ -405,7 +339,6 @@ const HtmlBuilder: React.FC = () => {
                         value={contactLink}
                         onChange={e => {
                           setContactLink(e.target.value);
-                          debouncedSave.current.googleDocLink?.(e.target.value);
                         }}
                         className="font-mono text-xs flex-1"
                         placeholder="Paste Contact Us link"
@@ -529,7 +462,6 @@ const HtmlBuilder: React.FC = () => {
                         value={featuredTitle}
                         onChange={e => {
                           setFeaturedTitle(e.target.value);
-                          debouncedSave.current.featuredTitle?.(e.target.value);
                         }}
                         className="flex-1"
                         placeholder="Enter title"
@@ -543,13 +475,33 @@ const HtmlBuilder: React.FC = () => {
                         value={featuredAlt}
                         onChange={e => {
                           setFeaturedAlt(e.target.value);
-                          debouncedSave.current.featuredAlt?.(e.target.value);
                         }}
                         className="flex-1"
                         placeholder="Enter alt text"
                       />
                       <CopyButton value={featuredAlt} />
                     </div>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => {
+                        if (currentTask?.id) {
+                          setSaving(true);
+                          updateTask(currentTask.id, { 
+                            featuredTitle,
+                            featuredAlt
+                          }).finally(() => setSaving(false));
+                        }
+                      }}
+                      className="mt-2"
+                    >
+                      Save Featured Image
+                    </Button>
+                    {saving && (
+                      <div className="text-sm text-muted-foreground mt-2">
+                        Saving changes...
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -593,7 +545,6 @@ const HtmlBuilder: React.FC = () => {
                           value={item.value}
                           onChange={e => {
                             item.setValue(e.target.value);
-                            debouncedSave.current[item.key]?.(e.target.value);
                           }}
                           placeholder={item.label}
                         />
@@ -604,6 +555,14 @@ const HtmlBuilder: React.FC = () => {
                         />
                       </div>
                     ))}
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={saveChanges}
+                      className="mt-2"
+                    >
+                      Save Meta Fields
+                    </Button>
                   </div>
                   {/* Top-right cell: Google Maps Embed */}
                   <div className="border rounded p-4 min-h-[80px] flex flex-col gap-2">
@@ -621,7 +580,6 @@ const HtmlBuilder: React.FC = () => {
                       value={mapsLocation}
                       onChange={e => {
                         setMapsLocation(e.target.value);
-                        debouncedSave.current.mapsEmbedCode?.(e.target.value);
                       }}
                       placeholder="e.g., Acton, MA"
                       className="mb-2"
@@ -646,13 +604,20 @@ const HtmlBuilder: React.FC = () => {
                         value={mapsEmbedCode}
                         onChange={e => {
                           setMapsEmbedCode(e.target.value);
-                          debouncedSave.current.mapsEmbedCode?.(e.target.value);
                         }}
                         placeholder="Paste your iframe code here..."
                         className="flex-1"
                       />
                       <CopyButton value={mapsEmbedCode} />
                     </div>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={saveChanges}
+                      className="mt-2"
+                    >
+                      Save Maps
+                    </Button>
                   </div>
                   {/* Bottom-left cell: Instructions to Link */}
                   <div className="border rounded p-4 min-h-[80px] flex flex-col justify-between">
@@ -662,7 +627,6 @@ const HtmlBuilder: React.FC = () => {
                         checked={instructionsChecked}
                         onChange={e => {
                           setInstructionsChecked(e.target.checked);
-                          debouncedSave.current.instructionsToLink?.(e.target.checked ? 'Checked' : '');
                         }}
                         className="ml-2"
                       />
@@ -673,10 +637,17 @@ const HtmlBuilder: React.FC = () => {
                       value={instructionsToLink}
                       onChange={e => {
                         setInstructionsToLink(e.target.value);
-                        debouncedSave.current.instructionsToLink?.(e.target.value);
                       }}
                       placeholder="Enter instructions..."
                     />
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={saveChanges}
+                      className="mt-2"
+                    >
+                      Save Instructions
+                    </Button>
                   </div>
                   {/* Bottom-right cell: Notes */}
                   <div className="border rounded p-4 min-h-[80px] flex flex-col justify-between">
@@ -689,10 +660,17 @@ const HtmlBuilder: React.FC = () => {
                       value={notes}
                       onChange={e => {
                         setNotes(e.target.value);
-                        debouncedSave.current.notes?.(e.target.value);
                       }}
                       placeholder="Enter notes..."
                     />
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={saveChanges}
+                      className="mt-2"
+                    >
+                      Save Notes
+                    </Button>
                   </div>
                 </div>
               </div>

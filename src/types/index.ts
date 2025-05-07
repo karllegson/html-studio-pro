@@ -57,6 +57,7 @@ export interface Task {
   metaUrl?: string;
   metaDescription?: string;
   instructionsToLink?: string;
+  mapsLocation?: string;
   mapsEmbedCode?: string;
 }
 
