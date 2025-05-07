@@ -408,6 +408,7 @@ const HtmlBuilder: React.FC = () => {
       setInstructionsToLink(currentTask.instructionsToLink || '');
       setMapsLocation(currentTask.mapsLocation || '');
       setMapsEmbedCode(currentTask.mapsEmbedCode || '');
+      setFeaturedImg(currentTask.featuredImg || '');
 
       const company = getCompanyById(currentTask.companyId);
       if (company) {
