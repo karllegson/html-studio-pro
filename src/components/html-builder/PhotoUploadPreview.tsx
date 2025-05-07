@@ -149,7 +149,7 @@ export const PhotoUploadPreview: React.FC<PhotoUploadPreviewProps> = ({
       {/* Image previews */}
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 p-4 overflow-auto flex-1">
         {images.map((img, idx) => (
-          <div key={img.url + '-' + idx} className="relative aspect-square rounded-lg overflow-hidden bg-muted">
+          <div key={img.url + '-' + idx} className="relative aspect-square rounded-lg overflow-hidden bg-muted border-2 border-gray-300 hover:border-blue-500 transition-colors">
             <img
               src={img.url}
               alt={img.name}

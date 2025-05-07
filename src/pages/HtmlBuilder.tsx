@@ -69,7 +69,351 @@ const HtmlBuilder: React.FC = () => {
   const [featuredImgChecked, setFeaturedImgChecked] = useState(false);
 
   const [saving, setSaving] = useState(false);
-  const saveTimeouts = useRef({});
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [isOffline, setIsOffline] = useState(!navigator.onLine);
+  const [changeHistory, setChangeHistory] = useState<Array<{field: string, value: string, timestamp: string}>>([]);
+  const [showHistory, setShowHistory] = useState(false);
+  const updateQueue = useRef<Record<string, any>>({});
+  const updateTimeout = useRef<NodeJS.Timeout | null>(null);
+  const retryCount = useRef<Record<string, number>>({});
+  const MAX_RETRIES = 3;
+  const MAX_HISTORY = 50;
+
+  // Offline detection
+  useEffect(() => {
+    const handleOnline = () => setIsOffline(false);
+    const handleOffline = () => setIsOffline(true);
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
+  // Save to localStorage when offline
+  useEffect(() => {
+    if (isOffline && currentTask?.id) {
+      const offlineData = {
+        taskId: currentTask.id,
+        updates: updateQueue.current,
+        timestamp: new Date().toISOString()
+      };
+      localStorage.setItem(`offline_updates_${currentTask.id}`, JSON.stringify(offlineData));
+    }
+  }, [isOffline, currentTask?.id, updateQueue.current]);
+
+  // Load offline changes when coming back online
+  useEffect(() => {
+    if (!isOffline && currentTask?.id) {
+      const offlineData = localStorage.getItem(`offline_updates_${currentTask.id}`);
+      if (offlineData) {
+        try {
+          const { updates } = JSON.parse(offlineData);
+          Object.entries(updates).forEach(([field, value]) => {
+            debouncedUpdate(field, value);
+          });
+          localStorage.removeItem(`offline_updates_${currentTask.id}`);
+        } catch (error) {
+          console.error('Failed to load offline changes:', error);
+        }
+      }
+    }
+  }, [isOffline, currentTask?.id]);
+
+  // Field validation rules with improved Google Doc link handling
+  const validationRules = {
+    metaTitle: (value: string) => value.length <= 60,
+    metaDescription: (value: string) => value.length <= 160,
+    metaUrl: (value: string) => {
+      if (!value) return true;
+      try {
+        new URL(value);
+        return true;
+      } catch {
+        return false;
+      }
+    },
+    teamworkLink: (value: string) => {
+      if (!value) return true;
+      return value.includes('teamwork.com');
+    },
+    googleDocLink: (value: string) => {
+      if (!value) return true;
+      // More flexible Google Docs URL validation
+      const validPatterns = [
+        /^https:\/\/docs\.google\.com\/document\/d\/[a-zA-Z0-9_-]+\/edit/,
+        /^https:\/\/docs\.google\.com\/document\/d\/[a-zA-Z0-9_-]+\/view/,
+        /^https:\/\/docs\.google\.com\/document\/d\/[a-zA-Z0-9_-]+\/preview/
+      ];
+      return validPatterns.some(pattern => pattern.test(value));
+    }
+  };
+
+  // Batch update function with improved error handling
+  const batchUpdate = async () => {
+    if (currentTask?.id && Object.keys(updateQueue.current).length > 0) {
+      setSaving(true);
+      setSaveError(null);
+      
+      try {
+        // Ensure all fields are properly initialized
+        const updates = {
+          ...updateQueue.current,
+          // Ensure optional fields are explicitly set to empty string if undefined
+          googleDocLink: updateQueue.current.googleDocLink || '',
+          teamworkLink: updateQueue.current.teamworkLink || '',
+          notes: updateQueue.current.notes || '',
+          featuredTitle: updateQueue.current.featuredTitle || '',
+          featuredAlt: updateQueue.current.featuredAlt || '',
+          widgetTitle: updateQueue.current.widgetTitle || '',
+          metaTitle: updateQueue.current.metaTitle || '',
+          metaUrl: updateQueue.current.metaUrl || '',
+          metaDescription: updateQueue.current.metaDescription || '',
+          instructionsToLink: updateQueue.current.instructionsToLink || '',
+          mapsLocation: updateQueue.current.mapsLocation || '',
+          mapsEmbedCode: updateQueue.current.mapsEmbedCode || ''
+        };
+
+        await updateTask(currentTask.id, updates);
+        
+        // Add to change history
+        const newHistory = Object.entries(updates).map(([field, value]) => ({
+          field,
+          value: String(value),
+          timestamp: new Date().toISOString()
+        }));
+        
+        setChangeHistory(prev => {
+          const updated = [...newHistory, ...prev].slice(0, MAX_HISTORY);
+          return updated;
+        });
+
+        // Clear the queue and retry counts after successful update
+        updateQueue.current = {};
+        retryCount.current = {};
+      } catch (error) {
+        console.error('Failed to save changes:', error);
+        setSaveError('Failed to save changes. Retrying...');
+        
+        // Retry logic for failed updates
+        Object.keys(updateQueue.current).forEach(field => {
+          retryCount.current[field] = (retryCount.current[field] || 0) + 1;
+          if (retryCount.current[field] < MAX_RETRIES) {
+            // Retry after 1 second
+            setTimeout(() => {
+              if (currentTask?.id) {
+                updateTask(currentTask.id, { [field]: updateQueue.current[field] })
+                  .catch(console.error);
+              }
+            }, 1000);
+          } else {
+            setSaveError(`Failed to save some changes after ${MAX_RETRIES} attempts. Please try again.`);
+          }
+        });
+      } finally {
+        setSaving(false);
+      }
+    }
+  };
+
+  // Debounced update function with error handling
+  const debouncedUpdate = (field: string, value: any) => {
+    if (currentTask?.id) {
+      // Add to update queue
+      updateQueue.current[field] = value;
+
+      // Clear existing timeout
+      if (updateTimeout.current) {
+        clearTimeout(updateTimeout.current);
+      }
+
+      // Set new timeout
+      updateTimeout.current = setTimeout(batchUpdate, 500);
+    }
+  };
+
+  // Clean up timeout and retry counts on unmount
+  useEffect(() => {
+    return () => {
+      if (updateTimeout.current) {
+        clearTimeout(updateTimeout.current);
+      }
+      retryCount.current = {};
+    };
+  }, []);
+
+  // Direct update handlers for each field
+  const handleFeaturedTitleChange = (value: string) => {
+    setFeaturedTitle(value);
+    if (currentTask) {
+      updateTask(currentTask.id, { featuredTitle: value });
+    }
+  };
+
+  const handleFeaturedAltChange = (value: string) => {
+    setFeaturedAlt(value);
+    if (currentTask) {
+      updateTask(currentTask.id, { featuredAlt: value });
+    }
+  };
+
+  const handleWidgetTitleChange = (value: string) => {
+    setWidgetTitle(value);
+    if (currentTask) {
+      updateTask(currentTask.id, { widgetTitle: value });
+    }
+  };
+
+  const handleMetaTitleChange = (value: string) => {
+    setMetaTitle(value);
+    if (currentTask) {
+      updateTask(currentTask.id, { metaTitle: value });
+    }
+  };
+
+  const handleMetaUrlChange = (value: string) => {
+    setMetaUrl(value);
+    if (currentTask) {
+      updateTask(currentTask.id, { metaUrl: value });
+    }
+  };
+
+  const handleMetaDescriptionChange = (value: string) => {
+    setMetaDescription(value);
+    if (currentTask) {
+      updateTask(currentTask.id, { metaDescription: value });
+    }
+  };
+
+  const handleMapsLocationChange = (value: string) => {
+    setMapsLocation(value);
+    if (currentTask) {
+      updateTask(currentTask.id, { mapsLocation: value });
+    }
+  };
+
+  const handleMapsEmbedCodeChange = (value: string) => {
+    setMapsEmbedCode(value);
+    if (currentTask) {
+      updateTask(currentTask.id, { mapsEmbedCode: value });
+    }
+  };
+
+  const handleTeamworkLinkChange = (value: string) => {
+    setTeamworkLink(value);
+    if (currentTask) {
+      updateTask(currentTask.id, { teamworkLink: value });
+    }
+  };
+
+  const handleGoogleDocLinkChange = (value: string) => {
+    setGoogleDocLink(value);
+    if (currentTask) {
+      updateTask(currentTask.id, { googleDocLink: value });
+    }
+  };
+
+  // Unified text change handler with silent validation
+  const handleTextChange = (field: string, value: string) => {
+    // Basic validation
+    if (value === undefined || value === null) {
+      console.warn(`Invalid value for ${field}:`, value);
+      return;
+    }
+
+    // Silent field-specific validation
+    const validationRule = validationRules[field as keyof typeof validationRules];
+    if (validationRule && !validationRule(value)) {
+      // Just update the value without showing error
+      console.warn(`Invalid value for ${field}:`, value);
+    }
+
+    // Update local state
+    switch (field) {
+      case 'notes':
+        setNotes(value);
+        break;
+      case 'featuredTitle':
+        handleFeaturedTitleChange(value);
+        break;
+      case 'featuredAlt':
+        handleFeaturedAltChange(value);
+        break;
+      case 'widgetTitle':
+        handleWidgetTitleChange(value);
+        break;
+      case 'metaTitle':
+        handleMetaTitleChange(value);
+        break;
+      case 'metaUrl':
+        handleMetaUrlChange(value);
+        break;
+      case 'metaDescription':
+        handleMetaDescriptionChange(value);
+        break;
+      case 'instructionsToLink':
+        setInstructionsToLink(value);
+        break;
+      case 'mapsLocation':
+        handleMapsLocationChange(value);
+        break;
+      case 'mapsEmbedCode':
+        handleMapsEmbedCodeChange(value);
+        break;
+      case 'teamworkLink':
+        handleTeamworkLinkChange(value);
+        break;
+      case 'googleDocLink':
+        handleGoogleDocLinkChange(value);
+        break;
+      case 'contactLink':
+        setContactLink(value);
+        break;
+      default:
+        console.warn(`Unknown field: ${field}`);
+        return;
+    }
+
+    // Queue Firebase update with minimal feedback
+    debouncedUpdate(field, value);
+  };
+
+  // Load initial values from task - only once on initial load
+  useEffect(() => {
+    if (!currentTask || !tasksLoaded) return;
+
+    // Only run this ONCE when task is first loaded
+    if (!htmlContent && !companyId && !notes && !featuredTitle && !metaTitle) {
+      if (currentTask.status === TaskStatus.RECENTLY_DELETED) {
+        updateTask(currentTask.id, { status: TaskStatus.IN_PROGRESS });
+      }
+
+      // Load all field values from currentTask
+      setHtmlContent(currentTask.htmlContent || '');
+      setCompanyId(currentTask.companyId || '');
+      setNotes(currentTask.notes || '');
+      setPageType(currentTask.type || TaskType.BLOG);
+      setTeamworkLink(currentTask.teamworkLink || '');
+      setGoogleDocLink(currentTask.googleDocLink || '');
+      setFeaturedTitle(currentTask.featuredTitle || '');
+      setFeaturedAlt(currentTask.featuredAlt || '');
+      setWidgetTitle(currentTask.widgetTitle || '');
+      setMetaTitle(currentTask.metaTitle || '');
+      setMetaUrl(currentTask.metaUrl || '');
+      setMetaDescription(currentTask.metaDescription || '');
+      setInstructionsToLink(currentTask.instructionsToLink || '');
+      setMapsLocation(currentTask.mapsLocation || '');
+      setMapsEmbedCode(currentTask.mapsEmbedCode || '');
+
+      const company = getCompanyById(currentTask.companyId);
+      if (company) {
+        setContactLink(company.contactLink || '');
+      }
+    }
+  }, [currentTask, tasksLoaded, getCompanyById, updateTask]);
 
   // Mark tasks as loaded when they arrive
   useEffect(() => {
@@ -89,59 +433,45 @@ const HtmlBuilder: React.FC = () => {
     }
   }, [taskId, tasksLoading, tasks, setCurrentTask, navigate]);
 
-  useEffect(() => {
-    if (!currentTask) {
-      navigate('/');
-      return;
-    }
-
-    if (currentTask.status === TaskStatus.RECENTLY_DELETED) {
-      updateTask(currentTask.id, { status: TaskStatus.IN_PROGRESS });
-    }
-
-    // Load all field values from currentTask
-    setHtmlContent(currentTask.htmlContent || '');
-    setCompanyId(currentTask.companyId || '');
-    setNotes(currentTask.notes || '');
-    setPageType(currentTask.type || TaskType.BLOG);
-    setTeamworkLink(currentTask.teamworkLink || '');
-    setGoogleDocLink(currentTask.googleDocLink || '');
-    setFeaturedTitle(currentTask.featuredTitle || '');
-    setFeaturedAlt(currentTask.featuredAlt || '');
-    setWidgetTitle(currentTask.widgetTitle || '');
-    setMetaTitle(currentTask.metaTitle || '');
-    setMetaUrl(currentTask.metaUrl || '');
-    setMetaDescription(currentTask.metaDescription || '');
-    setInstructionsToLink(currentTask.instructionsToLink || '');
-    setMapsLocation(currentTask.mapsLocation || '');
-    setMapsEmbedCode(currentTask.mapsEmbedCode || '');
-
-    const company = getCompanyById(currentTask.companyId);
-    if (company) {
-      setContactLink(company.contactLink || '');
-    }
-  }, [currentTask, navigate, getCompanyById, updateTask]);
-
-  const saveChanges = () => {
-    if (currentTask && currentTask.id) {
+  // Save all changes (used for HTML editor and manual saves)
+  const saveChanges = async () => {
+    if (currentTask?.id) {
       setSaving(true);
-      updateTask(currentTask.id, {
-        htmlContent,
-        companyId,
-        notes,
-        type: pageType,
-        teamworkLink,
-        googleDocLink,
-        featuredTitle,
-        featuredAlt,
-        widgetTitle,
-        metaTitle,
-        metaUrl,
-        metaDescription,
-        instructionsToLink,
-        mapsLocation,
-        mapsEmbedCode
-      }).finally(() => setSaving(false));
+      try {
+        const updates = {
+          htmlContent,
+          companyId,
+          notes,
+          type: pageType,
+          teamworkLink,
+          googleDocLink,
+          featuredTitle,
+          featuredAlt,
+          widgetTitle,
+          metaTitle,
+          metaUrl,
+          metaDescription,
+          instructionsToLink,
+          mapsLocation,
+          mapsEmbedCode
+        };
+        await updateTask(currentTask.id, updates);
+        toast({
+          title: "Changes saved",
+          description: "All changes have been saved successfully.",
+          duration: 2000
+        });
+      } catch (error) {
+        console.error('Failed to save changes:', error);
+        toast({
+          title: "Error saving changes",
+          description: "Some changes may not have been saved. Please try again.",
+          variant: "destructive",
+          duration: 3000
+        });
+      } finally {
+        setSaving(false);
+      }
     }
   };
 
@@ -154,7 +484,7 @@ const HtmlBuilder: React.FC = () => {
     
     const company = getCompanyById(value);
     if (company) {
-      setContactLink(company.contactLink);
+      setContactLink(company.contactLink || '');
     }
   };
 
@@ -280,10 +610,10 @@ const HtmlBuilder: React.FC = () => {
             <div className="sticky top-4 h-[calc(100vh-2rem)] flex flex-col gap-4">
               <Button 
                 variant="outline" 
-                onClick={() => {
-                  saveChanges();
+                onClick={async () => {
+                  await saveChanges(); // Save all changes before navigating
                   if (currentTask && currentTask.status !== TaskStatus.IN_PROGRESS) {
-                    updateTask(currentTask.id, { status: TaskStatus.IN_PROGRESS });
+                    await updateTask(currentTask.id, { status: TaskStatus.IN_PROGRESS });
                   }
                   navigate('/');
                 }} 
@@ -320,8 +650,8 @@ const HtmlBuilder: React.FC = () => {
                     googleDocLink={googleDocLink}
                     onCompanyChange={handleCompanyChange}
                     onPageTypeChange={handlePageTypeChange}
-                    onTeamworkLinkChange={setTeamworkLink}
-                    onGoogleDocLinkChange={setGoogleDocLink}
+                    onTeamworkLinkChange={handleTeamworkLinkChange}
+                    onGoogleDocLinkChange={handleGoogleDocLinkChange}
                   />
                 </div>
                 <div className="bg-card rounded-lg p-4 flex flex-col max-h-[400px]">
@@ -416,9 +746,7 @@ const HtmlBuilder: React.FC = () => {
                       <Input
                         type="text"
                         value={featuredTitle}
-                        onChange={e => {
-                          setFeaturedTitle(e.target.value);
-                        }}
+                        onChange={e => handleFeaturedTitleChange(e.target.value)}
                         className="flex-1"
                         placeholder="Enter title"
                       />
@@ -429,9 +757,7 @@ const HtmlBuilder: React.FC = () => {
                       <Input
                         type="text"
                         value={featuredAlt}
-                        onChange={e => {
-                          setFeaturedAlt(e.target.value);
-                        }}
+                        onChange={e => handleFeaturedAltChange(e.target.value)}
                         className="flex-1"
                         placeholder="Enter alt text"
                       />
@@ -443,10 +769,10 @@ const HtmlBuilder: React.FC = () => {
                 {/* Row 2 */}
                 <div className="border rounded p-4 min-h-[80px] flex flex-col justify-center">
                   {[
-                    { label: 'Widget Title', key: 'widgetTitle', value: widgetTitle, setValue: setWidgetTitle },
-                    { label: 'Meta Title', key: 'metaTitle', value: metaTitle, setValue: setMetaTitle },
-                    { label: 'Meta URL', key: 'metaUrl', value: metaUrl, setValue: setMetaUrl },
-                    { label: 'Meta Description', key: 'metaDescription', value: metaDescription, setValue: setMetaDescription },
+                    { label: 'Widget Title', key: 'widgetTitle', value: widgetTitle, handler: handleWidgetTitleChange },
+                    { label: 'Meta Title', key: 'metaTitle', value: metaTitle, handler: handleMetaTitleChange },
+                    { label: 'Meta URL', key: 'metaUrl', value: metaUrl, handler: handleMetaUrlChange },
+                    { label: 'Meta Description', key: 'metaDescription', value: metaDescription, handler: handleMetaDescriptionChange },
                   ].map((item, idx) => (
                     <div key={item.key} className="flex items-center gap-2 mb-3 last:mb-0">
                       <span className="w-28">{item.label}</span>
@@ -454,9 +780,7 @@ const HtmlBuilder: React.FC = () => {
                         type="text"
                         className="flex-1"
                         value={item.value}
-                        onChange={e => {
-                          item.setValue(e.target.value);
-                        }}
+                        onChange={e => item.handler(e.target.value)}
                         placeholder={item.label}
                       />
                       <CopyButton value={item.value} />
@@ -566,9 +890,7 @@ const HtmlBuilder: React.FC = () => {
                     <Input
                       type="text"
                       value={mapsLocation}
-                      onChange={e => {
-                        setMapsLocation(e.target.value);
-                      }}
+                      onChange={e => handleMapsLocationChange(e.target.value)}
                       placeholder="e.g., Acton, MA"
                       className="mb-2"
                     />
@@ -590,9 +912,7 @@ const HtmlBuilder: React.FC = () => {
                       <Textarea
                         rows={3}
                         value={mapsEmbedCode}
-                        onChange={e => {
-                          setMapsEmbedCode(e.target.value);
-                        }}
+                        onChange={e => handleMapsEmbedCodeChange(e.target.value)}
                         placeholder="Paste your iframe code here..."
                         className="flex-1"
                       />
@@ -615,9 +935,7 @@ const HtmlBuilder: React.FC = () => {
                       className="rounded-lg border p-2 mt-2 flex-1 resize-none"
                       rows={4}
                       value={instructionsToLink}
-                      onChange={e => {
-                        setInstructionsToLink(e.target.value);
-                      }}
+                      onChange={e => handleTextChange('instructionsToLink', e.target.value)}
                       placeholder="Enter instructions..."
                     />
                   </div>
@@ -630,9 +948,7 @@ const HtmlBuilder: React.FC = () => {
                       className="rounded-lg border p-2 mt-2 flex-1 resize-none"
                       rows={4}
                       value={notes}
-                      onChange={e => {
-                        setNotes(e.target.value);
-                      }}
+                      onChange={e => handleTextChange('notes', e.target.value)}
                       placeholder="Enter notes..."
                     />
                   </div>
@@ -676,7 +992,17 @@ const HtmlBuilder: React.FC = () => {
             </DialogContent>
           </Dialog>
         </div>
-        {saving && <div className="text-xs text-muted-foreground ml-2">Saving...</div>}
+        {saving && (
+          <div className="fixed bottom-4 right-4 bg-blue-500 text-white px-4 py-2 rounded shadow-lg flex items-center gap-2">
+            <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+            Saving changes...
+          </div>
+        )}
+        {saveError && (
+          <div className="fixed bottom-4 right-4 bg-red-500 text-white px-4 py-2 rounded shadow-lg">
+            {saveError}
+          </div>
+        )}
       </div>
     );
   }
