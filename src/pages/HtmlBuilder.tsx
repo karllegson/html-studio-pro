@@ -182,7 +182,9 @@ const HtmlBuilder: React.FC = () => {
           metaDescription: updateQueue.current.metaDescription || '',
           instructionsToLink: updateQueue.current.instructionsToLink || '',
           mapsLocation: updateQueue.current.mapsLocation || '',
-          mapsEmbedCode: updateQueue.current.mapsEmbedCode || ''
+          mapsEmbedCode: updateQueue.current.mapsEmbedCode || '',
+          selectedReviewTag: updateQueue.current.selectedReviewTag || '',
+          selectedFaqTag: updateQueue.current.selectedFaqTag || ''
         };
 
         await updateTask(currentTask.id, updates);
@@ -416,6 +418,10 @@ const HtmlBuilder: React.FC = () => {
       setMapsLocation(currentTask.mapsLocation || '');
       setMapsEmbedCode(currentTask.mapsEmbedCode || '');
       setFeaturedImg(currentTask.featuredImg || '');
+      
+      // Load saved tags
+      setReviewsTag(currentTask.selectedReviewTag || '');
+      setFaqTag(currentTask.selectedFaqTag || '');
 
       const company = getCompanyById(currentTask.companyId);
       if (company) {
@@ -462,7 +468,9 @@ const HtmlBuilder: React.FC = () => {
           metaDescription,
           instructionsToLink,
           mapsLocation,
-          mapsEmbedCode
+          mapsEmbedCode,
+          selectedReviewTag: reviewsTag,
+          selectedFaqTag: faqTag
         };
         await updateTask(currentTask.id, updates);
         toast({
@@ -647,6 +655,17 @@ const HtmlBuilder: React.FC = () => {
     }
   };
 
+  // Move this useEffect to the top level, outside of any conditionals
+  useEffect(() => {
+    if (!companyId || !currentTask) return;
+    setTagsLoading(true);
+    const unsub = subscribeToCompanyTags(companyId, (tags) => {
+      setCompanyTags(tags);
+      setTagsLoading(false);
+    });
+    return () => unsub();
+  }, [companyId, currentTask]);
+
   // Remove the useEffect from inside the if (currentTask) block
   if (tasksLoading) {
     return null;
@@ -654,16 +673,6 @@ const HtmlBuilder: React.FC = () => {
 
   // If currentTask is set, render the builder UI
   if (currentTask) {
-    useEffect(() => {
-      if (!companyId) return;
-      setTagsLoading(true);
-      const unsub = subscribeToCompanyTags(companyId, (tags) => {
-        setCompanyTags(tags);
-        setTagsLoading(false);
-      });
-      return () => unsub();
-    }, [companyId]);
-
     return (
       <div className="min-h-screen w-full flex flex-col bg-[radial-gradient(circle,rgba(60,60,80,0.2)_1px,transparent_1px)] [background-size:32px_32px]">
         <div className="max-w-full px-4 py-4 mx-auto flex-1 flex flex-col pb-8">

@@ -91,6 +91,8 @@ export interface Task {
   mapsEmbedCode?: string;
   /** URL of the selected featured image */
   featuredImg?: string;
+  selectedReviewTag?: string;
+  selectedFaqTag?: string;
 }
 
 /**
