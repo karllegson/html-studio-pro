@@ -5,11 +5,13 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
 import { useTaskContext } from '@/context/TaskContext';
 import { useNavigate } from 'react-router-dom';
-import { Home, Tag, Building } from 'lucide-react';
+import { Home, Tag, Building, FileCode } from 'lucide-react';
+import { TemplateManager } from '@/components/admin/TemplateManager';
 
 const SIDEBAR_ITEMS = [
   { key: 'tags', label: 'Tags & Components', icon: <Tag className="mr-2" /> },
   { key: 'companies', label: 'Companies', icon: <Building className="mr-2" /> },
+  { key: 'templates', label: 'HTML Templates', icon: <FileCode className="mr-2" /> },
 ];
 
 export default function AdminPage() {
@@ -39,30 +41,28 @@ export default function AdminPage() {
     }
   }, [selectedCompany, companies]);
 
-  // --- Sidebar ---
   const Sidebar = (
-    <div className="w-56 bg-card border-r h-full flex flex-col">
-      <div className="p-4 text-xl font-bold flex flex-col gap-4">
-        <button
-          className="text-xs text-gray-500 hover:text-primary underline underline-offset-2 transition-colors text-left"
-          onClick={() => navigate('/')}
-        >
-          <Home className="inline mr-2" /> Back to Home
-        </button>
-        <span>Admin</span>
-      </div>
-      <div className="flex flex-col gap-2 px-2">
+    <div className="w-64 border-r h-screen p-4">
+      <div className="space-y-2">
         {SIDEBAR_ITEMS.map(item => (
           <Button
             key={item.key}
             variant={activeTab === item.key ? 'default' : 'ghost'}
-            className="justify-start"
+            className="w-full justify-start"
             onClick={() => setActiveTab(item.key)}
           >
             {item.icon}
             {item.label}
           </Button>
         ))}
+        <Button
+          variant="ghost"
+          className="w-full justify-start"
+          onClick={() => navigate('/')}
+        >
+          <Home className="mr-2" />
+          Back to Dashboard
+        </Button>
       </div>
     </div>
   );
@@ -71,24 +71,39 @@ export default function AdminPage() {
   const TagsComponentsContent = (
     <div className="p-6">
       <h2 className="text-2xl font-semibold mb-4">Tags & Components</h2>
-      <Card className="mb-6">
-        <CardContent className="pt-6">
-          <h3 className="text-lg font-medium mb-2">HTML Tags</h3>
-          <div className="flex flex-col gap-2">
-            <Button variant="outline" className="w-fit">+ Add Tag</Button>
-            <div className="text-muted-foreground">(Tag management UI placeholder)</div>
-          </div>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardContent className="pt-6">
-          <h3 className="text-lg font-medium mb-2">Components</h3>
-          <div className="flex flex-col gap-2">
-            <Button variant="outline" className="w-fit">+ Add Component</Button>
-            <div className="text-muted-foreground">(Component management UI placeholder)</div>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="grid grid-cols-2 gap-8">
+        {/* Tags Section */}
+        <Card>
+          <CardContent className="pt-6">
+            <h3 className="text-lg font-medium mb-2">HTML Tags</h3>
+            <div className="space-y-2">
+              {tags.map(tag => (
+                <div key={tag.id} className="flex items-center justify-between">
+                  <span>{tag.name}</span>
+                  <Button variant="ghost" size="sm">Edit</Button>
+                </div>
+              ))}
+              <Button variant="outline" className="w-full">Add Tag</Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Components Section */}
+        <Card>
+          <CardContent className="pt-6">
+            <h3 className="text-lg font-medium mb-2">HTML Components</h3>
+            <div className="space-y-2">
+              {components.map(component => (
+                <div key={component.id} className="flex items-center justify-between">
+                  <span>{component.name}</span>
+                  <Button variant="ghost" size="sm">Edit</Button>
+                </div>
+              ))}
+              <Button variant="outline" className="w-full">Add Component</Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 
@@ -194,7 +209,9 @@ export default function AdminPage() {
     <div className="flex h-screen w-full">
       {Sidebar}
       <main className="flex-1 overflow-y-auto">
-        {activeTab === 'tags' ? TagsComponentsContent : CompaniesContent}
+        {activeTab === 'tags' && TagsComponentsContent}
+        {activeTab === 'companies' && CompaniesContent}
+        {activeTab === 'templates' && <TemplateManager />}
       </main>
     </div>
   );

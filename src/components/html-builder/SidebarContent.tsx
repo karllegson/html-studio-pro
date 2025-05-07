@@ -3,7 +3,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { TagsSection } from './TagsSection';
 import { CompanySection } from './CompanySection';
 import { ImageConverter } from './ImageConverter';
-import { CompanyTemplateSection } from './CompanyTemplateSection';
+import { CompanyTemplateList } from './CompanyTemplateSection';
 
 interface SidebarContentProps {
   companyId: string;
@@ -52,9 +52,10 @@ export const SidebarContent: React.FC<SidebarContentProps> = ({
           onContactLinkChange={onContactLinkChange}
           onPageTypeChange={onPageTypeChange}
         />
-        <CompanyTemplateSection
+        <CompanyTemplateList
           companyId={companyId}
-          onInsertTemplate={(template) => onInsertComponent(template)}
+          pageType={pageType}
+          onInsertTemplate={onInsertComponent}
         />
         <ImageConverter />
       </div>

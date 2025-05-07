@@ -19,6 +19,8 @@ import CopyButton from '@/components/ui/CopyButton';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { CompanyTemplateList } from '@/components/html-builder/CompanyTemplateSection';
 
 // Auto-save disabled for debugging jitter issue
 
@@ -654,32 +656,37 @@ const HtmlBuilder: React.FC = () => {
                     onGoogleDocLinkChange={handleGoogleDocLinkChange}
                   />
                 </div>
-                <div className="bg-card rounded-lg p-4 flex flex-col max-h-[400px]">
+                <div className="flex flex-col">
                   {/* HTML Templates */}
-                  <CompanyTemplateSection
-                    companyId={companyId}
-                    onInsertTemplate={handleInsertComponent}
-                  />
-                  {/* Contact Us Link */}
-                  <div className="mt-3">
-                    <label className="text-sm font-medium mb-1 block">Contact Us Link</label>
-                    <div className="flex gap-2">
-                      <Input
-                        type="text"
-                        value={contactLink}
-                        onChange={e => {
-                          setContactLink(e.target.value);
-                        }}
-                        className="font-mono text-xs flex-1"
-                        placeholder="Paste Contact Us link"
-                      />
-                      <CopyButton value={contactLink} />
-                    </div>
-                  </div>
-                  {/* Image file name to link converter */}
-                  <div className="mt-3">
-                    <h3 className="text-lg font-medium mb-2">Image file name to link converter</h3>
-                    <ImageFilenameConverter companyDomain={getCompanyById(companyId)?.contactLink} />
+                  <div className="bg-card rounded-lg p-4 flex flex-col h-full">
+                    <ScrollArea className="flex-1">
+                      <div>
+                        <CompanyTemplateList
+                          companyId={companyId}
+                          pageType={pageType}
+                          onInsertTemplate={handleInsertComponent}
+                        />
+                        {/* Contact Us Link */}
+                        <div className="mt-3">
+                          <label className="text-sm font-medium mb-1 block">Contact Us Link</label>
+                          <div className="flex gap-2">
+                            <Input
+                              type="text"
+                              value={contactLink}
+                              onChange={e => setContactLink(e.target.value)}
+                              className="font-mono text-xs flex-1 pl-3 rounded-md bg-card ml-2"
+                              placeholder="Paste Contact Us link"
+                            />
+                            <CopyButton value={contactLink} />
+                          </div>
+                        </div>
+                        {/* Image file name to link converter */}
+                        <div className="mt-3">
+                          <h3 className="text-lg font-medium mb-2">Image file name to link converter</h3>
+                          <ImageFilenameConverter companyDomain={getCompanyById(companyId)?.contactLink} />
+                        </div>
+                      </div>
+                    </ScrollArea>
                   </div>
                 </div>
                 <div className="bg-card rounded-lg p-4 flex flex-col max-h-[400px]">
@@ -721,6 +728,9 @@ const HtmlBuilder: React.FC = () => {
                                 onClick={() => {
                                   setFeaturedImg(img.url);
                                   setShowFeaturedDropdown(false);
+                                  if (currentTask) {
+                                    updateTask(currentTask.id, { featuredImg: img.url });
+                                  }
                                 }}
                               >
                                 {img.name}

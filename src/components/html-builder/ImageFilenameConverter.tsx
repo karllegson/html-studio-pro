@@ -43,10 +43,10 @@ export const ImageFilenameConverter: React.FC<ImageFilenameConverterProps> = ({ 
       <div className="flex items-center gap-2 mb-2">
         <Input
           type="text"
-          placeholder="Enter image file name (e.g. photo.jpg)"
           value={filename}
           onChange={e => setFilename(e.target.value)}
-          className="w-full"
+          className="font-mono text-xs flex-1 pl-3 rounded-md bg-card ml-2"
+          placeholder="Enter image file name (e.g. photo.jpg)"
         />
         <Button variant="default" onClick={handleConvert} disabled={!filename.trim()}>
           Convert
@@ -57,7 +57,7 @@ export const ImageFilenameConverter: React.FC<ImageFilenameConverterProps> = ({ 
           type="text"
           value={output}
           readOnly
-          className="w-full bg-muted"
+          className="w-full bg-card pl-3 rounded-md ml-2"
         />
         <Button variant="outline" size="icon" onClick={handleCopy} disabled={!output}>
           <Copy size={16} />

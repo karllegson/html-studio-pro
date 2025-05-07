@@ -11,6 +11,30 @@ export interface Company {
 }
 
 /**
+ * Represents an HTML template in the system
+ */
+export interface HtmlTemplate {
+  /** Unique identifier for the template */
+  id: string;
+  /** Company ID this template belongs to */
+  companyId: string;
+  /** Type of page this template is for */
+  pageType: TaskType;
+  /** Name of the template */
+  name: string;
+  /** HTML content of the template */
+  content: string;
+  /** Description of the template */
+  description: string;
+  /** Whether this template is active */
+  isActive: boolean;
+  /** When the template was created */
+  createdAt: string;
+  /** When the template was last updated */
+  updatedAt: string;
+}
+
+/**
  * Represents an image uploaded to a task
  */
 export interface TaskImage {
@@ -59,6 +83,8 @@ export interface Task {
   instructionsToLink?: string;
   mapsLocation?: string;
   mapsEmbedCode?: string;
+  /** URL of the selected featured image */
+  featuredImg?: string;
 }
 
 /**

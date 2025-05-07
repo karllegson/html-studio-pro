@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { Task, TaskStatus, TaskType, Company } from '../types';
+import { Task, TaskStatus, TaskType, Company, HtmlTemplate } from '../types';
 import { db } from '../firebase';
 import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, getDoc } from 'firebase/firestore';
 import { deleteImage } from '@/utils/imageUpload';
@@ -9,6 +9,7 @@ import { v4 as uuidv4 } from "uuid";
 interface TaskContextType {
   tasks: Task[];
   companies: Company[];
+  templates: HtmlTemplate[];
   currentTask: Task | null;
   setCurrentTask: (task: Task | null) => void;
   addTask: (task: Partial<Task>) => Promise<Task>;
@@ -20,6 +21,11 @@ interface TaskContextType {
   updateCompany: (companyId: string, updates: Partial<Company>) => Promise<void>;
   deleteCompany: (companyId: string) => Promise<void>;
   addCompany: (company: Omit<Company, 'id'>) => Promise<void>;
+  addTemplate: (template: Omit<HtmlTemplate, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
+  updateTemplate: (templateId: string, updates: Partial<HtmlTemplate>) => Promise<void>;
+  deleteTemplate: (templateId: string) => Promise<void>;
+  getTemplatesByCompany: (companyId: string) => HtmlTemplate[];
+  getTemplatesByPageType: (pageType: TaskType) => HtmlTemplate[];
   tasksLoading: boolean;
 }
 
@@ -71,6 +77,7 @@ export const TaskProvider: React.FC<TaskProviderProps> = ({ children, user }) =>
   const [localTasks, setLocalTasks] = useState<Task[]>([]);
   const [companies, setCompanies] = useState<Company[]>([]);
   const [currentTask, setCurrentTask] = useState<Task | null>(null);
+  const [templates, setTemplates] = useState<HtmlTemplate[]>([]);
   const [tasksLoading, setTasksLoading] = useState(true);
 
   const isAuthorized = user?.email ? AUTHORIZED_EMAILS.includes(user.email) : false;
@@ -164,6 +171,24 @@ export const TaskProvider: React.FC<TaskProviderProps> = ({ children, user }) =>
     if (user === undefined) return;
     fetchTasks().catch(console.error);
   }, [isAuthorized, user]);
+
+  /**
+   * Fetches all templates from Firestore
+   */
+  const fetchTemplates = async () => {
+    if (!isAuthorized) return;
+    try {
+      const querySnapshot = await getDocs(collection(db, 'templates'));
+      setTemplates(querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as HtmlTemplate)));
+    } catch (error) {
+      console.error('Error fetching templates:', error);
+      throw error;
+    }
+  };
+
+  useEffect(() => {
+    fetchTemplates().catch(console.error);
+  }, [isAuthorized]);
 
   /**
    * Adds a new task to Firestore
@@ -329,11 +354,80 @@ export const TaskProvider: React.FC<TaskProviderProps> = ({ children, user }) =>
     }
   };
 
+  /**
+   * Adds a new template to Firestore
+   */
+  const addTemplate = async (template: Omit<HtmlTemplate, 'id' | 'createdAt' | 'updatedAt'>) => {
+    if (!isAuthorized) return;
+    try {
+      const now = new Date().toISOString();
+      const newTemplate = {
+        ...template,
+        createdAt: now,
+        updatedAt: now,
+      };
+      await addDoc(collection(db, 'templates'), newTemplate);
+      await fetchTemplates();
+    } catch (error) {
+      console.error('Failed to add template:', error);
+      throw error;
+    }
+  };
+
+  /**
+   * Updates an existing template in Firestore
+   */
+  const updateTemplate = async (templateId: string, updates: Partial<HtmlTemplate>) => {
+    if (!isAuthorized) return;
+    try {
+      const now = new Date().toISOString();
+      await updateDoc(doc(db, 'templates', templateId), {
+        ...updates,
+        updatedAt: now,
+      });
+      setTemplates(prev => prev.map(template =>
+        template.id === templateId ? { ...template, ...updates, updatedAt: now } : template
+      ));
+    } catch (error) {
+      console.error('Failed to update template:', error);
+      throw error;
+    }
+  };
+
+  /**
+   * Deletes a template from Firestore
+   */
+  const deleteTemplate = async (templateId: string) => {
+    if (!isAuthorized) return;
+    try {
+      await deleteDoc(doc(db, 'templates', templateId));
+      setTemplates(prev => prev.filter(template => template.id !== templateId));
+    } catch (error) {
+      console.error('Failed to delete template:', error);
+      throw error;
+    }
+  };
+
+  /**
+   * Gets templates for a specific company
+   */
+  const getTemplatesByCompany = (companyId: string) => {
+    return templates.filter(template => template.companyId === companyId);
+  };
+
+  /**
+   * Gets templates for a specific page type
+   */
+  const getTemplatesByPageType = (pageType: TaskType) => {
+    return templates.filter(template => template.pageType === pageType);
+  };
+
   return (
     <TaskContext.Provider
       value={{
         tasks: isAuthorized ? tasks : localTasks,
         companies: isAuthorized ? companies : [],
+        templates: isAuthorized ? templates : [],
         currentTask,
         setCurrentTask,
         addTask,
@@ -345,6 +439,11 @@ export const TaskProvider: React.FC<TaskProviderProps> = ({ children, user }) =>
         updateCompany,
         deleteCompany,
         addCompany,
+        addTemplate,
+        updateTemplate,
+        deleteTemplate,
+        getTemplatesByCompany,
+        getTemplatesByPageType,
         tasksLoading,
       }}
     >
