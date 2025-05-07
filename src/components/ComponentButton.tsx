@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { useTaskContext } from '@/context/TaskContext';
@@ -34,7 +33,7 @@ export const ComponentButton: React.FC<ComponentButtonProps> = ({
     <Button
       variant="outline"
       size="sm"
-      className="whitespace-nowrap text-sm"
+      className="whitespace-nowrap text-xs px-2 py-0.5 rounded-sm min-w-0 min-h-0 h-6 border-2 border-border"
       onClick={handleClick}
     >
       {label}

@@ -118,6 +118,7 @@ export const EditorSection = forwardRef<EditorSectionRef, EditorSectionProps>(({
     foldGutter(),
     closeBrackets(),
     autocompletion(),
+    history({ maxDepth: 100 }),
     keymap.of([
       ...defaultKeymap,
       ...historyKeymap,

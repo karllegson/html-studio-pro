@@ -13,7 +13,6 @@ import { ImageFilenameConverter } from '@/components/html-builder/ImageFilenameC
 import { getCompanyTags, setCompanyTags, subscribeToCompanyTags, CompanyTags } from '@/utils/companyTags';
 
 const SIDEBAR_ITEMS = [
-  { key: 'tags', label: 'Tags & Components', icon: <Tag className="mr-2" /> },
   { key: 'companies', label: 'Companies', icon: <Building className="mr-2" /> },
   { key: 'templates', label: 'HTML Templates', icon: <FileCode className="mr-2" /> },
 ];
@@ -33,17 +32,13 @@ const validateCompanyRules = (rules: { basePath: string; prefix: string; fileSuf
 };
 
 export default function AdminPage() {
-  const [activeTab, setActiveTab] = useState('tags');
+  const [activeTab, setActiveTab] = useState('companies');
   const [selectedCompany, setSelectedCompany] = useState<string | null>(null);
   const [editCompany, setEditCompany] = useState<{ contactLink: string, basePath: string, prefix: string, fileSuffix: string } | null>(null);
   const navigate = useNavigate();
 
   // Use real companies from context
   const { companies, getCompanyById, updateCompany, deleteCompany, addCompany } = useTaskContext();
-
-  // Placeholder state for tags/components/companies (replace with backend in future)
-  const [tags, setTags] = useState<any[]>([]);
-  const [components, setComponents] = useState<any[]>([]);
 
   // State for add company form
   const [showAddForm, setShowAddForm] = useState(false);
@@ -92,46 +87,6 @@ export default function AdminPage() {
             {item.label}
           </Button>
         ))}
-      </div>
-    </div>
-  );
-
-  // --- Tags & Components Content ---
-  const TagsComponentsContent = (
-    <div className="p-6">
-      <h2 className="text-2xl font-semibold mb-4">Tags & Components</h2>
-      <div className="grid grid-cols-2 gap-8">
-        {/* Tags Section */}
-        <Card>
-          <CardContent className="pt-6">
-            <h3 className="text-lg font-medium mb-2">HTML Tags</h3>
-            <div className="space-y-2">
-              {tags.map(tag => (
-                <div key={tag.id} className="flex items-center justify-between">
-                  <span>{tag.name}</span>
-                  <Button variant="ghost" size="sm">Edit</Button>
-                </div>
-              ))}
-              <Button variant="outline" className="w-full">Add Tag</Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Components Section */}
-        <Card>
-          <CardContent className="pt-6">
-            <h3 className="text-lg font-medium mb-2">HTML Components</h3>
-            <div className="space-y-2">
-              {components.map(component => (
-                <div key={component.id} className="flex items-center justify-between">
-                  <span>{component.name}</span>
-                  <Button variant="ghost" size="sm">Edit</Button>
-                </div>
-              ))}
-              <Button variant="outline" className="w-full">Add Component</Button>
-            </div>
-          </CardContent>
-        </Card>
       </div>
     </div>
   );
@@ -353,7 +308,6 @@ export default function AdminPage() {
     <div className="flex h-screen w-full">
       {Sidebar}
       <main className="flex-1 overflow-y-auto">
-        {activeTab === 'tags' && TagsComponentsContent}
         {activeTab === 'companies' && CompaniesContent}
         {activeTab === 'templates' && <TemplateManager />}
       </main>
