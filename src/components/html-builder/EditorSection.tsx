@@ -3,7 +3,7 @@ import CodeMirror, { ReactCodeMirrorRef } from '@uiw/react-codemirror';
 import { oneDark } from '@codemirror/theme-one-dark';
 import { EditorView, ViewUpdate } from '@codemirror/view';
 import { Button } from '@/components/ui/button';
-import { Copy, Save, Maximize2, Minimize2, Plus, Minus } from 'lucide-react';
+import { Copy, Save, Maximize2, Minimize2, Plus, Minus, ArrowDown } from 'lucide-react';
 import { lineNumbers, highlightActiveLineGutter, highlightSpecialChars, drawSelection, dropCursor, rectangularSelection, crosshairCursor, highlightActiveLine, keymap } from '@codemirror/view';
 import { EditorState } from '@codemirror/state';
 import { foldGutter, indentOnInput, syntaxHighlighting, defaultHighlightStyle } from '@codemirror/language';
@@ -13,6 +13,7 @@ import { closeBrackets, autocompletion, closeBracketsKeymap, completionKeymap } 
 import { lintKeymap } from '@codemirror/lint';
 import { foldKeymap } from '@codemirror/language';
 import { html } from '@codemirror/lang-html';
+import CopyButton from '@/components/ui/CopyButton';
 
 export interface EditorSectionRef {
   getView: () => EditorView | undefined;
@@ -22,7 +23,6 @@ interface EditorSectionProps {
   htmlContent: string;
   onHtmlChange: (value: string) => void;
   onUpdate: (viewUpdate: ViewUpdate) => void;
-  onCopyToClipboard: (text: string) => void;
   onSave: () => void;
   lastSavedAt?: Date | null;
 }
@@ -31,7 +31,6 @@ export const EditorSection = forwardRef<EditorSectionRef, EditorSectionProps>(({
   htmlContent,
   onHtmlChange,
   onUpdate,
-  onCopyToClipboard,
   onSave,
   lastSavedAt,
 }, ref) => {
@@ -116,26 +115,49 @@ export const EditorSection = forwardRef<EditorSectionRef, EditorSectionProps>(({
               <Plus size={14} />
             </Button>
           </div>
-          <div className="flex gap-2 ml-2">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => onCopyToClipboard(htmlContent)}
-              className="flex items-center gap-1"
-            >
-              <Copy size={14} />
-              Copy All
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={onSave}
-              className="flex items-center gap-1"
-            >
-              <Save size={14} />
-              Save
-            </Button>
-          </div>
+          <CopyButton value={htmlContent} className="ml-2" />
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={onSave}
+            className="flex items-center gap-1"
+          >
+            <Save size={14} />
+            Save
+          </Button>
+          <Button 
+            variant="ghost" 
+            size="sm"
+            onClick={() => {
+              try {
+                const view = editorRef.current?.view;
+                if (view) {
+                  // Get the last line number
+                  const lastLine = view.state.doc.lines;
+                  // Move cursor to the end of the last line
+                  const pos = view.state.doc.line(lastLine).to;
+                  // Scroll into view and focus
+                  view.dispatch({
+                    selection: { anchor: pos, head: pos },
+                    scrollIntoView: true
+                  });
+                  view.focus();
+                } else {
+                  // Fallback to DOM scrolling if view is not available
+                  const scroller = document.querySelector('.cm-scroller') as HTMLElement;
+                  if (scroller) {
+                    scroller.scrollTo({ top: scroller.scrollHeight, behavior: 'smooth' });
+                  }
+                }
+              } catch (error) {
+                console.error('Error scrolling to bottom:', error);
+              }
+            }}
+            className="flex items-center gap-1"
+          >
+            <ArrowDown size={14} />
+            Scroll Bottom
+          </Button>
         </div>
         {lastSavedAt && (
           <div className="text-xs text-muted-foreground ml-4 whitespace-nowrap">

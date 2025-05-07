@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
@@ -13,25 +12,28 @@ import {
 } from '@/components/ui/select';
 import { useTaskContext } from '@/context/TaskContext';
 import { Copy } from 'lucide-react';
+import CopyButton from '@/components/ui/CopyButton';
 
 interface CompanySectionProps {
   companyId: string;
-  contactLink: string;
   pageType: string;
+  teamworkLink: string;
+  googleDocLink: string;
   onCompanyChange: (value: string) => void;
-  onContactLinkChange: (value: string) => void;
-  onCopyToClipboard: (text: string) => void;
   onPageTypeChange: (value: string) => void;
+  onTeamworkLinkChange: (value: string) => void;
+  onGoogleDocLinkChange: (value: string) => void;
 }
 
 export const CompanySection: React.FC<CompanySectionProps> = ({
   companyId,
-  contactLink,
   pageType,
+  teamworkLink,
+  googleDocLink,
   onCompanyChange,
-  onContactLinkChange,
-  onCopyToClipboard,
   onPageTypeChange,
+  onTeamworkLinkChange,
+  onGoogleDocLinkChange,
 }) => {
   const { companies } = useTaskContext();
 
@@ -51,8 +53,7 @@ export const CompanySection: React.FC<CompanySectionProps> = ({
             )}
           </h2>
         )}
-        
-        <div className="space-y-2">
+        <div className="space-y-0.5">
           <Label htmlFor="company">Company</Label>
           <Select value={companyId} onValueChange={onCompanyChange}>
             <SelectTrigger id="company">
@@ -67,8 +68,7 @@ export const CompanySection: React.FC<CompanySectionProps> = ({
             </SelectContent>
           </Select>
         </div>
-        
-        <div className="space-y-2 mt-4">
+        <div className="space-y-0.5 mt-1">
           <Label htmlFor="pageType">Page Type</Label>
           <Select value={pageType} onValueChange={onPageTypeChange}>
             <SelectTrigger id="pageType">
@@ -81,24 +81,30 @@ export const CompanySection: React.FC<CompanySectionProps> = ({
             </SelectContent>
           </Select>
         </div>
-        
-        <div className="space-y-2 mt-4">
-          <Label htmlFor="contactLink">Contact Us Link</Label>
+        <div className="space-y-0.5 mt-1">
+          <Label htmlFor="teamworkLink">Teamwork Link</Label>
           <div className="flex gap-2">
-            <Input 
-              id="contactLink" 
-              value={contactLink} 
-              onChange={(e) => onContactLinkChange(e.target.value)} 
+            <Input
+              id="teamworkLink"
+              value={teamworkLink}
+              onChange={e => onTeamworkLinkChange(e.target.value)}
               className="font-mono text-xs"
+              placeholder="Paste Teamwork link"
             />
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => onCopyToClipboard(contactLink)}
-              className="flex-shrink-0"
-            >
-              <Copy size={16} />
-            </Button>
+            <CopyButton value={teamworkLink} />
+          </div>
+        </div>
+        <div className="space-y-0.5 mt-1">
+          <Label htmlFor="googleDocLink">Google Doc Link</Label>
+          <div className="flex gap-2">
+            <Input
+              id="googleDocLink"
+              value={googleDocLink}
+              onChange={e => onGoogleDocLinkChange(e.target.value)}
+              className="font-mono text-xs"
+              placeholder="Paste Google Doc link"
+            />
+            <CopyButton value={googleDocLink} />
           </div>
         </div>
       </CardContent>

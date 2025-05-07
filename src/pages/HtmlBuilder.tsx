@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useTaskContext } from '@/context/TaskContext';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Copy } from 'lucide-react';
+import { ArrowLeft, Copy, Check } from 'lucide-react';
 import { TaskStatus, TaskType } from '@/types';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { EditorSection, EditorSectionRef } from '@/components/html-builder/EditorSection';
@@ -14,9 +14,22 @@ import { ImageFilenameConverter } from '@/components/html-builder/ImageFilenameC
 import { PhotoUploadPreview } from '@/components/html-builder/PhotoUploadPreview';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import { NotesSection } from '@/components/html-builder/NotesSection';
+import GreenCircleCheckbox from '@/components/ui/GreenCircleCheckbox';
+import CopyButton from '@/components/ui/CopyButton';
+import { Textarea } from '@/components/ui/textarea';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 // Auto-save disabled for debugging jitter issue
+
+// Debounce utility
+function debounce(func, wait) {
+  let timeout;
+  return function (...args) {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => func.apply(this, args), wait);
+  };
+}
 
 const HtmlBuilder: React.FC = () => {
   const { taskId } = useParams<{ taskId: string }>();
@@ -25,8 +38,6 @@ const HtmlBuilder: React.FC = () => {
   const { toast } = useToast();
   const isMobile = useIsMobile();
   const editorRef = useRef<EditorSectionRef>(null);
-  const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const [loadingTask, setLoadingTask] = useState(true);
   const editorContainerRef = useRef<HTMLDivElement>(null);
 
   const [htmlContent, setHtmlContent] = useState('');
@@ -36,7 +47,6 @@ const HtmlBuilder: React.FC = () => {
   const [pageType, setPageType] = useState<TaskType>(TaskType.BLOG);
   const [selectedText, setSelectedText] = useState('');
   const [cursorPosition, setCursorPosition] = useState({ from: 0, to: 0 });
-  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
   const [reviewsTag, setReviewsTag] = useState('');
   const [faqTag, setFaqTag] = useState('');
   const [featuredImg, setFeaturedImg] = useState<string | null>(null);
@@ -47,6 +57,32 @@ const HtmlBuilder: React.FC = () => {
   // Track if we've finished the initial load
   const [tasksLoaded, setTasksLoaded] = useState(false);
 
+  const [widgetTitle, setWidgetTitle] = useState('');
+  const [metaTitle, setMetaTitle] = useState('');
+  const [metaUrl, setMetaUrl] = useState('');
+  const [metaDescription, setMetaDescription] = useState('');
+  const [checkedFields, setCheckedFields] = useState<{ [key: string]: boolean }>({});
+
+  const [instructionsToLink, setInstructionsToLink] = useState('');
+  const [instructionsChecked, setInstructionsChecked] = useState(false);
+
+  const [mapsLocation, setMapsLocation] = useState('');
+  const [mapsEmbedCode, setMapsEmbedCode] = useState('');
+  const [mapsChecked, setMapsChecked] = useState(false);
+
+  const [helpOpen, setHelpOpen] = useState(false);
+
+  const [teamworkLink, setTeamworkLink] = useState('');
+  const [googleDocLink, setGoogleDocLink] = useState('');
+
+  const [featuredImgChecked, setFeaturedImgChecked] = useState(false);
+
+  const [saving, setSaving] = useState(false);
+  const saveTimeouts = useRef({});
+
+  // Debounced save for each field
+  const debouncedSave = useRef<Record<string, (value: any) => void>>({});
+
   // Mark tasks as loaded when they arrive
   useEffect(() => {
     if (tasks.length > 0) setTasksLoaded(true);
@@ -55,24 +91,15 @@ const HtmlBuilder: React.FC = () => {
   // Wait for tasks to load before redirecting
   useEffect(() => {
     if (!taskId) return;
-    if (tasksLoading) return; // Wait for tasks to finish loading
+    if (tasksLoading) return;
 
-    // Only redirect if tasks are loaded and the task is truly not found
     const found = tasks.find(t => t.id === taskId);
     if (found) {
       setCurrentTask(found);
     } else if (!tasksLoading && tasks.length > 0) {
-      // Only redirect if tasks are loaded and the list is not empty
       navigate("/", { replace: true });
     }
   }, [taskId, tasksLoading, tasks, setCurrentTask, navigate]);
-
-  // Persist currentTask.id to localStorage
-  useEffect(() => {
-    if (currentTask?.id) {
-      localStorage.setItem('lastTaskId', currentTask.id);
-    }
-  }, [currentTask?.id]);
 
   useEffect(() => {
     if (!currentTask) {
@@ -80,7 +107,6 @@ const HtmlBuilder: React.FC = () => {
       return;
     }
 
-    // Set the task to "IN_PROGRESS" when opened
     if (currentTask.status === TaskStatus.RECENTLY_DELETED) {
       updateTask(currentTask.id, { status: TaskStatus.IN_PROGRESS });
     }
@@ -96,7 +122,82 @@ const HtmlBuilder: React.FC = () => {
     }
   }, [currentTask, navigate, getCompanyById, updateTask]);
 
-  // Auto-save disabled for debugging jitter issue
+  useEffect(() => {
+    debouncedSave.current = {
+      teamworkLink: debounce((value) => {
+        if (currentTask?.id) {
+          setSaving(true);
+          updateTask(currentTask.id, { teamworkLink: value }).finally(() => setSaving(false));
+        }
+      }, 500),
+      googleDocLink: debounce((value) => {
+        if (currentTask?.id) {
+          setSaving(true);
+          updateTask(currentTask.id, { googleDocLink: value }).finally(() => setSaving(false));
+        }
+      }, 500),
+      featuredTitle: debounce((value) => {
+        if (currentTask?.id) {
+          setSaving(true);
+          updateTask(currentTask.id, { featuredTitle: value }).finally(() => setSaving(false));
+        }
+      }, 500),
+      featuredAlt: debounce((value) => {
+        if (currentTask?.id) {
+          setSaving(true);
+          updateTask(currentTask.id, { featuredAlt: value }).finally(() => setSaving(false));
+        }
+      }, 500),
+      htmlContent: debounce((value) => {
+        if (currentTask?.id) {
+          setSaving(true);
+          updateTask(currentTask.id, { htmlContent: value }).finally(() => setSaving(false));
+        }
+      }, 500),
+      widgetTitle: debounce((value) => {
+        if (currentTask?.id) {
+          setSaving(true);
+          updateTask(currentTask.id, { widgetTitle: value }).finally(() => setSaving(false));
+        }
+      }, 500),
+      metaTitle: debounce((value) => {
+        if (currentTask?.id) {
+          setSaving(true);
+          updateTask(currentTask.id, { metaTitle: value }).finally(() => setSaving(false));
+        }
+      }, 500),
+      metaUrl: debounce((value) => {
+        if (currentTask?.id) {
+          setSaving(true);
+          updateTask(currentTask.id, { metaUrl: value }).finally(() => setSaving(false));
+        }
+      }, 500),
+      metaDescription: debounce((value) => {
+        if (currentTask?.id) {
+          setSaving(true);
+          updateTask(currentTask.id, { metaDescription: value }).finally(() => setSaving(false));
+        }
+      }, 500),
+      instructionsToLink: debounce((value) => {
+        if (currentTask?.id) {
+          setSaving(true);
+          updateTask(currentTask.id, { instructionsToLink: value }).finally(() => setSaving(false));
+        }
+      }, 500),
+      notes: debounce((value) => {
+        if (currentTask?.id) {
+          setSaving(true);
+          updateTask(currentTask.id, { notes: value }).finally(() => setSaving(false));
+        }
+      }, 500),
+      mapsEmbedCode: debounce((value) => {
+        if (currentTask?.id) {
+          setSaving(true);
+          updateTask(currentTask.id, { mapsEmbedCode: value }).finally(() => setSaving(false));
+        }
+      }, 500),
+    };
+  }, [currentTask?.id, updateTask]);
 
   const saveChanges = () => {
     if (currentTask && currentTask.id) {
@@ -106,7 +207,6 @@ const HtmlBuilder: React.FC = () => {
         notes,
         type: pageType,
       });
-      setLastSavedAt(new Date());
     }
   };
 
@@ -124,7 +224,6 @@ const HtmlBuilder: React.FC = () => {
   };
 
   const handlePageTypeChange = (value: string) => {
-    // Map string to TaskType enum
     let mappedType: TaskType = TaskType.BLOG;
     if (value === TaskType.SUB_PAGE) mappedType = TaskType.SUB_PAGE;
     else if (value === TaskType.LANDING_PAGE) mappedType = TaskType.LANDING_PAGE;
@@ -144,18 +243,7 @@ const HtmlBuilder: React.FC = () => {
 
   const handleHtmlChange = (value: string) => {
     setHtmlContent(value);
-    
-    // Don't update the task here to avoid too many updates
-    // The auto-save will handle it
-  };
-
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-    toast({
-      title: "Copied to clipboard",
-      description: "The text has been copied to your clipboard.",
-      duration: 2000,
-    });
+    debouncedSave.current.htmlContent?.(value);
   };
 
   const handleTagClick = (openTag: string, closeTag: string | null) => {
@@ -243,22 +331,9 @@ const HtmlBuilder: React.FC = () => {
     setCursorPosition({ from: selection.from, to: selection.to });
   };
 
-  const handleCopy = (text: string) => {
-    navigator.clipboard.writeText(text);
-    toast({
-      title: 'Copied to clipboard',
-      description: 'The value has been copied.',
-      duration: 2000,
-    });
-  };
-
-  // Show loading spinner/message while waiting
+  // Remove the loading spinner/message
   if (tasksLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-lg text-muted-foreground">Loading task...</div>
-      </div>
-    );
+    return null;
   }
 
   // If currentTask is set, render the builder UI
@@ -293,7 +368,6 @@ const HtmlBuilder: React.FC = () => {
                   onCompanyChange={handleCompanyChange}
                   onContactLinkChange={setContactLink}
                   onNotesChange={handleNotesChange}
-                  onCopyToClipboard={copyToClipboard}
                   onPageTypeChange={handlePageTypeChange}
                   onlyTagsAndComponents={true}
                 />
@@ -303,31 +377,49 @@ const HtmlBuilder: React.FC = () => {
             <div className="flex flex-col h-full">
               <div className="grid grid-cols-3 gap-3 mb-2">
                 {/* Row 1 */}
-                <div className="bg-card rounded-lg p-4 flex flex-col min-h-[420px]">
+                <div className="bg-card rounded-lg p-4 flex flex-col">
                   {/* Company Section */}
                   <CompanySection
                     companyId={companyId}
-                    contactLink={contactLink}
                     pageType={pageType}
+                    teamworkLink={teamworkLink}
+                    googleDocLink={googleDocLink}
                     onCompanyChange={handleCompanyChange}
-                    onContactLinkChange={setContactLink}
-                    onCopyToClipboard={copyToClipboard}
                     onPageTypeChange={handlePageTypeChange}
+                    onTeamworkLinkChange={setTeamworkLink}
+                    onGoogleDocLinkChange={setGoogleDocLink}
                   />
                 </div>
-                <div className="bg-card rounded-lg p-4 flex flex-col">
+                <div className="bg-card rounded-lg p-4 flex flex-col max-h-[400px]">
                   {/* HTML Templates */}
                   <CompanyTemplateSection
                     companyId={companyId}
                     onInsertTemplate={handleInsertComponent}
                   />
+                  {/* Contact Us Link */}
+                  <div className="mt-3">
+                    <label className="text-sm font-medium mb-1 block">Contact Us Link</label>
+                    <div className="flex gap-2">
+                      <Input
+                        type="text"
+                        value={contactLink}
+                        onChange={e => {
+                          setContactLink(e.target.value);
+                          debouncedSave.current.googleDocLink?.(e.target.value);
+                        }}
+                        className="font-mono text-xs flex-1"
+                        placeholder="Paste Contact Us link"
+                      />
+                      <CopyButton value={contactLink} />
+                    </div>
+                  </div>
                   {/* Image file name to link converter */}
                   <div className="mt-3">
                     <h3 className="text-lg font-medium mb-2">Image file name to link converter</h3>
                     <ImageFilenameConverter companyDomain={getCompanyById(companyId)?.contactLink} />
                   </div>
                 </div>
-                <div className="bg-card rounded-lg p-4 flex flex-col h-[420px]">
+                <div className="bg-card rounded-lg p-4 flex flex-col max-h-[400px]">
                   <h3 className="text-lg font-medium mb-2">Photos</h3>
                   <div className="overflow-auto h-full">
                     <PhotoUploadPreview 
@@ -354,7 +446,7 @@ const HtmlBuilder: React.FC = () => {
                           <SelectItem value="review-tag-2">Review Tag 2</SelectItem>
                         </SelectContent>
                       </Select>
-                      <Button variant="outline" onClick={() => handleCopy(reviewsTag)} disabled={!reviewsTag}>copy</Button>
+                      <CopyButton value={reviewsTag} />
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="w-32">FAQ</span>
@@ -367,132 +459,282 @@ const HtmlBuilder: React.FC = () => {
                           <SelectItem value="faq-tag-2">FAQ Tag 2</SelectItem>
                         </SelectContent>
                       </Select>
-                      <Button variant="outline" onClick={() => handleCopy(faqTag)} disabled={!faqTag}>copy</Button>
+                      <CopyButton value={faqTag} />
                     </div>
                   </div>
                 </div>
-                <div className="col-span-2 bg-card rounded-lg p-4 flex items-center justify-center border-2 border-red-500 border-solid">
-                  {/* Debug Empty Section */}
-                  <span className="text-red-500 font-bold">DEBUG: Empty Section</span>
-                </div>
-              </div>
-              {/* Featured IMG section spanning columns 2 and 3 */}
-              <div className="bg-card rounded-lg p-4 flex flex-row items-center col-span-3" style={{ gridColumn: '1 / span 3', minHeight: '110px' }}>
-                {/* Dropdown and Select button */}
-                <div className="flex flex-col items-start min-w-[180px] pr-4">
-                  <label className="font-medium mb-1">Featured IMG</label>
-                  <div className="relative flex items-center gap-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => setShowFeaturedDropdown(v => !v)}
-                      type="button"
-                      className="w-32 justify-between"
-                    >
-                      {featuredImg ? (
-                        <span
-                          className="truncate overflow-hidden whitespace-nowrap max-w-[100px] inline-block"
-                          title={currentTask?.images?.find(img => img.url === featuredImg)?.name || ''}
-                        >
-                          {currentTask?.images?.find(img => img.url === featuredImg)?.name || 'Select image'}
-                        </span>
-                      ) : 'Select image'}
-                      <span className="ml-2">▼</span>
-                    </Button>
-                    {/* Dropdown popover */}
-                    {showFeaturedDropdown && (
-                      <div className="absolute left-0 top-full z-10 mt-1 w-40 bg-background border border-border rounded shadow-lg">
-                        <ul className="max-h-48 overflow-auto">
-                          {(currentTask?.images || []).map(img => (
-                            <li
-                              key={img.url}
-                              className={`px-3 py-2 cursor-pointer hover:bg-muted ${featuredImg === img.url ? 'bg-muted' : ''}`}
-                              onClick={() => {
-                                setFeaturedImg(img.url);
-                                setShowFeaturedDropdown(false);
-                              }}
-                            >
-                              {img.name}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
+                <div className="col-span-2 bg-card rounded-lg p-4 flex flex-row items-center">
+                  {/* Featured IMG section */}
+                  <div className="flex flex-col items-start min-w-[180px] pr-4">
+                    <div className="flex items-center gap-2 mb-1">
+                      <label className="font-medium">Featured IMG</label>
+                      <GreenCircleCheckbox
+                        checked={featuredImgChecked}
+                        onChange={e => setFeaturedImgChecked(e.target.checked)}
+                      />
+                    </div>
+                    <div className="relative flex items-center gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setShowFeaturedDropdown(v => !v)}
+                        type="button"
+                        className="w-32 justify-between"
+                      >
+                        {featuredImg ? (
+                          <span
+                            className="truncate overflow-hidden whitespace-nowrap max-w-[100px] inline-block"
+                            title={currentTask?.images?.find(img => img.url === featuredImg)?.name || ''}
+                          >
+                            {currentTask?.images?.find(img => img.url === featuredImg)?.name || 'Select image'}
+                          </span>
+                        ) : 'Select image'}
+                        <span className="ml-2">▼</span>
+                      </Button>
+                      {/* Dropdown popover */}
+                      {showFeaturedDropdown && (
+                        <div className="absolute left-0 top-full z-10 mt-1 w-40 bg-background border border-border rounded shadow-lg">
+                          <ul className="max-h-48 overflow-auto">
+                            {(currentTask?.images || []).map(img => (
+                              <li
+                                key={img.url}
+                                className={`px-3 py-2 cursor-pointer hover:bg-muted ${featuredImg === img.url ? 'bg-muted' : ''}`}
+                                onClick={() => {
+                                  setFeaturedImg(img.url);
+                                  setShowFeaturedDropdown(false);
+                                }}
+                              >
+                                {img.name}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  {/* Preview of selected image */}
+                  <div className="flex flex-col items-center justify-center min-w-[120px] px-4">
+                    {featuredImg ? (
+                      <img src={featuredImg} alt="Featured preview" className="max-h-24 max-w-24 rounded shadow border" />
+                    ) : (
+                      <div className="w-24 h-24 flex items-center justify-center border rounded bg-muted text-muted-foreground">No image</div>
                     )}
                   </div>
-                </div>
-                {/* Preview of selected image */}
-                <div className="flex flex-col items-center justify-center min-w-[120px] px-4">
-                  {featuredImg ? (
-                    <img src={featuredImg} alt="Featured preview" className="max-h-24 max-w-24 rounded shadow border" />
-                  ) : (
-                    <div className="w-24 h-24 flex items-center justify-center border rounded bg-muted text-muted-foreground">No image</div>
-                  )}
-                </div>
-                {/* Title and ALT fields */}
-                <div className="flex flex-col gap-2 flex-1 pl-4">
-                  <div className="flex items-center gap-2">
-                    <span className="w-12">Title:</span>
-                    <Input
-                      type="text"
-                      value={featuredTitle}
-                      onChange={e => setFeaturedTitle(e.target.value)}
-                      className="flex-1"
-                      placeholder="Enter title"
-                    />
-                    <Button size="sm" variant="outline" onClick={() => handleCopy(featuredTitle)} disabled={!featuredTitle}>copy</Button>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="w-12">ALT:</span>
-                    <Input
-                      type="text"
-                      value={featuredAlt}
-                      onChange={e => setFeaturedAlt(e.target.value)}
-                      className="flex-1"
-                      placeholder="Enter alt text"
-                    />
-                    <Button size="sm" variant="outline" onClick={() => handleCopy(featuredAlt)} disabled={!featuredAlt}>copy</Button>
+                  {/* Title and ALT fields */}
+                  <div className="flex flex-col gap-2 flex-1 pl-4">
+                    <div className="flex items-center gap-2">
+                      <span className="w-12">Title:</span>
+                      <Input
+                        type="text"
+                        value={featuredTitle}
+                        onChange={e => {
+                          setFeaturedTitle(e.target.value);
+                          debouncedSave.current.featuredTitle?.(e.target.value);
+                        }}
+                        className="flex-1"
+                        placeholder="Enter title"
+                      />
+                      <CopyButton value={featuredTitle} />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="w-12">ALT:</span>
+                      <Input
+                        type="text"
+                        value={featuredAlt}
+                        onChange={e => {
+                          setFeaturedAlt(e.target.value);
+                          debouncedSave.current.featuredAlt?.(e.target.value);
+                        }}
+                        className="flex-1"
+                        placeholder="Enter alt text"
+                      />
+                      <CopyButton value={featuredAlt} />
+                    </div>
                   </div>
                 </div>
               </div>
               {/* HTML Editor always visible and fills remaining space */}
               <div className="flex-1 flex flex-col" ref={editorContainerRef}>
-                {/* Go to bottom button above editor */}
-                <div className="w-full flex justify-end mb-2">
-                  <Button variant="outline" size="sm" onClick={() => {
-                    if (editorContainerRef.current) {
-                      editorContainerRef.current.scrollIntoView({ block: 'end', behavior: 'smooth' });
-                    }
-                  }}>
-                    Go to bottom
-                  </Button>
-                </div>
                 <EditorSection
                   ref={editorRef}
                   htmlContent={htmlContent}
                   onHtmlChange={handleHtmlChange}
                   onUpdate={handleEditorUpdate}
-                  onCopyToClipboard={copyToClipboard}
                   onSave={saveChanges}
-                  lastSavedAt={lastSavedAt}
                 />
                 {/* Go to top button below editor */}
-                <div className="w-full flex justify-end mt-2">
+                <div className="w-full flex justify-center mt-2">
                   <Button variant="outline" size="sm" onClick={() => {
-                    if (editorContainerRef.current) {
-                      editorContainerRef.current.scrollIntoView({ block: 'start', behavior: 'smooth' });
+                    try {
+                      // Scroll to the very top of the page
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    } catch (error) {
+                      console.error('Error scrolling to top:', error);
                     }
                   }}>
                     Go to top
                   </Button>
                 </div>
-                {/* Notes section under HTML Editor */}
-                <div className="max-w-lg self-center w-full mt-4">
-                  <NotesSection notes={notes} onNotesChange={handleNotesChange} />
+                {/* 2x2 Section Grid with Notes in bottom right as the cell itself */}
+                <div className="w-full max-w-4xl mx-auto mt-6 grid grid-cols-2 grid-rows-2 gap-4">
+                  {/* Top-left cell: Widget/Meta fields */}
+                  <div className="border rounded p-4 min-h-[80px] flex flex-col justify-center">
+                    {[
+                      { label: 'Widget Title', key: 'widgetTitle', value: widgetTitle, setValue: setWidgetTitle },
+                      { label: 'Meta Title', key: 'metaTitle', value: metaTitle, setValue: setMetaTitle },
+                      { label: 'Meta URL', key: 'metaUrl', value: metaUrl, setValue: setMetaUrl },
+                      { label: 'Meta Description', key: 'metaDescription', value: metaDescription, setValue: setMetaDescription },
+                    ].map((item, idx) => (
+                      <div key={item.key} className="flex items-center gap-2 mb-3 last:mb-0">
+                        <span className="w-28">{item.label}</span>
+                        <Input
+                          type="text"
+                          className="flex-1"
+                          value={item.value}
+                          onChange={e => {
+                            item.setValue(e.target.value);
+                            debouncedSave.current[item.key]?.(e.target.value);
+                          }}
+                          placeholder={item.label}
+                        />
+                        <CopyButton value={item.value} />
+                        <GreenCircleCheckbox
+                          checked={!!checkedFields[item.key]}
+                          onChange={e => setCheckedFields(f => ({ ...f, [item.key]: e.target.checked }))}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                  {/* Top-right cell: Google Maps Embed */}
+                  <div className="border rounded p-4 min-h-[80px] flex flex-col gap-2">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="mx-auto font-medium text-center w-full">Google Maps Embed</span>
+                      <GreenCircleCheckbox
+                        checked={mapsChecked}
+                        onChange={e => setMapsChecked(e.target.checked)}
+                        className="ml-2"
+                      />
+                    </div>
+                    <label className="text-sm mb-1">Enter a City, ST:</label>
+                    <Input
+                      type="text"
+                      value={mapsLocation}
+                      onChange={e => {
+                        setMapsLocation(e.target.value);
+                        debouncedSave.current.mapsEmbedCode?.(e.target.value);
+                      }}
+                      placeholder="e.g., Acton, MA"
+                      className="mb-2"
+                    />
+                    <Button
+                      type="button"
+                      className="mb-2 w-fit"
+                      onClick={() => {
+                        if (!mapsLocation.trim()) return;
+                        const encoded = encodeURIComponent(mapsLocation.trim());
+                        window.open(`https://www.google.com/maps/place/${encoded}`, '_blank');
+                      }}
+                    >
+                      Open in Google Maps
+                    </Button>
+                    <div className="text-xs text-muted-foreground mb-1">
+                      <strong>Instructions:</strong> In the new tab, click "Share" → "Embed a map" → choose "Satellite" → copy the iframe code and paste it below:
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Textarea
+                        rows={3}
+                        value={mapsEmbedCode}
+                        onChange={e => {
+                          setMapsEmbedCode(e.target.value);
+                          debouncedSave.current.mapsEmbedCode?.(e.target.value);
+                        }}
+                        placeholder="Paste your iframe code here..."
+                        className="flex-1"
+                      />
+                      <CopyButton value={mapsEmbedCode} />
+                    </div>
+                  </div>
+                  {/* Bottom-left cell: Instructions to Link */}
+                  <div className="border rounded p-4 min-h-[80px] flex flex-col justify-between">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="mx-auto font-medium text-center w-full">Instructions to Link</span>
+                      <GreenCircleCheckbox
+                        checked={instructionsChecked}
+                        onChange={e => {
+                          setInstructionsChecked(e.target.checked);
+                          debouncedSave.current.instructionsToLink?.(e.target.checked ? 'Checked' : '');
+                        }}
+                        className="ml-2"
+                      />
+                    </div>
+                    <Textarea
+                      className="rounded-lg border p-2 mt-2 flex-1 resize-none"
+                      rows={4}
+                      value={instructionsToLink}
+                      onChange={e => {
+                        setInstructionsToLink(e.target.value);
+                        debouncedSave.current.instructionsToLink?.(e.target.value);
+                      }}
+                      placeholder="Enter instructions..."
+                    />
+                  </div>
+                  {/* Bottom-right cell: Notes */}
+                  <div className="border rounded p-4 min-h-[80px] flex flex-col justify-between">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="mx-auto font-medium text-center w-full">Notes</span>
+                    </div>
+                    <Textarea
+                      className="rounded-lg border p-2 mt-2 flex-1 resize-none"
+                      rows={4}
+                      value={notes}
+                      onChange={e => {
+                        setNotes(e.target.value);
+                        debouncedSave.current.notes?.(e.target.value);
+                      }}
+                      placeholder="Enter notes..."
+                    />
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
+        {/* Help button at the bottom right, not floating */}
+        <div className="w-full flex justify-end mt-4 mb-4">
+          <Dialog open={helpOpen} onOpenChange={setHelpOpen}>
+            <DialogTrigger asChild>
+              <Button variant="secondary" size="lg" className="px-8 py-2 text-lg font-semibold rounded-full shadow-md mx-4 my-1">
+                Help
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>Help Topics</DialogTitle>
+              </DialogHeader>
+              <Tabs defaultValue="html-editor">
+                <TabsList>
+                  <TabsTrigger value="html-editor">HTML Editor</TabsTrigger>
+                  <TabsTrigger value="company-section">Company Section</TabsTrigger>
+                  <TabsTrigger value="notes">Notes</TabsTrigger>
+                  <TabsTrigger value="maps-embed">Google Maps Embed</TabsTrigger>
+                </TabsList>
+                <TabsContent value="html-editor">
+                  <p>Use the HTML editor to create and edit your content. You can insert tags and components using the sidebar.</p>
+                </TabsContent>
+                <TabsContent value="company-section">
+                  <p>Select a company and manage contact links and page types.</p>
+                </TabsContent>
+                <TabsContent value="notes">
+                  <p>Add notes to keep track of important information.</p>
+                </TabsContent>
+                <TabsContent value="maps-embed">
+                  <p>Enter a location to generate an embed code for Google Maps.</p>
+                </TabsContent>
+              </Tabs>
+            </DialogContent>
+          </Dialog>
+        </div>
+        {saving && <div className="text-xs text-muted-foreground ml-2">Saving...</div>}
       </div>
     );
   }

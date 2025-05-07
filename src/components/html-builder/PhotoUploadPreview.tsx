@@ -166,13 +166,13 @@ export const PhotoUploadPreview: React.FC<PhotoUploadPreviewProps> = ({
         </button>
       </div>
       {/* Image previews */}
-      <div className="flex flex-wrap gap-2 mb-2 overflow-auto">
+      <div className="grid grid-cols-2 gap-4 p-2 mb-2 overflow-auto">
         {images.map((img, idx) => (
-          <div key={img.url + '-' + idx} className="relative rounded overflow-hidden bg-muted flex items-center justify-center">
+          <div key={img.url + '-' + idx} className="relative rounded overflow-hidden bg-muted flex items-center justify-center w-[140px] h-[140px] mx-auto">
             <img
               src={img.url}
               alt={img.name}
-              className="opacity-80 cursor-pointer max-w-[120px] max-h-[120px]"
+              className="opacity-80 cursor-pointer w-[140px] h-[140px] object-cover"
               onClick={() => setPreviewIdx(idx)}
             />
             {img.uploading && (
@@ -183,7 +183,7 @@ export const PhotoUploadPreview: React.FC<PhotoUploadPreviewProps> = ({
             )}
             <button
               type="button"
-              className="absolute top-1 right-1 bg-red-600 hover:bg-red-700 rounded-full p-1 text-white shadow"
+              className="absolute top-2 right-2 bg-red-600 hover:bg-red-700 rounded-full p-1 text-white shadow"
               onClick={() => handleRemove(idx)}
               title="Remove image"
             >

@@ -48,6 +48,16 @@ export interface Task {
   updatedAt: string;
   /** Array of images associated with this task */
   images: TaskImage[];
+  // Added for auto-save support
+  googleDocLink?: string;
+  featuredTitle?: string;
+  featuredAlt?: string;
+  widgetTitle?: string;
+  metaTitle?: string;
+  metaUrl?: string;
+  metaDescription?: string;
+  instructionsToLink?: string;
+  mapsEmbedCode?: string;
 }
 
 /**
