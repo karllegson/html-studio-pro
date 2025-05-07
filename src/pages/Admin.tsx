@@ -5,10 +5,11 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
 import { useTaskContext } from '@/context/TaskContext';
 import { useNavigate } from 'react-router-dom';
+import { Home, Tag, Building } from 'lucide-react';
 
 const SIDEBAR_ITEMS = [
-  { key: 'tags', label: 'Tags & Components' },
-  { key: 'companies', label: 'Companies' },
+  { key: 'tags', label: 'Tags & Components', icon: <Tag className="mr-2" /> },
+  { key: 'companies', label: 'Companies', icon: <Building className="mr-2" /> },
 ];
 
 export default function AdminPage() {
@@ -41,12 +42,12 @@ export default function AdminPage() {
   // --- Sidebar ---
   const Sidebar = (
     <div className="w-56 bg-card border-r h-full flex flex-col">
-      <div className="p-4 text-xl font-bold flex flex-col gap-2">
+      <div className="p-4 text-xl font-bold flex flex-col gap-4">
         <button
           className="text-xs text-gray-500 hover:text-primary underline underline-offset-2 transition-colors text-left"
           onClick={() => navigate('/')}
         >
-          ← Back to Home
+          <Home className="inline mr-2" /> Back to Home
         </button>
         <span>Admin</span>
       </div>
@@ -58,6 +59,7 @@ export default function AdminPage() {
             className="justify-start"
             onClick={() => setActiveTab(item.key)}
           >
+            {item.icon}
             {item.label}
           </Button>
         ))}
@@ -69,19 +71,22 @@ export default function AdminPage() {
   const TagsComponentsContent = (
     <div className="p-6">
       <h2 className="text-2xl font-semibold mb-4">Tags & Components</h2>
-      {/* Add/Edit/Delete UI for tags */}
       <Card className="mb-6">
         <CardContent className="pt-6">
           <h3 className="text-lg font-medium mb-2">HTML Tags</h3>
-          {/* List, add, edit, delete tags here */}
-          <div className="text-muted-foreground">(Tag management UI placeholder)</div>
+          <div className="flex flex-col gap-2">
+            <Button variant="outline" className="w-fit">+ Add Tag</Button>
+            <div className="text-muted-foreground">(Tag management UI placeholder)</div>
+          </div>
         </CardContent>
       </Card>
       <Card>
         <CardContent className="pt-6">
           <h3 className="text-lg font-medium mb-2">Components</h3>
-          {/* List, add, edit, delete components here */}
-          <div className="text-muted-foreground">(Component management UI placeholder)</div>
+          <div className="flex flex-col gap-2">
+            <Button variant="outline" className="w-fit">+ Add Component</Button>
+            <div className="text-muted-foreground">(Component management UI placeholder)</div>
+          </div>
         </CardContent>
       </Card>
     </div>
@@ -124,7 +129,7 @@ export default function AdminPage() {
       <div className="flex gap-8">
         {/* Company List */}
         <div className="w-64">
-          <h3 className="text-lg font-medium mb-2">Company List</h3>
+          <h3 className="text-lg font-medium mb-2">List</h3>
           <div className="flex flex-col gap-2">
             {companies.length === 0 && <div className="text-muted-foreground">No companies found.</div>}
             {companies.map(company => (
@@ -154,7 +159,7 @@ export default function AdminPage() {
                   onChange={e => handleAddCompanyChange('contactLink', e.target.value)}
                   required
                 />
-                <button type="submit" className="bg-primary text-white rounded px-2 py-1">Add</button>
+                <Button type="submit" className="bg-primary text-white rounded px-2 py-1">Add</Button>
               </form>
             )}
           </div>
@@ -163,8 +168,7 @@ export default function AdminPage() {
         {selectedCompany && editCompany ? (
           <Card>
             <CardContent className="pt-6">
-              <h3 className="text-lg font-medium mb-2">Company Settings</h3>
-              {/* Editable fields for the selected company */}
+              <h3 className="text-lg font-medium mb-2">Settings</h3>
               <div className="mb-4">
                 <label className="block mb-1 font-medium">Contact Link</label>
                 <Input
@@ -175,7 +179,7 @@ export default function AdminPage() {
               </div>
               <div className="flex gap-2">
                 <Button variant="default" onClick={handleSaveCompany}>Save</Button>
-                <Button variant="destructive" onClick={handleDeleteCompany}>Delete Company</Button>
+                <Button variant="destructive" onClick={handleDeleteCompany}>Delete</Button>
               </div>
             </CardContent>
           </Card>

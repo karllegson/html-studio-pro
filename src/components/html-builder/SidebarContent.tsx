@@ -2,7 +2,6 @@ import React from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { TagsSection } from './TagsSection';
 import { CompanySection } from './CompanySection';
-import { NotesSection } from './NotesSection';
 import { ImageConverter } from './ImageConverter';
 import { CompanyTemplateSection } from './CompanyTemplateSection';
 
@@ -16,7 +15,6 @@ interface SidebarContentProps {
   onCompanyChange: (value: string) => void;
   onContactLinkChange: (value: string) => void;
   onNotesChange: (value: string) => void;
-  onCopyToClipboard: (text: string) => void;
   onPageTypeChange: (value: string) => void;
   onlyTagsAndComponents?: boolean;
 }
@@ -31,7 +29,6 @@ export const SidebarContent: React.FC<SidebarContentProps> = ({
   onCompanyChange,
   onContactLinkChange,
   onNotesChange,
-  onCopyToClipboard,
   onPageTypeChange,
   onlyTagsAndComponents = false,
 }) => {
@@ -53,15 +50,13 @@ export const SidebarContent: React.FC<SidebarContentProps> = ({
           pageType={pageType}
           onCompanyChange={onCompanyChange}
           onContactLinkChange={onContactLinkChange}
-          onCopyToClipboard={onCopyToClipboard}
           onPageTypeChange={onPageTypeChange}
         />
         <CompanyTemplateSection
           companyId={companyId}
           onInsertTemplate={(template) => onInsertComponent(template)}
         />
-        <NotesSection notes={notes} onNotesChange={onNotesChange} />
-        <ImageConverter onCopyToClipboard={onCopyToClipboard} />
+        <ImageConverter />
       </div>
       {/* Scrollable Tags section - stays in view when scrolling */}
       <div className="flex-1 overflow-hidden">

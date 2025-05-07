@@ -45,6 +45,10 @@ const Dashboard: React.FC = () => {
   const [taskToDelete, setTaskToDelete] = useState<string[] | null>(null);
   const [activeTab, setActiveTab] = useState<string>('ready');
   const [isSelectionMode, setIsSelectionMode] = useState(false);
+  // Add local state for editing notes
+  const [editingNotes, setEditingNotes] = useState<{ [taskId: string]: string }>({});
+  // Add local state for editing teamwork links
+  const [editingTeamworkLinks, setEditingTeamworkLinks] = useState<{ [taskId: string]: string }>({});
 
   // Set the active tab based on the current task's status
   useEffect(() => {
@@ -208,7 +212,16 @@ const Dashboard: React.FC = () => {
               </TableCell>
               <TableCell>
                 <div className="flex gap-2 items-center">
-                  <Input value={task.teamworkLink} onChange={e => handleUpdateTaskField(task.id, 'teamworkLink', e.target.value)} className="w-full" />
+                  <Input
+                    value={editingTeamworkLinks[task.id] !== undefined ? editingTeamworkLinks[task.id] : task.teamworkLink}
+                    onChange={e => setEditingTeamworkLinks(prev => ({ ...prev, [task.id]: e.target.value }))}
+                    onBlur={e => {
+                      if (editingTeamworkLinks[task.id] !== undefined && editingTeamworkLinks[task.id] !== task.teamworkLink) {
+                        handleUpdateTaskField(task.id, 'teamworkLink', editingTeamworkLinks[task.id]);
+                      }
+                    }}
+                    className="w-full"
+                  />
                   <Button variant="outline" size="icon" onClick={() => copyToClipboard(task.teamworkLink)} className="flex-shrink-0">
                     <Copy size={16} />
                   </Button>
@@ -234,7 +247,16 @@ const Dashboard: React.FC = () => {
                 </Select>
               </TableCell>
               <TableCell>
-                <Input value={task.notes} onChange={e => handleUpdateTaskField(task.id, 'notes', e.target.value)} className="w-full" />
+                <Input
+                  value={editingNotes[task.id] !== undefined ? editingNotes[task.id] : task.notes}
+                  onChange={e => setEditingNotes(prev => ({ ...prev, [task.id]: e.target.value }))}
+                  onBlur={e => {
+                    if (editingNotes[task.id] !== undefined && editingNotes[task.id] !== task.notes) {
+                      handleUpdateTaskField(task.id, 'notes', editingNotes[task.id]);
+                    }
+                  }}
+                  className="w-full"
+                />
               </TableCell>
               <TableCell>
                 {formatDate(task.updatedAt)}

@@ -1,18 +1,13 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Copy } from 'lucide-react';
+import CopyButton from '@/components/ui/CopyButton';
 
-interface ImageConverterProps {
-  onCopyToClipboard: (text: string) => void;
-}
+interface ImageConverterProps {}
 
-export const ImageConverter: React.FC<ImageConverterProps> = ({
-  onCopyToClipboard,
-}) => {
+export const ImageConverter: React.FC<ImageConverterProps> = () => {
   const [imageFileName, setImageFileName] = useState('');
   const [imageUrl, setImageUrl] = useState('');
 
@@ -45,14 +40,7 @@ export const ImageConverter: React.FC<ImageConverterProps> = ({
                   readOnly 
                   className="font-mono text-xs mt-1"
                 />
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => onCopyToClipboard(imageUrl)}
-                  className="flex-shrink-0 mt-1"
-                >
-                  <Copy size={16} />
-                </Button>
+                <CopyButton value={imageUrl} className="flex-shrink-0 mt-1" />
               </div>
             </div>
           )}

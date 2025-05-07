@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useTaskContext } from '@/context/TaskContext';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Copy } from 'lucide-react';
+import { ArrowLeft, Copy, Check } from 'lucide-react';
 import { TaskStatus, TaskType } from '@/types';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { EditorSection, EditorSectionRef } from '@/components/html-builder/EditorSection';
@@ -14,7 +14,11 @@ import { ImageFilenameConverter } from '@/components/html-builder/ImageFilenameC
 import { PhotoUploadPreview } from '@/components/html-builder/PhotoUploadPreview';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import { NotesSection } from '@/components/html-builder/NotesSection';
+import GreenCircleCheckbox from '@/components/ui/GreenCircleCheckbox';
+import CopyButton from '@/components/ui/CopyButton';
+import { Textarea } from '@/components/ui/textarea';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 // Auto-save disabled for debugging jitter issue
 
@@ -43,6 +47,26 @@ const HtmlBuilder: React.FC = () => {
 
   // Track if we've finished the initial load
   const [tasksLoaded, setTasksLoaded] = useState(false);
+
+  const [widgetTitle, setWidgetTitle] = useState('');
+  const [metaTitle, setMetaTitle] = useState('');
+  const [metaUrl, setMetaUrl] = useState('');
+  const [metaDescription, setMetaDescription] = useState('');
+  const [checkedFields, setCheckedFields] = useState<{ [key: string]: boolean }>({});
+
+  const [instructionsToLink, setInstructionsToLink] = useState('');
+  const [instructionsChecked, setInstructionsChecked] = useState(false);
+
+  const [mapsLocation, setMapsLocation] = useState('');
+  const [mapsEmbedCode, setMapsEmbedCode] = useState('');
+  const [mapsChecked, setMapsChecked] = useState(false);
+
+  const [helpOpen, setHelpOpen] = useState(false);
+
+  const [teamworkLink, setTeamworkLink] = useState('');
+  const [googleDocLink, setGoogleDocLink] = useState('');
+
+  const [featuredImgChecked, setFeaturedImgChecked] = useState(false);
 
   // Mark tasks as loaded when they arrive
   useEffect(() => {
@@ -127,15 +151,6 @@ const HtmlBuilder: React.FC = () => {
 
   const handleHtmlChange = (value: string) => {
     setHtmlContent(value);
-  };
-
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-    toast({
-      title: "Copied to clipboard",
-      description: "The text has been copied to your clipboard.",
-      duration: 2000,
-    });
   };
 
   const handleTagClick = (openTag: string, closeTag: string | null) => {
@@ -223,15 +238,6 @@ const HtmlBuilder: React.FC = () => {
     setCursorPosition({ from: selection.from, to: selection.to });
   };
 
-  const handleCopy = (text: string) => {
-    navigator.clipboard.writeText(text);
-    toast({
-      title: 'Copied to clipboard',
-      description: 'The value has been copied.',
-      duration: 2000,
-    });
-  };
-
   // Remove the loading spinner/message
   if (tasksLoading) {
     return null;
@@ -269,7 +275,6 @@ const HtmlBuilder: React.FC = () => {
                   onCompanyChange={handleCompanyChange}
                   onContactLinkChange={setContactLink}
                   onNotesChange={handleNotesChange}
-                  onCopyToClipboard={copyToClipboard}
                   onPageTypeChange={handlePageTypeChange}
                   onlyTagsAndComponents={true}
                 />
@@ -279,31 +284,46 @@ const HtmlBuilder: React.FC = () => {
             <div className="flex flex-col h-full">
               <div className="grid grid-cols-3 gap-3 mb-2">
                 {/* Row 1 */}
-                <div className="bg-card rounded-lg p-4 flex flex-col min-h-[420px]">
+                <div className="bg-card rounded-lg p-4 flex flex-col">
                   {/* Company Section */}
                   <CompanySection
                     companyId={companyId}
-                    contactLink={contactLink}
                     pageType={pageType}
+                    teamworkLink={teamworkLink}
+                    googleDocLink={googleDocLink}
                     onCompanyChange={handleCompanyChange}
-                    onContactLinkChange={setContactLink}
-                    onCopyToClipboard={copyToClipboard}
                     onPageTypeChange={handlePageTypeChange}
+                    onTeamworkLinkChange={setTeamworkLink}
+                    onGoogleDocLinkChange={setGoogleDocLink}
                   />
                 </div>
-                <div className="bg-card rounded-lg p-4 flex flex-col">
+                <div className="bg-card rounded-lg p-4 flex flex-col max-h-[400px]">
                   {/* HTML Templates */}
                   <CompanyTemplateSection
                     companyId={companyId}
                     onInsertTemplate={handleInsertComponent}
                   />
+                  {/* Contact Us Link */}
+                  <div className="mt-3">
+                    <label className="text-sm font-medium mb-1 block">Contact Us Link</label>
+                    <div className="flex gap-2">
+                      <Input
+                        type="text"
+                        value={contactLink}
+                        onChange={e => setContactLink(e.target.value)}
+                        className="font-mono text-xs flex-1"
+                        placeholder="Paste Contact Us link"
+                      />
+                      <CopyButton value={contactLink} />
+                    </div>
+                  </div>
                   {/* Image file name to link converter */}
                   <div className="mt-3">
                     <h3 className="text-lg font-medium mb-2">Image file name to link converter</h3>
                     <ImageFilenameConverter companyDomain={getCompanyById(companyId)?.contactLink} />
                   </div>
                 </div>
-                <div className="bg-card rounded-lg p-4 flex flex-col h-[420px]">
+                <div className="bg-card rounded-lg p-4 flex flex-col max-h-[400px]">
                   <h3 className="text-lg font-medium mb-2">Photos</h3>
                   <div className="overflow-auto h-full">
                     <PhotoUploadPreview 
@@ -330,7 +350,7 @@ const HtmlBuilder: React.FC = () => {
                           <SelectItem value="review-tag-2">Review Tag 2</SelectItem>
                         </SelectContent>
                       </Select>
-                      <Button variant="outline" onClick={() => handleCopy(reviewsTag)} disabled={!reviewsTag}>copy</Button>
+                      <CopyButton value={reviewsTag} />
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="w-32">FAQ</span>
@@ -343,14 +363,20 @@ const HtmlBuilder: React.FC = () => {
                           <SelectItem value="faq-tag-2">FAQ Tag 2</SelectItem>
                         </SelectContent>
                       </Select>
-                      <Button variant="outline" onClick={() => handleCopy(faqTag)} disabled={!faqTag}>copy</Button>
+                      <CopyButton value={faqTag} />
                     </div>
                   </div>
                 </div>
                 <div className="col-span-2 bg-card rounded-lg p-4 flex flex-row items-center">
                   {/* Featured IMG section */}
                   <div className="flex flex-col items-start min-w-[180px] pr-4">
-                    <label className="font-medium mb-1">Featured IMG</label>
+                    <div className="flex items-center gap-2 mb-1">
+                      <label className="font-medium">Featured IMG</label>
+                      <GreenCircleCheckbox
+                        checked={featuredImgChecked}
+                        onChange={e => setFeaturedImgChecked(e.target.checked)}
+                      />
+                    </div>
                     <div className="relative flex items-center gap-2">
                       <Button
                         size="sm"
@@ -409,7 +435,7 @@ const HtmlBuilder: React.FC = () => {
                         className="flex-1"
                         placeholder="Enter title"
                       />
-                      <Button size="sm" variant="outline" onClick={() => handleCopy(featuredTitle)} disabled={!featuredTitle}>copy</Button>
+                      <CopyButton value={featuredTitle} />
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="w-12">ALT:</span>
@@ -420,7 +446,7 @@ const HtmlBuilder: React.FC = () => {
                         className="flex-1"
                         placeholder="Enter alt text"
                       />
-                      <Button size="sm" variant="outline" onClick={() => handleCopy(featuredAlt)} disabled={!featuredAlt}>copy</Button>
+                      <CopyButton value={featuredAlt} />
                     </div>
                   </div>
                 </div>
@@ -432,11 +458,10 @@ const HtmlBuilder: React.FC = () => {
                   htmlContent={htmlContent}
                   onHtmlChange={handleHtmlChange}
                   onUpdate={handleEditorUpdate}
-                  onCopyToClipboard={copyToClipboard}
                   onSave={saveChanges}
                 />
                 {/* Go to top button below editor */}
-                <div className="w-full flex justify-end mt-2">
+                <div className="w-full flex justify-center mt-2">
                   <Button variant="outline" size="sm" onClick={() => {
                     try {
                       // Scroll to the very top of the page
@@ -448,13 +473,144 @@ const HtmlBuilder: React.FC = () => {
                     Go to top
                   </Button>
                 </div>
-                {/* Notes section under HTML Editor */}
-                <div className="max-w-lg self-center w-full mt-4">
-                  <NotesSection notes={notes} onNotesChange={handleNotesChange} />
+                {/* 2x2 Section Grid with Notes in bottom right as the cell itself */}
+                <div className="w-full max-w-4xl mx-auto mt-6 grid grid-cols-2 grid-rows-2 gap-4">
+                  {/* Top-left cell: Widget/Meta fields */}
+                  <div className="border rounded p-4 min-h-[80px] flex flex-col justify-center">
+                    {[
+                      { label: 'Widget Title', key: 'widgetTitle', value: widgetTitle, setValue: setWidgetTitle },
+                      { label: 'Meta Title', key: 'metaTitle', value: metaTitle, setValue: setMetaTitle },
+                      { label: 'Meta URL', key: 'metaUrl', value: metaUrl, setValue: setMetaUrl },
+                      { label: 'Meta Description', key: 'metaDescription', value: metaDescription, setValue: setMetaDescription },
+                    ].map((item, idx) => (
+                      <div key={item.key} className="flex items-center gap-2 mb-3 last:mb-0">
+                        <span className="w-28">{item.label}</span>
+                        <Input
+                          type="text"
+                          className="flex-1"
+                          value={item.value}
+                          onChange={e => item.setValue(e.target.value)}
+                          placeholder={item.label}
+                        />
+                        <CopyButton value={item.value} />
+                        <GreenCircleCheckbox
+                          checked={!!checkedFields[item.key]}
+                          onChange={e => setCheckedFields(f => ({ ...f, [item.key]: e.target.checked }))}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                  {/* Top-right cell: Google Maps Embed */}
+                  <div className="border rounded p-4 min-h-[80px] flex flex-col gap-2">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="mx-auto font-medium text-center w-full">Google Maps Embed</span>
+                      <GreenCircleCheckbox
+                        checked={mapsChecked}
+                        onChange={e => setMapsChecked(e.target.checked)}
+                        className="ml-2"
+                      />
+                    </div>
+                    <label className="text-sm mb-1">Enter a City, ST:</label>
+                    <Input
+                      type="text"
+                      value={mapsLocation}
+                      onChange={e => setMapsLocation(e.target.value)}
+                      placeholder="e.g., Acton, MA"
+                      className="mb-2"
+                    />
+                    <Button
+                      type="button"
+                      className="mb-2 w-fit"
+                      onClick={() => {
+                        if (!mapsLocation.trim()) return;
+                        const encoded = encodeURIComponent(mapsLocation.trim());
+                        window.open(`https://www.google.com/maps/place/${encoded}`, '_blank');
+                      }}
+                    >
+                      Open in Google Maps
+                    </Button>
+                    <div className="text-xs text-muted-foreground mb-1">
+                      <strong>Instructions:</strong> In the new tab, click "Share" → "Embed a map" → choose "Satellite" → copy the iframe code and paste it below:
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Textarea
+                        rows={3}
+                        value={mapsEmbedCode}
+                        onChange={e => setMapsEmbedCode(e.target.value)}
+                        placeholder="Paste your iframe code here..."
+                        className="flex-1"
+                      />
+                      <CopyButton value={mapsEmbedCode} />
+                    </div>
+                  </div>
+                  {/* Bottom-left cell: Instructions to Link */}
+                  <div className="border rounded p-4 min-h-[80px] flex flex-col justify-between">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="mx-auto font-medium text-center w-full">Instructions to Link</span>
+                      <GreenCircleCheckbox
+                        checked={instructionsChecked}
+                        onChange={e => setInstructionsChecked(e.target.checked)}
+                        className="ml-2"
+                      />
+                    </div>
+                    <Textarea
+                      className="rounded-lg border p-2 mt-2 flex-1 resize-none"
+                      rows={4}
+                      value={instructionsToLink}
+                      onChange={e => setInstructionsToLink(e.target.value)}
+                      placeholder="Enter instructions..."
+                    />
+                  </div>
+                  {/* Bottom-right cell: Notes */}
+                  <div className="border rounded p-4 min-h-[80px] flex flex-col justify-between">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="mx-auto font-medium text-center w-full">Notes</span>
+                    </div>
+                    <Textarea
+                      className="rounded-lg border p-2 mt-2 flex-1 resize-none"
+                      rows={4}
+                      placeholder="Enter notes..."
+                    />
+                  </div>
                 </div>
               </div>
             </div>
           </div>
+        </div>
+        {/* Help button at the bottom right, not floating */}
+        <div className="w-full flex justify-end mt-4 mb-4">
+          <Dialog open={helpOpen} onOpenChange={setHelpOpen}>
+            <DialogTrigger asChild>
+              <Button variant="secondary" size="lg" className="px-8 py-2 text-lg font-semibold rounded-full shadow-md mx-4 my-1">
+                Help
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>Help Topics</DialogTitle>
+              </DialogHeader>
+              <Tabs defaultValue="html-editor">
+                <TabsList>
+                  <TabsTrigger value="html-editor">HTML Editor</TabsTrigger>
+                  <TabsTrigger value="company-section">Company Section</TabsTrigger>
+                  <TabsTrigger value="notes">Notes</TabsTrigger>
+                  <TabsTrigger value="maps-embed">Google Maps Embed</TabsTrigger>
+                </TabsList>
+                <TabsContent value="html-editor">
+                  <p>Use the HTML editor to create and edit your content. You can insert tags and components using the sidebar.</p>
+                </TabsContent>
+                <TabsContent value="company-section">
+                  <p>Select a company and manage contact links and page types.</p>
+                </TabsContent>
+                <TabsContent value="notes">
+                  <p>Add notes to keep track of important information.</p>
+                </TabsContent>
+                <TabsContent value="maps-embed">
+                  <p>Enter a location to generate an embed code for Google Maps.</p>
+                </TabsContent>
+              </Tabs>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
     );
