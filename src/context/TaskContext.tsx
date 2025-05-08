@@ -71,7 +71,7 @@ interface TaskProviderProps {
   user: User | null | undefined; // undefined = not loaded yet
 }
 
-const AUTHORIZED_EMAILS = ["dklegson@gmail.com", "SECOND_EMAIL_HERE"]; // Add your emails here
+const AUTHORIZED_EMAILS = ["dklegson@gmail.com", "dklegson1@gmail.com"]; // Add your emails here
 
 const DEFAULT_COMPANY = {
   name: 'ocboston',
