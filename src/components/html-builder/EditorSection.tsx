@@ -1,4 +1,4 @@
-import React, { useRef, useImperativeHandle, forwardRef, useState, useEffect } from 'react';
+import React, { useRef, useImperativeHandle, forwardRef, useState } from 'react';
 import CodeMirror, { ReactCodeMirrorRef } from '@uiw/react-codemirror';
 import { oneDark } from '@codemirror/theme-one-dark';
 import { EditorView, ViewUpdate } from '@codemirror/view';
@@ -72,25 +72,6 @@ export const EditorSection = forwardRef<EditorSectionRef, EditorSectionProps>(({
     getView: () => editorRef.current?.view
   }));
 
-  // Force override minHeight/maxHeight on .cm-scroller after render
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const scroller = document.querySelector('.cm-scroller') as HTMLElement;
-      if (scroller) {
-        scroller.style.minHeight = 'unset';
-        if (!isExtended) {
-          scroller.style.maxHeight = '600px';
-          scroller.style.overflowY = 'auto';
-        } else {
-          scroller.style.maxHeight = 'unset';
-          scroller.style.overflowY = 'visible';
-        }
-        clearInterval(interval);
-      }
-    }, 100);
-    return () => clearInterval(interval);
-  }, [isExtended]);
-
   const increaseFontSize = () => {
     setFontSize(prev => Math.min(prev + 1, 24));
   };
@@ -106,7 +87,6 @@ export const EditorSection = forwardRef<EditorSectionRef, EditorSectionProps>(({
   const extensions = [
     html(),
     lineNumbers(),
-    highlightActiveLineGutter(),
     highlightSpecialChars(),
     drawSelection(),
     dropCursor(),
@@ -115,14 +95,12 @@ export const EditorSection = forwardRef<EditorSectionRef, EditorSectionProps>(({
     highlightActiveLine(),
     indentOnInput(),
     syntaxHighlighting(customHighlightStyle),
-    foldGutter(),
     closeBrackets(),
     autocompletion(),
-    history({ maxDepth: 100 }),
+    history(),
     keymap.of([
       ...defaultKeymap,
       ...historyKeymap,
-      ...foldKeymap,
       ...closeBracketsKeymap,
       ...completionKeymap,
       ...searchKeymap,
@@ -133,25 +111,59 @@ export const EditorSection = forwardRef<EditorSectionRef, EditorSectionProps>(({
     EditorView.theme({
       '&': {
         fontSize: `${fontSize}px`,
+        boxSizing: 'border-box',
+        width: '100%',
+        overflowX: 'hidden',
       },
       '.cm-scroller': {
         fontFamily: 'monospace',
+        overflow: 'hidden',
+        width: '100%',
       },
       '.cm-content': {
-        padding: '0.5rem 0',
-      },
-      '.cm-line': {
-        padding: '0 0.5rem',
-      },
-      '.cm-activeLine': {
-        backgroundColor: 'rgba(255, 255, 255, 0.05)',
-      },
-      '.cm-activeLineGutter': {
-        backgroundColor: 'rgba(255, 255, 255, 0.05)',
+        padding: '0.5rem',
+        boxSizing: 'border-box',
+        width: '100%',
+        whiteSpace: 'pre-wrap',
+        wordBreak: 'break-word',
+        overflowX: 'hidden',
+        position: 'relative',
       },
       '.cm-gutters': {
-        backgroundColor: '#1a1a2e',
-        color: '#6272a4',
+        background: 'none',
+        border: 'none',
+        color: '#7c8696',
+        minWidth: '24px',
+        width: '24px',
+        padding: 0,
+        margin: 0,
+      },
+      '.cm-lineNumbers': {
+        fontSize: '10px',
+        fontFamily: 'monospace',
+        opacity: 0.4,
+        padding: 0,
+        margin: 0,
+        textAlign: 'right',
+        width: '24px',
+        minWidth: '24px',
+      },
+      '.cm-line': {
+        padding: 0,
+        width: '100%',
+        whiteSpace: 'pre-wrap',
+        wordBreak: 'break-word',
+        position: 'relative',
+      },
+      '.cm-line::before': undefined,
+      '.cm-activeLine': {
+        background: 'transparent',
+        width: '100%',
+        boxSizing: 'border-box',
+        borderRadius: 'inherit',
+      },
+      '.cm-activeLineGutter': {
+        background: 'transparent', // subtle background for gutter only
         border: 'none',
       },
       '.cm-gutterElement': {
@@ -168,101 +180,205 @@ export const EditorSection = forwardRef<EditorSectionRef, EditorSectionProps>(({
     }),
   ];
 
-  return (
-    <div className={
-      `bg-[#23263a] border border-border shadow-xl rounded-xl flex flex-col w-full px-0 my-4 focus-within:ring-2 focus-within:ring-primary/60 ${isExtended ? '' : ''}`
-    }>
-      <div className="p-2 bg-secondary text-secondary-foreground text-sm font-mono flex justify-between items-center rounded-t-xl">
-        <div className="flex items-center gap-2">
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={() => setIsExtended(!isExtended)}
-            className="flex items-center gap-1"
-          >
-            {isExtended ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
-          </Button>
-          <div>HTML Editor</div>
-          <div className="flex items-center gap-1 ml-2">
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={decreaseFontSize}
-              className="flex items-center gap-1"
-            >
-              <Minus size={14} />
-            </Button>
-            <span className="text-xs">{fontSize}px</span>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={increaseFontSize}
-              className="flex items-center gap-1"
-            >
-              <Plus size={14} />
-            </Button>
-          </div>
-          <CopyButton value={htmlContent} className="ml-2" />
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={onSave}
-            className="flex items-center gap-1"
-          >
-            <Save size={14} />
-            Save
-          </Button>
-          <Button 
-            variant="ghost" 
-            size="sm"
-            onClick={() => {
-              try {
-                const view = editorRef.current?.view;
-                if (view) {
-                  // Get the last line number
-                  const lastLine = view.state.doc.lines;
-                  // Move cursor to the end of the last line
-                  const pos = view.state.doc.line(lastLine).to;
-                  // Scroll into view and focus
-                  view.dispatch({
-                    selection: { anchor: pos, head: pos },
-                    scrollIntoView: true
-                  });
-                  view.focus();
-                } else {
-                  // Fallback to DOM scrolling if view is not available
-                  const scroller = document.querySelector('.cm-scroller') as HTMLElement;
-                  if (scroller) {
-                    scroller.scrollTo({ top: scroller.scrollHeight, behavior: 'smooth' });
+  // --- Render ---
+  if (isExtended) {
+    return (
+      <div className="w-full overflow-x-auto">
+        <div
+          className={`bg-[#23263a] border border-border shadow-xl rounded-xl flex flex-col px-0 my-4 focus-within:ring-2 focus-within:ring-primary/60 transition-all duration-300`}
+          style={{ minWidth: '1200px', width: '2000px', maxWidth: 'none' }}
+        >
+          <div className="p-2 bg-secondary text-secondary-foreground text-sm font-mono flex justify-between items-center rounded-t-xl">
+            <div className="flex items-center gap-2">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => setIsExtended(false)}
+                aria-label="Collapse editor"
+              >
+                <Maximize2 size={14} />
+              </Button>
+              <div>HTML Editor</div>
+              <div className="flex items-center gap-1 ml-2">
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={decreaseFontSize}
+                  className="flex items-center gap-1"
+                >
+                  <Minus size={14} />
+                </Button>
+                <span className="text-xs">{fontSize}px</span>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={increaseFontSize}
+                  className="flex items-center gap-1"
+                >
+                  <Plus size={14} />
+                </Button>
+              </div>
+              <CopyButton value={htmlContent} className="ml-2" />
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={onSave}
+                className="flex items-center gap-1"
+              >
+                <Save size={14} />
+                Save
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={() => {
+                  try {
+                    const view = editorRef.current?.view;
+                    if (view) {
+                      const lastLine = view.state.doc.lines;
+                      const pos = view.state.doc.line(lastLine).to;
+                      view.dispatch({
+                        selection: { anchor: pos, head: pos },
+                        scrollIntoView: true
+                      });
+                      view.focus();
+                    } else {
+                      const scroller = document.querySelector('.cm-scroller') as HTMLElement;
+                      if (scroller) {
+                        scroller.scrollTo({ top: scroller.scrollHeight, behavior: 'smooth' });
+                      }
+                    }
+                  } catch (error) {
+                    console.error('Error scrolling to bottom:', error);
                   }
-                }
-              } catch (error) {
-                console.error('Error scrolling to bottom:', error);
-              }
-            }}
-            className="flex items-center gap-1"
-          >
-            <ArrowDown size={14} />
-            Scroll Bottom
-          </Button>
-        </div>
-        {lastSavedAt && (
-          <div className="text-xs text-muted-foreground ml-4 whitespace-nowrap">
-            Last saved: {lastSavedAt.toLocaleTimeString()}
+                }}
+                className="flex items-center gap-1"
+              >
+                <ArrowDown size={14} />
+                Scroll Bottom
+              </Button>
+            </div>
+            {lastSavedAt && (
+              <div className="text-xs text-muted-foreground ml-4 whitespace-nowrap">
+                Last saved: {lastSavedAt.toLocaleTimeString()}
+              </div>
+            )}
           </div>
-        )}
+          <div className="flex-1 rounded-b-xl overflow-hidden" style={{overflow: 'hidden', borderRadius: '0 0 1rem 1rem'}}>
+            <div className="w-full max-w-full">
+              <CodeMirror
+                ref={editorRef}
+                value={htmlContent}
+                theme={oneDark}
+                extensions={extensions}
+                onChange={onHtmlChange}
+                className={`text-editor-foreground cm-s-dark ${wrapClass}`}
+                onUpdate={onUpdate}
+                style={{ fontSize: `${fontSize}px` }}
+              />
+            </div>
+          </div>
+        </div>
       </div>
-      <div className="flex-1 rounded-b-xl overflow-hidden">
-        <CodeMirror
-          ref={editorRef}
-          value={htmlContent}
-          theme={oneDark}
-          extensions={extensions}
-          onChange={onHtmlChange}
-          className={`text-editor-foreground cm-s-dark ${wrapClass}`}
-          onUpdate={onUpdate}
-          style={{ fontSize: `${fontSize}px` }}
-        />
+    );
+  }
+
+  return (
+    <div className="w-full">
+      <div
+        className={`bg-[#23263a] border border-border shadow-xl rounded-xl flex flex-col px-0 my-4 focus-within:ring-2 focus-within:ring-primary/60 transition-all duration-300 w-full`}
+        style={{ minWidth: '0', width: '100%', maxWidth: '100%' }}
+      >
+        <div className="p-2 bg-secondary text-secondary-foreground text-sm font-mono flex justify-between items-center rounded-t-xl">
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => setIsExtended(true)}
+              aria-label="Expand editor"
+            >
+              <Maximize2 size={14} />
+            </Button>
+            <div>HTML Editor</div>
+            <div className="flex items-center gap-1 ml-2">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={decreaseFontSize}
+                className="flex items-center gap-1"
+              >
+                <Minus size={14} />
+              </Button>
+              <span className="text-xs">{fontSize}px</span>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={increaseFontSize}
+                className="flex items-center gap-1"
+              >
+                <Plus size={14} />
+              </Button>
+            </div>
+            <CopyButton value={htmlContent} className="ml-2" />
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={onSave}
+              className="flex items-center gap-1"
+            >
+              <Save size={14} />
+              Save
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={() => {
+                try {
+                  const view = editorRef.current?.view;
+                  if (view) {
+                    const lastLine = view.state.doc.lines;
+                    const pos = view.state.doc.line(lastLine).to;
+                    view.dispatch({
+                      selection: { anchor: pos, head: pos },
+                      scrollIntoView: true
+                    });
+                    view.focus();
+                  } else {
+                    const scroller = document.querySelector('.cm-scroller') as HTMLElement;
+                    if (scroller) {
+                      scroller.scrollTo({ top: scroller.scrollHeight, behavior: 'smooth' });
+                    }
+                  }
+                } catch (error) {
+                  console.error('Error scrolling to bottom:', error);
+                }
+              }}
+              className="flex items-center gap-1"
+            >
+              <ArrowDown size={14} />
+              Scroll Bottom
+            </Button>
+          </div>
+          {lastSavedAt && (
+            <div className="text-xs text-muted-foreground ml-4 whitespace-nowrap">
+              Last saved: {lastSavedAt.toLocaleTimeString()}
+            </div>
+          )}
+        </div>
+        <div className="flex-1 rounded-b-xl overflow-hidden" style={{overflow: 'hidden', borderRadius: '0 0 1rem 1rem'}}>
+          <div className="w-full max-w-full">
+            <CodeMirror
+              ref={editorRef}
+              value={htmlContent}
+              theme={oneDark}
+              extensions={extensions}
+              onChange={onHtmlChange}
+              className={`text-editor-foreground cm-s-dark ${wrapClass}`}
+              onUpdate={onUpdate}
+              style={{ fontSize: `${fontSize}px` }}
+            />
+          </div>
+        </div>
       </div>
     </div>
   );
