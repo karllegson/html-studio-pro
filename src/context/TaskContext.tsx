@@ -133,11 +133,9 @@ export const TaskProvider: React.FC<TaskProviderProps> = ({ children, user }) =>
       const querySnapshot = await getDocs(collection(db, 'companies'));
       const companiesList = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Company));
       
-      // Check if default company exists
-      const defaultCompanyExists = companiesList.some(company => company.name === DEFAULT_COMPANY.name);
-      
-      if (!defaultCompanyExists) {
-        // Add default company if it doesn't exist
+      // Only create default company if there are no companies at all
+      if (companiesList.length === 0) {
+        // Add default company if no companies exist
         await addDoc(collection(db, 'companies'), DEFAULT_COMPANY);
         // Fetch companies again to include the new default company
         const updatedSnapshot = await getDocs(collection(db, 'companies'));
@@ -152,8 +150,10 @@ export const TaskProvider: React.FC<TaskProviderProps> = ({ children, user }) =>
   };
 
   useEffect(() => {
-    fetchCompanies().catch(console.error);
-  }, [isAuthorized]);
+    if (isAuthorized) {
+      fetchCompanies().catch(console.error);
+    }
+  }, [isAuthorized, user?.uid]);
 
   /**
    * Adds a new company to Firestore
@@ -191,11 +191,18 @@ export const TaskProvider: React.FC<TaskProviderProps> = ({ children, user }) =>
   const deleteCompany = async (companyId: string) => {
     if (!isAuthorized) return;
     try {
-      await deleteDoc(doc(db, 'companies', companyId));
+      // First update the local state to prevent UI flicker
       setCompanies(prev => prev.filter(company => company.id !== companyId));
       setTasks(prev => prev.filter(task => task.companyId !== companyId));
+      
+      // Then delete from Firestore
+      await deleteDoc(doc(db, 'companies', companyId));
+      
+      // No need to fetch companies again since we've already updated the local state
     } catch (error) {
       console.error('Failed to delete company:', error);
+      // If there's an error, fetch companies to ensure sync
+      await fetchCompanies();
       throw error;
     }
   };

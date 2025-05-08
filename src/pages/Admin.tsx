@@ -18,17 +18,8 @@ const SIDEBAR_ITEMS = [
 ];
 
 const validateCompanyRules = (rules: { basePath: string; prefix: string; fileSuffix: string }) => {
-  const errors: string[] = [];
-
-  if (!rules.basePath.endsWith('/')) {
-    errors.push('Base path must end with a forward slash (/)');
-  }
-
-  if (!rules.fileSuffix.startsWith('-')) {
-    errors.push('File suffix must start with a hyphen (-)');
-  }
-
-  return errors;
+  // Return empty array to allow any input
+  return [];
 };
 
 export default function AdminPage() {

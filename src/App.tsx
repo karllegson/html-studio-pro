@@ -28,8 +28,14 @@ const App: React.FC = () => {
 
   console.log("App user:", user);
 
-  if (loading) return <div>Loading...</div>;
-  // if (!user) return <Login />;
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-muted">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+  if (!user) return <Login />;
 
   return (
     <QueryClientProvider client={queryClient}>
