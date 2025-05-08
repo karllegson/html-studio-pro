@@ -88,9 +88,6 @@ const HtmlBuilder: React.FC = () => {
 
   const [linkDialogOpen, setLinkDialogOpen] = useState(false);
 
-  // Add a ref to track the last inserted range
-  const lastInsertRange = useRef<{start: number, end: number} | null>(null);
-
   // Offline detection
   useEffect(() => {
     const handleOnline = () => setIsOffline(false);
@@ -560,10 +557,6 @@ const HtmlBuilder: React.FC = () => {
         },
         selection: { anchor: selection.from + openTag.length + selectedContent.length + closeTag.length }
       });
-      lastInsertRange.current = {
-        start: selection.from,
-        end: selection.from + openTag.length + selectedContent.length + closeTag.length
-      };
       view.focus();
     } else {
       // Insert tag at cursor and move cursor after it
@@ -571,10 +564,6 @@ const HtmlBuilder: React.FC = () => {
         changes: { from: selection.from, to: selection.from, insert: openTag },
         selection: { anchor: selection.from + openTag.length }
       });
-      lastInsertRange.current = {
-        start: selection.from,
-        end: selection.from + openTag.length
-      };
       view.focus();
     }
   };
@@ -594,10 +583,6 @@ const HtmlBuilder: React.FC = () => {
         },
         selection: { anchor: selection.from + html.length }
       });
-      lastInsertRange.current = {
-        start: selection.from,
-        end: selection.from + html.length
-      };
       view.focus();
     } else {
       // Insert at cursor
@@ -605,10 +590,6 @@ const HtmlBuilder: React.FC = () => {
         changes: { from: selection.from, to: selection.from, insert: html },
         selection: { anchor: selection.from + html.length }
       });
-      lastInsertRange.current = {
-        start: selection.from,
-        end: selection.from + html.length
-      };
       view.focus();
     }
   };
@@ -619,27 +600,6 @@ const HtmlBuilder: React.FC = () => {
     setSelectedText(state.doc.sliceString(selection.from, selection.to));
     setCursorPosition({ from: selection.from, to: selection.to });
   };
-
-  // useEffect to highlight after htmlContent changes
-  useEffect(() => {
-    if (!lastInsertRange.current) return;
-    const view = editorRef.current?.getView();
-    if (!view) return;
-    const { start, end } = lastInsertRange.current;
-    setTimeout(() => {
-      view.focus();
-      view.dispatch({
-        selection: { anchor: start, head: end },
-        scrollIntoView: true
-      });
-      setTimeout(() => {
-        view.dispatch({
-          selection: { anchor: end, head: end }
-        });
-        lastInsertRange.current = null;
-      }, 2000); // 2 seconds
-    }, 0);
-  }, [htmlContent]);
 
   // Add the useEffect here, at the top level
   useEffect(() => {
