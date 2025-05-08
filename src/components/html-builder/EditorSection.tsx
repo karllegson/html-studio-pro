@@ -1,35 +1,16 @@
-import React, { useRef, useImperativeHandle, forwardRef, useState, useCallback, useEffect, useMemo } from 'react';
-import CodeMirror from '@uiw/react-codemirror';
-import { oneDark } from '@codemirror/theme-one-dark';
-import { EditorView, ViewUpdate } from '@codemirror/view';
+import React, { useRef, useImperativeHandle, forwardRef, useState, useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Copy, Save, Maximize2, Plus, Minus, ArrowDown } from 'lucide-react';
-import { lineNumbers, highlightActiveLine } from '@codemirror/view';
-import { EditorState } from '@codemirror/state';
-import { syntaxHighlighting } from '@codemirror/language';
-import { history, defaultKeymap } from '@codemirror/commands';
-import { closeBrackets, closeBracketsKeymap } from '@codemirror/autocomplete';
-import { html } from '@codemirror/lang-html';
-import { tags } from '@lezer/highlight';
-import { HighlightStyle } from '@codemirror/language';
 import CopyButton from '@/components/ui/CopyButton';
 
-// Minimal syntax highlighting for better performance
-const customHighlightStyle = HighlightStyle.define([
-  { tag: tags.tagName, color: '#ffffff' },      // HTML tags
-  { tag: tags.attributeName, color: '#8be9fd' }, // Attributes
-  { tag: tags.string, color: '#f1fa8c' },       // Strings
-  { tag: tags.comment, color: '#6272a4' },      // Comments
-]);
-
 export interface EditorSectionRef {
-  getView: () => EditorView | undefined;
+  getView: () => HTMLTextAreaElement | undefined;
 }
 
 interface EditorSectionProps {
   htmlContent: string;
   onHtmlChange: (value: string) => void;
-  onUpdate: (viewUpdate: ViewUpdate) => void;
+  onUpdate: () => void;
   onSave: () => void;
   lastSavedAt?: Date | null;
 }
@@ -41,90 +22,18 @@ export const EditorSection = forwardRef<EditorSectionRef, EditorSectionProps>(({
   onSave,
   lastSavedAt,
 }, ref) => {
-  const editorRef = useRef<any>(null);
+  const editorRef = useRef<HTMLTextAreaElement>(null);
   const [isExtended, setIsExtended] = useState(false);
   const [fontSize, setFontSize] = useState(14);
   const [isVisible, setIsVisible] = useState(true);
   const observerRef = useRef<IntersectionObserver | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const visibilityTimeoutRef = useRef<NodeJS.Timeout>();
-  const [isEditorMounted, setIsEditorMounted] = useState(false);
   
   useImperativeHandle(ref, () => ({
-    getView: () => editorRef.current?.view
+    getView: () => editorRef.current
   }));
 
-  // Memoized extensions for better performance
-  const extensions = useMemo(() => [
-    html(),
-    lineNumbers(),
-    highlightActiveLine(),
-    syntaxHighlighting(customHighlightStyle),
-    closeBrackets(),
-    history(),
-    EditorView.lineWrapping,
-    EditorState.tabSize.of(2),
-    EditorView.theme({
-      '&': {
-        fontSize: `${fontSize}px`,
-        boxSizing: 'border-box',
-        width: '100%',
-        overflowX: 'hidden',
-        color: '#f8f8f2',
-      },
-      '.cm-scroller': {
-        fontFamily: 'monospace',
-        overflow: 'hidden',
-        width: '100%',
-      },
-      '.cm-content': {
-        padding: '0.5rem',
-        boxSizing: 'border-box',
-        width: '100%',
-        whiteSpace: 'pre-wrap',
-        wordBreak: 'break-word',
-        overflowX: 'hidden',
-        position: 'relative',
-        color: '#f8f8f2',
-      },
-      '.cm-gutters': {
-        background: 'none',
-        border: 'none',
-        color: '#7c8696',
-        minWidth: '24px',
-        width: '24px',
-        padding: 0,
-        margin: 0,
-      },
-      '.cm-lineNumbers': {
-        fontSize: '10px',
-        fontFamily: 'monospace',
-        opacity: 0.4,
-        padding: 0,
-        margin: 0,
-        textAlign: 'right',
-        width: '24px',
-        minWidth: '24px',
-        color: '#7c8696',
-      },
-      '.cm-line': {
-        padding: 0,
-        width: '100%',
-        whiteSpace: 'pre-wrap',
-        wordBreak: 'break-word',
-        position: 'relative',
-        color: '#f8f8f2',
-      },
-      '.cm-activeLine': {
-        background: 'transparent',
-        width: '100%',
-        boxSizing: 'border-box',
-        borderRadius: 'inherit',
-      },
-    }),
-  ], [fontSize]);
-
-  // Intersection Observer for lazy loading
   useEffect(() => {
     if (!containerRef.current) return;
 
@@ -136,9 +45,7 @@ export const EditorSection = forwardRef<EditorSectionRef, EditorSectionProps>(({
           }
           
           visibilityTimeoutRef.current = setTimeout(() => {
-            const shouldBeVisible = entry.isIntersecting;
-            setIsVisible(shouldBeVisible);
-            setIsEditorMounted(shouldBeVisible);
+            setIsVisible(entry.isIntersecting);
           }, 150);
         });
       },
@@ -160,15 +67,6 @@ export const EditorSection = forwardRef<EditorSectionRef, EditorSectionProps>(({
     };
   }, []);
 
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      if (editorRef.current?.view) {
-        editorRef.current.view.destroy();
-      }
-    };
-  }, []);
-
   const increaseFontSize = useCallback(() => {
     setFontSize(prev => Math.min(prev + 1, 24));
   }, []);
@@ -177,7 +75,16 @@ export const EditorSection = forwardRef<EditorSectionRef, EditorSectionProps>(({
     setFontSize(prev => Math.max(prev - 1, 10));
   }, []);
 
-  const wrapClass = !isExtended ? 'cm-wrap-lines' : '';
+  const handleChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    onHtmlChange(e.target.value);
+    onUpdate();
+  }, [onHtmlChange, onUpdate]);
+
+  const scrollToBottom = useCallback(() => {
+    if (editorRef.current) {
+      editorRef.current.scrollTop = editorRef.current.scrollHeight;
+    }
+  }, []);
 
   const renderEditor = () => {
     if (!isVisible) {
@@ -188,24 +95,18 @@ export const EditorSection = forwardRef<EditorSectionRef, EditorSectionProps>(({
       );
     }
 
-    if (!isEditorMounted) {
-      return (
-        <div className="h-[500px] flex items-center justify-center text-muted-foreground">
-          Loading editor...
-        </div>
-      );
-    }
-
     return (
-      <CodeMirror
+      <textarea
         ref={editorRef}
         value={htmlContent}
-        theme={oneDark}
-        extensions={extensions}
-        onChange={onHtmlChange}
-        className={`text-editor-foreground cm-s-dark ${wrapClass}`}
-        onUpdate={onUpdate}
-        style={{ fontSize: `${fontSize}px` }}
+        onChange={handleChange}
+        className="w-full h-[500px] bg-[#282a36] text-[#f8f8f2] font-mono p-4 resize-none focus:outline-none"
+        style={{ 
+          fontSize: `${fontSize}px`,
+          lineHeight: '1.5',
+          tabSize: 2
+        }}
+        spellCheck={false}
       />
     );
   };
@@ -253,22 +154,7 @@ export const EditorSection = forwardRef<EditorSectionRef, EditorSectionProps>(({
       <Button
         variant="ghost" 
         size="sm"
-        onClick={() => {
-          try {
-            const view = editorRef.current?.view;
-            if (view) {
-              const lastLine = view.state.doc.lines;
-              const pos = view.state.doc.line(lastLine).to;
-              view.dispatch({
-                selection: { anchor: pos, head: pos },
-                scrollIntoView: true
-              });
-              view.focus();
-            }
-          } catch (error) {
-            console.error('Error scrolling to bottom:', error);
-          }
-        }}
+        onClick={scrollToBottom}
         className="flex items-center gap-1"
       >
         <ArrowDown size={14} />
