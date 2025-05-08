@@ -47,47 +47,10 @@ export const EditorSection = forwardRef<EditorSectionRef, EditorSectionProps>(({
   const editorViewRef = useRef<EditorView | undefined>(undefined);
   const [isExtended, setIsExtended] = useState(false);
   const [fontSize, setFontSize] = useState(14);
-  const [isVisible, setIsVisible] = useState(true);
-  const observerRef = useRef<IntersectionObserver | null>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const visibilityTimeoutRef = useRef<NodeJS.Timeout>();
   
   useImperativeHandle(ref, () => ({
     getView: () => editorViewRef.current
   }));
-
-  useEffect(() => {
-    if (!containerRef.current) return;
-
-    observerRef.current = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (visibilityTimeoutRef.current) {
-            clearTimeout(visibilityTimeoutRef.current);
-          }
-          
-          visibilityTimeoutRef.current = setTimeout(() => {
-            setIsVisible(entry.isIntersecting);
-          }, 150);
-        });
-      },
-      { 
-        threshold: [0, 0.1, 0.2],
-        rootMargin: '50px 0px'
-      }
-    );
-
-    observerRef.current.observe(containerRef.current);
-
-    return () => {
-      if (observerRef.current) {
-        observerRef.current.disconnect();
-      }
-      if (visibilityTimeoutRef.current) {
-        clearTimeout(visibilityTimeoutRef.current);
-      }
-    };
-  }, []);
 
   const increaseFontSize = useCallback(() => {
     setFontSize(prev => Math.min(prev + 1, 24));
@@ -100,7 +63,18 @@ export const EditorSection = forwardRef<EditorSectionRef, EditorSectionProps>(({
   const handleChange = useCallback((value: string) => {
     onHtmlChange(value);
     onUpdate();
+    // Ensure the editor view is focused after a change
+    if (editorViewRef.current) {
+      editorViewRef.current.focus();
+    }
   }, [onHtmlChange, onUpdate]);
+
+  // Add a useEffect to focus the editor view whenever htmlContent changes
+  useEffect(() => {
+    if (editorViewRef.current) {
+      editorViewRef.current.focus();
+    }
+  }, [htmlContent]);
 
   const scrollToBottom = useCallback(() => {
     if (editorDivRef.current) {
@@ -113,50 +87,41 @@ export const EditorSection = forwardRef<EditorSectionRef, EditorSectionProps>(({
     editorViewRef.current = view;
   }, []);
 
-  const renderEditor = () => {
-    if (!isVisible) {
-      return (
-        <div className="min-h-[300px] flex items-center justify-center text-muted-foreground">
-          Editor is not visible
-        </div>
-      );
-    }
-    return (
-      <div className="relative w-full min-h-[300px]" ref={editorDivRef}>
-        <CodeMirror
-          value={htmlContent}
-          height="100%"
-          theme={oneDark}
-          extensions={[html(), whiteTextTheme]}
-          onChange={handleChange}
-          basicSetup={{
-            lineNumbers: true,
-            highlightActiveLine: false,
-            foldGutter: false,
-            dropCursor: false,
-            allowMultipleSelections: false,
-            indentOnInput: false,
-            syntaxHighlighting: true,
-            bracketMatching: true,
-            closeBrackets: true,
-            autocompletion: false,
-            rectangularSelection: false,
-            crosshairCursor: false,
-            highlightActiveLineGutter: false,
-            highlightSelectionMatches: false
-          }}
-          style={{
-            fontSize: `${fontSize}px`,
-            minHeight: '300px',
-            height: 'auto',
-            maxHeight: 'none',
-            width: '100%'
-          }}
-          onCreateEditor={handleEditorView}
-        />
-      </div>
-    );
-  };
+  const renderEditor = () => (
+    <div className="relative w-full min-h-[300px]" ref={editorDivRef}>
+      <CodeMirror
+        value={htmlContent}
+        height="100%"
+        theme={oneDark}
+        extensions={[html(), whiteTextTheme]}
+        onChange={handleChange}
+        basicSetup={{
+          lineNumbers: true,
+          highlightActiveLine: false,
+          foldGutter: false,
+          dropCursor: false,
+          allowMultipleSelections: false,
+          indentOnInput: false,
+          syntaxHighlighting: true,
+          bracketMatching: true,
+          closeBrackets: true,
+          autocompletion: false,
+          rectangularSelection: false,
+          crosshairCursor: false,
+          highlightActiveLineGutter: false,
+          highlightSelectionMatches: false
+        }}
+        style={{
+          fontSize: `${fontSize}px`,
+          minHeight: '300px',
+          height: 'auto',
+          maxHeight: 'none',
+          width: '100%'
+        }}
+        onCreateEditor={handleEditorView}
+      />
+    </div>
+  );
 
   const renderToolbar = () => (
     <div className="flex items-center gap-2">
@@ -231,7 +196,7 @@ export const EditorSection = forwardRef<EditorSectionRef, EditorSectionProps>(({
   );
 
   return (
-    <div className="w-full" ref={containerRef}>
+    <div className="w-full">
       {isExtended ? (
         <div className="w-full overflow-x-auto">
           {editorContainer}

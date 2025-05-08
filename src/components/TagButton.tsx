@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 
@@ -8,6 +8,8 @@ interface TagButtonProps {
   closeTag: string | null;
   onTagClick: (openTag: string, closeTag: string | null) => void;
   className?: string;
+  isOpen: boolean;
+  setIsOpen: (isOpen: boolean) => void;
 }
 
 export const TagButton: React.FC<TagButtonProps> = ({
@@ -15,23 +17,32 @@ export const TagButton: React.FC<TagButtonProps> = ({
   openTag,
   closeTag,
   onTagClick,
-  className
+  className,
+  isOpen,
+  setIsOpen
 }) => {
-  const [isOpen, setIsOpen] = useState(true);
-
   const handleClick = () => {
     if (!closeTag) {
       // Always insert openTag for self-closing tags
       onTagClick(openTag, null);
       return;
     }
+    
     const selection = window.getSelection();
     const hasSelection = selection && selection.toString().length > 0;
-    onTagClick(openTag, closeTag);
-    if (!hasSelection) {
+    
+    if (hasSelection) {
+      // If there's a selection, always wrap it with both tags
+      onTagClick(openTag, closeTag);
+    } else {
+      // If no selection, insert either opening or closing tag based on state
+      if (isOpen) {
+        onTagClick(openTag, null);
+      } else {
+        onTagClick(closeTag, null);
+      }
       setIsOpen(!isOpen);
     }
-    // If there is a selection, do NOT toggle the state
   };
 
   return (

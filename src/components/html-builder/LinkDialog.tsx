@@ -39,7 +39,9 @@ export const LinkDialog: React.FC<LinkDialogProps> = ({
         <div className="py-4">
           <div className="mb-4">
             <p className="text-sm text-muted-foreground mb-2">Selected text:</p>
-            <p className="font-medium">{selectedText}</p>
+            <p className="font-mono bg-muted px-2 py-1 rounded text-primary border border-border break-all">
+              {selectedText || <span className="italic text-muted-foreground">No text selected</span>}
+            </p>
           </div>
           <div>
             <label htmlFor="url" className="text-sm text-muted-foreground mb-2 block">
