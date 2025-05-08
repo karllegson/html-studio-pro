@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -21,12 +20,18 @@ export const TagButton: React.FC<TagButtonProps> = ({
   const [isOpen, setIsOpen] = useState(true);
 
   const handleClick = () => {
-    onTagClick(isOpen ? openTag : (closeTag || ''), isOpen ? closeTag : null);
-    
-    // Only toggle the button state if no text is selected and it has a closing tag
-    if (closeTag && window.getSelection()?.toString() === '') {
+    if (!closeTag) {
+      // Always insert openTag for self-closing tags
+      onTagClick(openTag, null);
+      return;
+    }
+    const selection = window.getSelection();
+    const hasSelection = selection && selection.toString().length > 0;
+    onTagClick(openTag, closeTag);
+    if (!hasSelection) {
       setIsOpen(!isOpen);
     }
+    // If there is a selection, do NOT toggle the state
   };
 
   return (
@@ -40,7 +45,8 @@ export const TagButton: React.FC<TagButtonProps> = ({
       )}
       onClick={handleClick}
     >
-      {isOpen ? label : `/${label}`}
+      {/* Only show /label if closeTag exists */}
+      {closeTag ? (isOpen ? label : `/${label}`) : label}
     </Button>
   );
 };

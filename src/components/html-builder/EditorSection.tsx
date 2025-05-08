@@ -2,9 +2,13 @@ import React, { useRef, useImperativeHandle, forwardRef, useState, useCallback, 
 import { Button } from '@/components/ui/button';
 import { Copy, Save, Maximize2, Plus, Minus, ArrowDown } from 'lucide-react';
 import CopyButton from '@/components/ui/CopyButton';
+import CodeMirror from '@uiw/react-codemirror';
+import { html } from '@codemirror/lang-html';
+import { oneDark } from '@codemirror/theme-one-dark';
+import { EditorView } from '@codemirror/view';
 
 export interface EditorSectionRef {
-  getView: () => HTMLTextAreaElement | undefined;
+  getView: () => EditorView | undefined;
 }
 
 interface EditorSectionProps {
@@ -15,6 +19,23 @@ interface EditorSectionProps {
   lastSavedAt?: Date | null;
 }
 
+// Custom theme for white text
+const whiteTextTheme = EditorView.theme({
+  '&': {
+    color: '#fff',
+    backgroundColor: '#23263a',
+  },
+  '.cm-content': {
+    color: '#fff',
+    caretColor: '#fff',
+  },
+  '.cm-lineNumbers, .cm-gutters': {
+    backgroundColor: '#23263a',
+    color: '#888',
+    border: 'none',
+  },
+});
+
 export const EditorSection = forwardRef<EditorSectionRef, EditorSectionProps>(({
   htmlContent,
   onHtmlChange,
@@ -22,7 +43,8 @@ export const EditorSection = forwardRef<EditorSectionRef, EditorSectionProps>(({
   onSave,
   lastSavedAt,
 }, ref) => {
-  const editorRef = useRef<HTMLTextAreaElement>(null);
+  const editorDivRef = useRef<HTMLDivElement>(null);
+  const editorViewRef = useRef<EditorView | undefined>(undefined);
   const [isExtended, setIsExtended] = useState(false);
   const [fontSize, setFontSize] = useState(14);
   const [isVisible, setIsVisible] = useState(true);
@@ -31,7 +53,7 @@ export const EditorSection = forwardRef<EditorSectionRef, EditorSectionProps>(({
   const visibilityTimeoutRef = useRef<NodeJS.Timeout>();
   
   useImperativeHandle(ref, () => ({
-    getView: () => editorRef.current
+    getView: () => editorViewRef.current
   }));
 
   useEffect(() => {
@@ -75,39 +97,64 @@ export const EditorSection = forwardRef<EditorSectionRef, EditorSectionProps>(({
     setFontSize(prev => Math.max(prev - 1, 10));
   }, []);
 
-  const handleChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    onHtmlChange(e.target.value);
+  const handleChange = useCallback((value: string) => {
+    onHtmlChange(value);
     onUpdate();
   }, [onHtmlChange, onUpdate]);
 
   const scrollToBottom = useCallback(() => {
-    if (editorRef.current) {
-      editorRef.current.scrollTop = editorRef.current.scrollHeight;
+    if (editorDivRef.current) {
+      editorDivRef.current.scrollTop = editorDivRef.current.scrollHeight;
     }
+  }, []);
+
+  // Attach the EditorView instance to the ref when CodeMirror mounts
+  const handleEditorView = useCallback((view: EditorView | undefined) => {
+    editorViewRef.current = view;
   }, []);
 
   const renderEditor = () => {
     if (!isVisible) {
       return (
-        <div className="h-[500px] flex items-center justify-center text-muted-foreground">
+        <div className="min-h-[300px] flex items-center justify-center text-muted-foreground">
           Editor is not visible
         </div>
       );
     }
-
     return (
-      <textarea
-        ref={editorRef}
-        value={htmlContent}
-        onChange={handleChange}
-        className="w-full h-[500px] bg-[#282a36] text-[#f8f8f2] font-mono p-4 resize-none focus:outline-none"
-        style={{ 
-          fontSize: `${fontSize}px`,
-          lineHeight: '1.5',
-          tabSize: 2
-        }}
-        spellCheck={false}
-      />
+      <div className="relative w-full min-h-[300px]" ref={editorDivRef}>
+        <CodeMirror
+          value={htmlContent}
+          height="100%"
+          theme={oneDark}
+          extensions={[html(), whiteTextTheme]}
+          onChange={handleChange}
+          basicSetup={{
+            lineNumbers: true,
+            highlightActiveLine: false,
+            foldGutter: false,
+            dropCursor: false,
+            allowMultipleSelections: false,
+            indentOnInput: false,
+            syntaxHighlighting: true,
+            bracketMatching: true,
+            closeBrackets: true,
+            autocompletion: false,
+            rectangularSelection: false,
+            crosshairCursor: false,
+            highlightActiveLineGutter: false,
+            highlightSelectionMatches: false
+          }}
+          style={{
+            fontSize: `${fontSize}px`,
+            minHeight: '300px',
+            height: 'auto',
+            maxHeight: 'none',
+            width: '100%'
+          }}
+          onCreateEditor={handleEditorView}
+        />
+      </div>
     );
   };
 

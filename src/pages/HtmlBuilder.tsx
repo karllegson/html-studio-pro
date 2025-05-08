@@ -543,71 +543,74 @@ const HtmlBuilder: React.FC = () => {
   const handleTagClick = (openTag: string, closeTag: string | null) => {
     const view = editorRef.current?.getView();
     if (!view) return;
-    
     const selection = view.state.selection.main;
     const selectedContent = view.state.doc.sliceString(selection.from, selection.to);
-    
     // Special handling for link tag
-    if (openTag.includes('href=""')) {
+    if (openTag.startsWith('<a ') && closeTag === '</a>') {
       setLinkDialogOpen(true);
       return;
     }
-    
-    // If text is selected, wrap it with tags
     if (selectedContent && closeTag) {
-      const updatedContent = view.state.doc.toString().slice(0, selection.from) + 
-        openTag + selectedContent + closeTag + 
-        view.state.doc.toString().slice(selection.to);
-      
-      setHtmlContent(updatedContent);
-      
-      // Restore cursor position after the tag + selected content
-      setTimeout(() => {
-        if (view) {
-          view.focus();
-          const newPosition = selection.from + openTag.length + selectedContent.length;
-          view.dispatch({
-            selection: { anchor: newPosition, head: newPosition }
-          });
-        }
-      }, 0);
-    } 
-    // If no text is selected, insert the tag at cursor position
-    else {
-      const updatedContent = view.state.doc.toString().slice(0, selection.from) + 
-        openTag + 
-        view.state.doc.toString().slice(selection.from);
-      
-      setHtmlContent(updatedContent);
-      
-      // Restore cursor position after the inserted tag
-      setTimeout(() => {
-        if (view) {
-          view.focus();
-          const newPosition = selection.from + openTag.length;
-          view.dispatch({
-            selection: { anchor: newPosition, head: newPosition }
-          });
-        }
-      }, 0);
+      // Wrap selected text
+      view.dispatch({
+        changes: {
+          from: selection.from,
+          to: selection.to,
+          insert: openTag + selectedContent + closeTag
+        },
+        selection: { anchor: selection.from + openTag.length + selectedContent.length + closeTag.length }
+      });
+      lastInsertRange.current = {
+        start: selection.from,
+        end: selection.from + openTag.length + selectedContent.length + closeTag.length
+      };
+      view.focus();
+    } else {
+      // Insert tag at cursor and move cursor after it
+      view.dispatch({
+        changes: { from: selection.from, to: selection.from, insert: openTag },
+        selection: { anchor: selection.from + openTag.length }
+      });
+      lastInsertRange.current = {
+        start: selection.from,
+        end: selection.from + openTag.length
+      };
+      view.focus();
     }
   };
 
   const handleInsertComponent = (html: string) => {
     const view = editorRef.current?.getView();
     if (!view) return;
-    
     const selection = view.state.selection.main;
-    const start = selection.from;
-    const end = start + html.length;
-
-    // Insert at cursor position
-    const updatedContent = view.state.doc.toString().slice(0, start) + 
-      html + 
-      view.state.doc.toString().slice(start);
-    
-    setHtmlContent(updatedContent);
-    lastInsertRange.current = { start, end };
+    const selectedContent = view.state.doc.sliceString(selection.from, selection.to);
+    if (selectedContent) {
+      // Wrap selection with the component/template
+      view.dispatch({
+        changes: {
+          from: selection.from,
+          to: selection.to,
+          insert: html
+        },
+        selection: { anchor: selection.from + html.length }
+      });
+      lastInsertRange.current = {
+        start: selection.from,
+        end: selection.from + html.length
+      };
+      view.focus();
+    } else {
+      // Insert at cursor
+      view.dispatch({
+        changes: { from: selection.from, to: selection.from, insert: html },
+        selection: { anchor: selection.from + html.length }
+      });
+      lastInsertRange.current = {
+        start: selection.from,
+        end: selection.from + html.length
+      };
+      view.focus();
+    }
   };
 
   const handleEditorUpdate = (viewUpdate: any) => {
@@ -629,13 +632,12 @@ const HtmlBuilder: React.FC = () => {
         selection: { anchor: start, head: end },
         scrollIntoView: true
       });
-      // Remove highlight after 1.5s
       setTimeout(() => {
         view.dispatch({
           selection: { anchor: end, head: end }
         });
         lastInsertRange.current = null;
-      }, 1500);
+      }, 2000); // 2 seconds
     }, 0);
   }, [htmlContent]);
 
@@ -708,50 +710,28 @@ const HtmlBuilder: React.FC = () => {
   const handleLinkConfirm = (url: string) => {
     const view = editorRef.current?.getView();
     if (!view) return;
-    
     const selection = view.state.selection.main;
     const selectedContent = view.state.doc.sliceString(selection.from, selection.to);
-    
     const openTag = `<a href="${url}">`;
     const closeTag = "</a>";
-    
-    // If text is selected, wrap it with the link tags
     if (selectedContent) {
-      const updatedContent = view.state.doc.toString().slice(0, selection.from) + 
-        openTag + selectedContent + closeTag + 
-        view.state.doc.toString().slice(selection.to);
-      
-      setHtmlContent(updatedContent);
-      
-      // Restore cursor position after the link
-      setTimeout(() => {
-        if (view) {
-          view.focus();
-          const newPosition = selection.from + openTag.length + selectedContent.length;
-          view.dispatch({
-            selection: { anchor: newPosition, head: newPosition }
-          });
-        }
-      }, 0);
-    } 
-    // If no text is selected, insert the link tags at cursor position
-    else {
-      const updatedContent = view.state.doc.toString().slice(0, selection.from) + 
-        openTag + "link text" + closeTag + 
-        view.state.doc.toString().slice(selection.from);
-      
-      setHtmlContent(updatedContent);
-      
-      // Restore cursor position after the opening tag
-      setTimeout(() => {
-        if (view) {
-          view.focus();
-          const newPosition = selection.from + openTag.length;
-          view.dispatch({
-            selection: { anchor: newPosition, head: newPosition + 9 } // Select "link text"
-          });
-        }
-      }, 0);
+      view.dispatch({
+        changes: {
+          from: selection.from,
+          to: selection.to,
+          insert: openTag + selectedContent + closeTag
+        },
+        selection: { anchor: selection.from + openTag.length + selectedContent.length + closeTag.length }
+      });
+      view.focus();
+    } else {
+      // Insert <a href="...">link text</a> at cursor
+      const linkText = "link text";
+      view.dispatch({
+        changes: { from: selection.from, to: selection.from, insert: openTag + linkText + closeTag },
+        selection: { anchor: selection.from + openTag.length, head: selection.from + openTag.length + linkText.length }
+      });
+      view.focus();
     }
   };
 
@@ -832,6 +812,7 @@ const HtmlBuilder: React.FC = () => {
                               type="text"
                               value={contactLink}
                               onChange={e => setContactLink(e.target.value)}
+                              onBlur={e => setContactLink(e.target.value)}
                               className="font-mono text-xs flex-1 pl-3 rounded-md bg-card ml-2"
                               placeholder="Paste Contact Us link"
                             />
@@ -911,6 +892,7 @@ const HtmlBuilder: React.FC = () => {
                         type="text"
                         value={featuredTitle}
                         onChange={e => handleFeaturedTitleChange(e.target.value)}
+                        onBlur={e => handleFeaturedTitleChange(e.target.value)}
                         className="flex-1"
                         placeholder="Enter title"
                       />
@@ -922,6 +904,7 @@ const HtmlBuilder: React.FC = () => {
                         type="text"
                         value={featuredAlt}
                         onChange={e => handleFeaturedAltChange(e.target.value)}
+                        onBlur={e => handleFeaturedAltChange(e.target.value)}
                         className="flex-1"
                         placeholder="Enter alt text"
                       />
@@ -950,9 +933,10 @@ const HtmlBuilder: React.FC = () => {
                       <span className="w-28">{item.label}</span>
                       <Input
                         type="text"
-                        className="w-64 px-3 py-2 text-sm rounded-md border"
                         value={item.value}
                         onChange={e => item.handler(e.target.value)}
+                        onBlur={e => item.handler(e.target.value)}
+                        className="w-64 px-3 py-2 text-sm rounded-md border"
                         placeholder={item.label}
                       />
                       <CopyButton value={item.value} />
@@ -1082,6 +1066,7 @@ const HtmlBuilder: React.FC = () => {
                       type="text"
                       value={mapsLocation}
                       onChange={e => handleMapsLocationChange(e.target.value)}
+                      onBlur={e => handleMapsLocationChange(e.target.value)}
                       placeholder="e.g., Acton, MA"
                       className="mb-2"
                     />
@@ -1104,6 +1089,7 @@ const HtmlBuilder: React.FC = () => {
                         rows={3}
                         value={mapsEmbedCode}
                         onChange={e => handleMapsEmbedCodeChange(e.target.value)}
+                        onBlur={e => handleMapsEmbedCodeChange(e.target.value)}
                         placeholder="Paste your iframe code here..."
                         className="flex-1"
                       />
@@ -1125,6 +1111,7 @@ const HtmlBuilder: React.FC = () => {
                       rows={4}
                       value={instructionsToLink}
                       onChange={e => handleTextChange('instructionsToLink', e.target.value)}
+                      onBlur={e => handleTextChange('instructionsToLink', e.target.value)}
                       placeholder="Enter instructions..."
                     />
                   </div>
@@ -1138,6 +1125,7 @@ const HtmlBuilder: React.FC = () => {
                       rows={4}
                       value={notes}
                       onChange={e => handleTextChange('notes', e.target.value)}
+                      onBlur={e => handleTextChange('notes', e.target.value)}
                       placeholder="Enter notes..."
                     />
                   </div>
