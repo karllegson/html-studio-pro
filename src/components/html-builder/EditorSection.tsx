@@ -1,47 +1,25 @@
-import React, { useRef, useImperativeHandle, forwardRef, useState } from 'react';
-import CodeMirror, { ReactCodeMirrorRef } from '@uiw/react-codemirror';
+import React, { useRef, useImperativeHandle, forwardRef, useState, useCallback, useEffect, useMemo } from 'react';
+import CodeMirror from '@uiw/react-codemirror';
 import { oneDark } from '@codemirror/theme-one-dark';
 import { EditorView, ViewUpdate } from '@codemirror/view';
 import { Button } from '@/components/ui/button';
-import { Copy, Save, Maximize2, Minimize2, Plus, Minus, ArrowDown } from 'lucide-react';
-import { lineNumbers, highlightActiveLineGutter, highlightSpecialChars, drawSelection, dropCursor, rectangularSelection, crosshairCursor, highlightActiveLine, keymap } from '@codemirror/view';
+import { Copy, Save, Maximize2, Plus, Minus, ArrowDown } from 'lucide-react';
+import { lineNumbers, highlightActiveLine } from '@codemirror/view';
 import { EditorState } from '@codemirror/state';
-import { foldGutter, indentOnInput, syntaxHighlighting, defaultHighlightStyle } from '@codemirror/language';
-import { history, defaultKeymap, historyKeymap } from '@codemirror/commands';
-import { searchKeymap } from '@codemirror/search';
-import { closeBrackets, autocompletion, closeBracketsKeymap, completionKeymap } from '@codemirror/autocomplete';
-import { lintKeymap } from '@codemirror/lint';
-import { foldKeymap } from '@codemirror/language';
+import { syntaxHighlighting } from '@codemirror/language';
+import { history, defaultKeymap } from '@codemirror/commands';
+import { closeBrackets, closeBracketsKeymap } from '@codemirror/autocomplete';
 import { html } from '@codemirror/lang-html';
 import { tags } from '@lezer/highlight';
 import { HighlightStyle } from '@codemirror/language';
 import CopyButton from '@/components/ui/CopyButton';
 
-// Custom syntax highlighting theme
+// Minimal syntax highlighting for better performance
 const customHighlightStyle = HighlightStyle.define([
-  { tag: tags.tagName, color: '#ff79c6' }, // HTML tags
+  { tag: tags.tagName, color: '#ffffff' },      // HTML tags
   { tag: tags.attributeName, color: '#8be9fd' }, // Attributes
-  { tag: tags.string, color: '#f1fa8c' }, // Strings
-  { tag: tags.comment, color: '#6272a4' }, // Comments
-  { tag: tags.number, color: '#bd93f9' }, // Numbers
-  { tag: tags.keyword, color: '#ff79c6' }, // Keywords
-  { tag: tags.operator, color: '#ff79c6' }, // Operators
-  { tag: tags.bracket, color: '#ff79c6' }, // Brackets
-  { tag: tags.className, color: '#8be9fd' }, // Classes
-  { tag: tags.propertyName, color: '#8be9fd' }, // Properties
-  { tag: tags.variableName, color: '#f8f8f2' }, // Variables
-  { tag: tags.definition(tags.variableName), color: '#50fa7b' }, // Variable definitions
-  { tag: tags.regexp, color: '#ffb86c' }, // Regular expressions
-  { tag: tags.escape, color: '#ffb86c' }, // Escape sequences
-  { tag: tags.meta, color: '#6272a4' }, // Meta tags
-  { tag: tags.link, color: '#8be9fd' }, // Links
-  { tag: tags.heading, color: '#ff79c6', fontWeight: 'bold' }, // Headings
-  { tag: tags.strong, color: '#ff79c6', fontWeight: 'bold' }, // Strong text
-  { tag: tags.emphasis, color: '#ff79c6', fontStyle: 'italic' }, // Emphasized text
-  { tag: tags.strikethrough, color: '#ff79c6', textDecoration: 'line-through' }, // Strikethrough
-  { tag: tags.list, color: '#f8f8f2' }, // Lists
-  { tag: tags.quote, color: '#f1fa8c', fontStyle: 'italic' }, // Quotes
-  { tag: tags.invalid, color: '#ff5555' }, // Invalid syntax
+  { tag: tags.string, color: '#f1fa8c' },       // Strings
+  { tag: tags.comment, color: '#6272a4' },      // Comments
 ]);
 
 export interface EditorSectionRef {
@@ -63,49 +41,27 @@ export const EditorSection = forwardRef<EditorSectionRef, EditorSectionProps>(({
   onSave,
   lastSavedAt,
 }, ref) => {
-  const editorRef = useRef<ReactCodeMirrorRef>(null);
+  const editorRef = useRef<any>(null);
   const [isExtended, setIsExtended] = useState(false);
   const [fontSize, setFontSize] = useState(14);
+  const [isVisible, setIsVisible] = useState(true);
+  const observerRef = useRef<IntersectionObserver | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const visibilityTimeoutRef = useRef<NodeJS.Timeout>();
+  const [isEditorMounted, setIsEditorMounted] = useState(false);
   
-  // Expose a method to get the editor view
   useImperativeHandle(ref, () => ({
     getView: () => editorRef.current?.view
   }));
 
-  const increaseFontSize = () => {
-    setFontSize(prev => Math.min(prev + 1, 24));
-  };
-
-  const decreaseFontSize = () => {
-    setFontSize(prev => Math.max(prev - 1, 10));
-  };
-
-  // Conditional class for text wrapping
-  const wrapClass = !isExtended ? 'cm-wrap-lines' : '';
-
-  // Enhanced extensions with syntax highlighting
-  const extensions = [
+  // Memoized extensions for better performance
+  const extensions = useMemo(() => [
     html(),
     lineNumbers(),
-    highlightSpecialChars(),
-    drawSelection(),
-    dropCursor(),
-    rectangularSelection(),
-    crosshairCursor(),
     highlightActiveLine(),
-    indentOnInput(),
     syntaxHighlighting(customHighlightStyle),
     closeBrackets(),
-    autocompletion(),
     history(),
-    keymap.of([
-      ...defaultKeymap,
-      ...historyKeymap,
-      ...closeBracketsKeymap,
-      ...completionKeymap,
-      ...searchKeymap,
-      ...lintKeymap,
-    ]),
     EditorView.lineWrapping,
     EditorState.tabSize.of(2),
     EditorView.theme({
@@ -114,6 +70,7 @@ export const EditorSection = forwardRef<EditorSectionRef, EditorSectionProps>(({
         boxSizing: 'border-box',
         width: '100%',
         overflowX: 'hidden',
+        color: '#f8f8f2',
       },
       '.cm-scroller': {
         fontFamily: 'monospace',
@@ -128,6 +85,7 @@ export const EditorSection = forwardRef<EditorSectionRef, EditorSectionProps>(({
         wordBreak: 'break-word',
         overflowX: 'hidden',
         position: 'relative',
+        color: '#f8f8f2',
       },
       '.cm-gutters': {
         background: 'none',
@@ -147,6 +105,7 @@ export const EditorSection = forwardRef<EditorSectionRef, EditorSectionProps>(({
         textAlign: 'right',
         width: '24px',
         minWidth: '24px',
+        color: '#7c8696',
       },
       '.cm-line': {
         padding: 0,
@@ -154,232 +113,199 @@ export const EditorSection = forwardRef<EditorSectionRef, EditorSectionProps>(({
         whiteSpace: 'pre-wrap',
         wordBreak: 'break-word',
         position: 'relative',
+        color: '#f8f8f2',
       },
-      '.cm-line::before': undefined,
       '.cm-activeLine': {
         background: 'transparent',
         width: '100%',
         boxSizing: 'border-box',
         borderRadius: 'inherit',
       },
-      '.cm-activeLineGutter': {
-        background: 'transparent', // subtle background for gutter only
-        border: 'none',
-      },
-      '.cm-gutterElement': {
-        padding: '0 0.5rem',
-      },
-      '.cm-matchingBracket': {
-        color: '#50fa7b',
-        fontWeight: 'bold',
-      },
-      '.cm-nonmatchingBracket': {
-        color: '#ff5555',
-        fontWeight: 'bold',
-      },
     }),
-  ];
+  ], [fontSize]);
 
-  // --- Render ---
-  if (isExtended) {
+  // Intersection Observer for lazy loading
+  useEffect(() => {
+    if (!containerRef.current) return;
+
+    observerRef.current = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (visibilityTimeoutRef.current) {
+            clearTimeout(visibilityTimeoutRef.current);
+          }
+          
+          visibilityTimeoutRef.current = setTimeout(() => {
+            const shouldBeVisible = entry.isIntersecting;
+            setIsVisible(shouldBeVisible);
+            setIsEditorMounted(shouldBeVisible);
+          }, 150);
+        });
+      },
+      { 
+        threshold: [0, 0.1, 0.2],
+        rootMargin: '50px 0px'
+      }
+    );
+
+    observerRef.current.observe(containerRef.current);
+
+    return () => {
+      if (observerRef.current) {
+        observerRef.current.disconnect();
+      }
+      if (visibilityTimeoutRef.current) {
+        clearTimeout(visibilityTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (editorRef.current?.view) {
+        editorRef.current.view.destroy();
+      }
+    };
+  }, []);
+
+  const increaseFontSize = useCallback(() => {
+    setFontSize(prev => Math.min(prev + 1, 24));
+  }, []);
+
+  const decreaseFontSize = useCallback(() => {
+    setFontSize(prev => Math.max(prev - 1, 10));
+  }, []);
+
+  const wrapClass = !isExtended ? 'cm-wrap-lines' : '';
+
+  const renderEditor = () => {
+    if (!isVisible) {
+      return (
+        <div className="h-[500px] flex items-center justify-center text-muted-foreground">
+          Editor is not visible
+        </div>
+      );
+    }
+
+    if (!isEditorMounted) {
+      return (
+        <div className="h-[500px] flex items-center justify-center text-muted-foreground">
+          Loading editor...
+        </div>
+      );
+    }
+
     return (
-      <div className="w-full overflow-x-auto">
-        <div
-          className={`bg-[#23263a] border border-border shadow-xl rounded-xl flex flex-col px-0 my-4 focus-within:ring-2 focus-within:ring-primary/60 transition-all duration-300`}
-          style={{ minWidth: '1200px', width: '2000px', maxWidth: 'none' }}
+      <CodeMirror
+        ref={editorRef}
+        value={htmlContent}
+        theme={oneDark}
+        extensions={extensions}
+        onChange={onHtmlChange}
+        className={`text-editor-foreground cm-s-dark ${wrapClass}`}
+        onUpdate={onUpdate}
+        style={{ fontSize: `${fontSize}px` }}
+      />
+    );
+  };
+
+  const renderToolbar = () => (
+    <div className="flex items-center gap-2">
+      <Button 
+        variant="ghost" 
+        size="sm" 
+        onClick={() => setIsExtended(!isExtended)}
+        aria-label={isExtended ? "Collapse editor" : "Expand editor"}
+      >
+        <Maximize2 size={14} />
+      </Button>
+      <div>HTML Editor</div>
+      <div className="flex items-center gap-1 ml-2">
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          onClick={decreaseFontSize}
+          className="flex items-center gap-1"
         >
-          <div className="p-2 bg-secondary text-secondary-foreground text-sm font-mono flex justify-between items-center rounded-t-xl">
-            <div className="flex items-center gap-2">
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={() => setIsExtended(false)}
-                aria-label="Collapse editor"
-              >
-                <Maximize2 size={14} />
-              </Button>
-              <div>HTML Editor</div>
-              <div className="flex items-center gap-1 ml-2">
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={decreaseFontSize}
-                  className="flex items-center gap-1"
-                >
-                  <Minus size={14} />
-                </Button>
-                <span className="text-xs">{fontSize}px</span>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={increaseFontSize}
-                  className="flex items-center gap-1"
-                >
-                  <Plus size={14} />
-                </Button>
-              </div>
-              <CopyButton value={htmlContent} className="ml-2" />
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={onSave}
-                className="flex items-center gap-1"
-              >
-                <Save size={14} />
-                Save
-              </Button>
-              <Button 
-                variant="ghost" 
-                size="sm"
-                onClick={() => {
-                  try {
-                    const view = editorRef.current?.view;
-                    if (view) {
-                      const lastLine = view.state.doc.lines;
-                      const pos = view.state.doc.line(lastLine).to;
-                      view.dispatch({
-                        selection: { anchor: pos, head: pos },
-                        scrollIntoView: true
-                      });
-                      view.focus();
-                    } else {
-                      const scroller = document.querySelector('.cm-scroller') as HTMLElement;
-                      if (scroller) {
-                        scroller.scrollTo({ top: scroller.scrollHeight, behavior: 'smooth' });
-                      }
-                    }
-                  } catch (error) {
-                    console.error('Error scrolling to bottom:', error);
-                  }
-                }}
-                className="flex items-center gap-1"
-              >
-                <ArrowDown size={14} />
-                Scroll Bottom
-              </Button>
-            </div>
-            {lastSavedAt && (
-              <div className="text-xs text-muted-foreground ml-4 whitespace-nowrap">
-                Last saved: {lastSavedAt.toLocaleTimeString()}
-              </div>
-            )}
+          <Minus size={14} />
+        </Button>
+        <span className="text-xs">{fontSize}px</span>
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          onClick={increaseFontSize}
+          className="flex items-center gap-1"
+        >
+          <Plus size={14} />
+        </Button>
+      </div>
+      <CopyButton value={htmlContent} className="ml-2" />
+      <Button 
+        variant="outline" 
+        size="sm"
+        onClick={onSave}
+        className="flex items-center gap-1"
+      >
+        <Save size={14} />
+        Save
+      </Button>
+      <Button
+        variant="ghost" 
+        size="sm"
+        onClick={() => {
+          try {
+            const view = editorRef.current?.view;
+            if (view) {
+              const lastLine = view.state.doc.lines;
+              const pos = view.state.doc.line(lastLine).to;
+              view.dispatch({
+                selection: { anchor: pos, head: pos },
+                scrollIntoView: true
+              });
+              view.focus();
+            }
+          } catch (error) {
+            console.error('Error scrolling to bottom:', error);
+          }
+        }}
+        className="flex items-center gap-1"
+      >
+        <ArrowDown size={14} />
+        Scroll Bottom
+      </Button>
+    </div>
+  );
+
+  const editorContainer = (
+    <div
+      className={`bg-[#23263a] border border-border shadow-xl rounded-xl flex flex-col px-0 my-4 focus-within:ring-2 focus-within:ring-primary/60 transition-all duration-300 ${isExtended ? 'min-w-[1200px] w-[2000px] max-w-none' : 'w-full'}`}
+    >
+      <div className="p-2 bg-secondary text-secondary-foreground text-sm font-mono flex justify-between items-center rounded-t-xl">
+        {renderToolbar()}
+        {lastSavedAt && (
+          <div className="text-xs text-muted-foreground ml-4 whitespace-nowrap">
+            Last saved: {lastSavedAt.toLocaleTimeString()}
           </div>
-          <div className="flex-1 rounded-b-xl overflow-hidden" style={{overflow: 'hidden', borderRadius: '0 0 1rem 1rem'}}>
-            <div className="w-full max-w-full">
-              <CodeMirror
-                ref={editorRef}
-                value={htmlContent}
-                theme={oneDark}
-                extensions={extensions}
-                onChange={onHtmlChange}
-                className={`text-editor-foreground cm-s-dark ${wrapClass}`}
-                onUpdate={onUpdate}
-                style={{ fontSize: `${fontSize}px` }}
-              />
-            </div>
-          </div>
+        )}
+      </div>
+      <div className="flex-1 rounded-b-xl overflow-hidden" style={{overflow: 'hidden', borderRadius: '0 0 1rem 1rem'}}>
+        <div className="w-full max-w-full">
+          {renderEditor()}
         </div>
       </div>
-    );
-  }
+    </div>
+  );
 
   return (
-    <div className="w-full">
-      <div
-        className={`bg-[#23263a] border border-border shadow-xl rounded-xl flex flex-col px-0 my-4 focus-within:ring-2 focus-within:ring-primary/60 transition-all duration-300 w-full`}
-        style={{ minWidth: '0', width: '100%', maxWidth: '100%' }}
-      >
-        <div className="p-2 bg-secondary text-secondary-foreground text-sm font-mono flex justify-between items-center rounded-t-xl">
-          <div className="flex items-center gap-2">
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={() => setIsExtended(true)}
-              aria-label="Expand editor"
-            >
-              <Maximize2 size={14} />
-            </Button>
-            <div>HTML Editor</div>
-            <div className="flex items-center gap-1 ml-2">
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={decreaseFontSize}
-                className="flex items-center gap-1"
-              >
-                <Minus size={14} />
-              </Button>
-              <span className="text-xs">{fontSize}px</span>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={increaseFontSize}
-                className="flex items-center gap-1"
-              >
-                <Plus size={14} />
-              </Button>
-            </div>
-            <CopyButton value={htmlContent} className="ml-2" />
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={onSave}
-              className="flex items-center gap-1"
-            >
-              <Save size={14} />
-              Save
-            </Button>
-            <Button 
-              variant="ghost" 
-              size="sm"
-              onClick={() => {
-                try {
-                  const view = editorRef.current?.view;
-                  if (view) {
-                    const lastLine = view.state.doc.lines;
-                    const pos = view.state.doc.line(lastLine).to;
-                    view.dispatch({
-                      selection: { anchor: pos, head: pos },
-                      scrollIntoView: true
-                    });
-                    view.focus();
-                  } else {
-                    const scroller = document.querySelector('.cm-scroller') as HTMLElement;
-                    if (scroller) {
-                      scroller.scrollTo({ top: scroller.scrollHeight, behavior: 'smooth' });
-                    }
-                  }
-                } catch (error) {
-                  console.error('Error scrolling to bottom:', error);
-                }
-              }}
-              className="flex items-center gap-1"
-            >
-              <ArrowDown size={14} />
-              Scroll Bottom
-            </Button>
-          </div>
-          {lastSavedAt && (
-            <div className="text-xs text-muted-foreground ml-4 whitespace-nowrap">
-              Last saved: {lastSavedAt.toLocaleTimeString()}
-            </div>
-          )}
+    <div className="w-full" ref={containerRef}>
+      {isExtended ? (
+        <div className="w-full overflow-x-auto">
+          {editorContainer}
         </div>
-        <div className="flex-1 rounded-b-xl overflow-hidden" style={{overflow: 'hidden', borderRadius: '0 0 1rem 1rem'}}>
-          <div className="w-full max-w-full">
-            <CodeMirror
-              ref={editorRef}
-              value={htmlContent}
-              theme={oneDark}
-              extensions={extensions}
-              onChange={onHtmlChange}
-              className={`text-editor-foreground cm-s-dark ${wrapClass}`}
-              onUpdate={onUpdate}
-              style={{ fontSize: `${fontSize}px` }}
-            />
-          </div>
-        </div>
-      </div>
+      ) : (
+        editorContainer
+      )}
     </div>
   );
 });
