@@ -61,14 +61,14 @@ export const ImageFilenameConverter: React.FC<ImageFilenameConverterProps> = ({ 
     <Card className="p-4 rounded-lg bg-card border border-border">
       <CardContent className="p-0">
         <div className="flex flex-col gap-4">
-          <div className="flex flex-col gap-1">
-            <Label htmlFor="filename" className="mb-2">Image Filename</Label>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-1 w-full">
+            <Label htmlFor="filename" className="w-full sm:w-32 text-xs sm:text-sm font-medium whitespace-nowrap truncate mb-2">Image Filename</Label>
             <Input
               id="filename"
               value={filename}
               onChange={(e) => setFilename(e.target.value)}
               placeholder="Enter filename"
-              className="bg-muted text-white/90 border border-border"
+              className="bg-muted text-white/90 border border-border w-full"
             />
           </div>
           <div

@@ -739,7 +739,7 @@ const HtmlBuilder: React.FC = () => {
             </div>
             {/* Main Content: 3 columns, grouped cards as in wireframe, notes, and editor */}
             <div className="flex flex-col h-full">
-              <div className="grid grid-cols-3 gap-3 mb-2">
+              <div className="grid grid-cols-3 gap-3 mb-2 editor-main-grid">
                 {/* Row 1 */}
                 <div className="bg-card rounded-lg p-4 flex flex-col">
                   {/* Company Section */}
@@ -882,24 +882,26 @@ const HtmlBuilder: React.FC = () => {
                 </div>
 
                 {/* Row 2 */}
-                <div className="border rounded p-4 min-h-[80px] flex flex-col justify-center">
+                <div className="border rounded p-4 min-h-[80px] flex flex-col justify-center bg-card">
                   {[
                     { label: 'Widget Title', key: 'widgetTitle', value: widgetTitle, handler: handleWidgetTitleChange },
                     { label: 'Meta Title', key: 'metaTitle', value: metaTitle, handler: handleMetaTitleChange },
                     { label: 'Meta URL', key: 'metaUrl', value: metaUrl, handler: handleMetaUrlChange },
                     { label: 'Meta Description', key: 'metaDescription', value: metaDescription, handler: handleMetaDescriptionChange },
                   ].map((item, idx) => (
-                    <div key={item.key} className="flex items-center gap-1 mb-2 last:mb-0">
-                      <span className="w-28">{item.label}</span>
-                      <Input
-                        type="text"
-                        value={item.value}
-                        onChange={e => item.handler(e.target.value)}
-                        onBlur={e => item.handler(e.target.value)}
-                        className="w-64 px-3 py-2 text-sm rounded-md border"
-                        placeholder={item.label}
-                      />
-                      <CopyButton value={item.value} />
+                    <div key={item.key} className="flex flex-col sm:flex-row sm:items-center gap-1 mb-2 last:mb-0 w-full">
+                      <span className="w-full sm:w-28 text-xs sm:text-sm font-medium whitespace-nowrap truncate">{item.label}</span>
+                      <div className="flex-1 flex flex-row gap-1 w-full">
+                        <Input
+                          type="text"
+                          value={item.value}
+                          onChange={e => item.handler(e.target.value)}
+                          onBlur={e => item.handler(e.target.value)}
+                          className="w-full px-3 py-2 text-xs sm:text-sm rounded-md border"
+                          placeholder={item.label}
+                        />
+                        <CopyButton value={item.value} />
+                      </div>
                     </div>
                   ))}
                   {/* Meta Info Checkbox */}
@@ -974,7 +976,7 @@ const HtmlBuilder: React.FC = () => {
                 {/* 2x2 Section Grid with Notes in bottom right as the cell itself */}
                 <div className="w-full max-w-4xl mx-auto mt-6 grid grid-cols-2 grid-rows-2 gap-4">
                   {/* Top-left cell: Tags link */}
-                  <div className="border rounded p-4 min-h-[80px] flex flex-col">
+                  <div className="border rounded p-4 min-h-[80px] flex flex-col justify-center bg-card">
                     <h3 className="text-lg font-medium mb-2">Tags link</h3>
                     <div className="flex flex-col gap-3">
                       <div className="flex items-center gap-2">
@@ -1012,7 +1014,7 @@ const HtmlBuilder: React.FC = () => {
                     </div>
                   </div>
                   {/* Top-right cell: Google Maps Embed */}
-                  <div className="border rounded p-4 min-h-[80px] flex flex-col gap-2">
+                  <div className="border rounded p-4 min-h-[80px] flex flex-col gap-2 bg-card">
                     <div className="flex items-center justify-between mb-2">
                       <span className="mx-auto font-medium text-center w-full">Google Maps Embed</span>
                       <GreenCircleCheckbox
@@ -1057,7 +1059,7 @@ const HtmlBuilder: React.FC = () => {
                     </div>
                   </div>
                   {/* Bottom-left cell: Instructions to Link */}
-                  <div className="border rounded p-4 min-h-[80px] flex flex-col justify-between">
+                  <div className="border rounded p-4 min-h-[80px] flex flex-col justify-between bg-card">
                     <div className="flex items-center justify-between mb-2">
                       <span className="mx-auto font-medium text-center w-full">Instructions to Link</span>
                       <GreenCircleCheckbox
@@ -1076,7 +1078,7 @@ const HtmlBuilder: React.FC = () => {
                     />
                   </div>
                   {/* Bottom-right cell: Notes */}
-                  <div className="border rounded p-4 min-h-[80px] flex flex-col justify-between">
+                  <div className="border rounded p-4 min-h-[80px] flex flex-col justify-between bg-card">
                     <div className="flex items-center justify-between mb-2">
                       <span className="mx-auto font-medium text-center w-full">Notes</span>
                     </div>
