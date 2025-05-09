@@ -25,7 +25,7 @@ const validateCompanyRules = (rules: { basePath: string; prefix: string; fileSuf
 export default function AdminPage() {
   const [activeTab, setActiveTab] = useState('companies');
   const [selectedCompany, setSelectedCompany] = useState<string | null>(null);
-  const [editCompany, setEditCompany] = useState<{ contactLink: string, basePath: string, prefix: string, fileSuffix: string } | null>(null);
+  const [editCompany, setEditCompany] = useState<{ contactLink: string, basePath: string, prefix: string, fileSuffix: string, info: string } | null>(null);
   const navigate = useNavigate();
 
   // Use real companies from context
@@ -49,7 +49,8 @@ export default function AdminPage() {
         contactLink: company.contactLink,
         basePath: company.basePath,
         prefix: company.prefix,
-        fileSuffix: company.fileSuffix
+        fileSuffix: company.fileSuffix,
+        info: company.info || ''
       } : null);
     } else {
       setEditCompany(null);
@@ -275,7 +276,17 @@ export default function AdminPage() {
                     <p className="text-sm text-muted-foreground mt-1">Must start with a hyphen (-)</p>
                   </div>
                 </div>
+                <div className="space-y-2">
+                  <Label className="block mb-1 font-medium text-white/80">More info</Label>
+                  <textarea
+                    placeholder="Enter company info..."
+                    value={editCompany.info}
+                    onChange={e => handleCompanyFieldChange('info', e.target.value)}
+                    className="bg-muted text-white/90 border border-border rounded p-2 min-h-[80px] w-full"
+                  />
+                </div>
                 <div className="pt-4">
+                  <h3 className="text-lg font-medium mb-2 text-center">Image file name to link converter</h3>
                   <ImageFilenameConverter companyId={selectedCompany} displayOutputAsText />
                 </div>
                 <hr className="my-6 border-t border-gray-700" />

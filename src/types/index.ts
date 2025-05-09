@@ -14,6 +14,8 @@ export interface Company {
   prefix: string;
   /** Suffix for image filenames */
   fileSuffix: string;
+  /** Optional company info for display */
+  info?: string;
 }
 
 /**

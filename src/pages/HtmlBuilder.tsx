@@ -977,7 +977,7 @@ const HtmlBuilder: React.FC = () => {
                 <div className="w-full max-w-4xl mx-auto mt-6 grid grid-cols-2 grid-rows-2 gap-4">
                   {/* Top-left cell: Tags link */}
                   <div className="border rounded p-4 min-h-[80px] flex flex-col justify-center bg-card">
-                    <h3 className="text-lg font-medium mb-2">Tags link</h3>
+                    <h3 className="text-lg font-medium mb-2 text-center w-full">Tags link</h3>
                     <div className="flex flex-col gap-3">
                       <div className="flex items-center gap-2">
                         <span className="w-32">Review</span>
@@ -1010,6 +1010,17 @@ const HtmlBuilder: React.FC = () => {
                           </SelectContent>
                         </Select>
                         <CopyButton value={faqTag} />
+                      </div>
+                    </div>
+                    {/* More info section */}
+                    <div className="mt-6">
+                      <h4 className="text-base font-semibold text-center text-primary mb-2">More info</h4>
+                      <div className="bg-muted/30 border border-border rounded p-3 text-sm text-white/90 min-h-[60px]">
+                        {getCompanyById(companyId)?.info ? (
+                          <span>{getCompanyById(companyId)?.info}</span>
+                        ) : (
+                          <span className="text-muted-foreground">No info available for this company.</span>
+                        )}
                       </div>
                     </div>
                   </div>
