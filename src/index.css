@@ -52,8 +52,8 @@
   body {
     @apply bg-background text-foreground;
     background-image: 
-      linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+      linear-gradient(rgba(255, 255, 255, 0.10) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.10) 1px, transparent 1px);
     background-size: 32px 32px;
     background-position: center center;
   }
@@ -166,9 +166,32 @@
 
 .card, [role="dialog"], [role="status"] {
   @apply border border-border;
-  background: hsl(0, 0%, 12%); /* Soft dark grey */
+  background: hsl(0, 0%, 12%);
   backdrop-filter: blur(8px);
   box-shadow: 0 6px 24px 0 rgba(0,0,0,0.25), 0 1.5px 4px 0 rgba(0,0,0,0.10);
+}
+
+.bg-card, .task-table-container {
+  background: hsl(220, 6%, 13%) !important;
+}
+
+td {
+  @apply bg-card/70;
+  background: hsl(220, 6%, 13%) !important;
+}
+
+tr:hover td {
+  @apply bg-accent/10;
+  background: hsl(220, 6%, 16%) !important;
+}
+
+.highlight-task-row td {
+  background: #2d014d !important;
+  color: #fff !important;
+}
+
+.highlight-task-row:hover td {
+  background: #3a0266 !important;
 }
 
 button, .button-glow {
@@ -186,14 +209,6 @@ table {
 
 th {
   @apply bg-secondary/80 text-foreground;
-}
-
-td {
-  @apply bg-card/70;
-}
-
-tr:hover td {
-  @apply bg-accent/10;
 }
 
 /* Tabs styling */
@@ -299,12 +314,4 @@ h1, h2, h3, h4, h5, h6 {
 /* Toast styles */
 [role="status"] {
   @apply bg-card/95 backdrop-blur-sm border border-border/50;
-}
-
-.task-table-container {
-  background: #181818 !important; /* Deep grey to match screenshot reference */
-}
-
-.bg-card {
-  background: #181818 !important; /* Deep grey to match screenshot reference */
 }

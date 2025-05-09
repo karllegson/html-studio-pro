@@ -58,28 +58,36 @@ export default function AdminPage() {
   }, [selectedCompany, companies]);
 
   const Sidebar = (
-    <div className="w-64 border-r h-screen p-4 bg-background flex flex-col">
+    <div className="w-64 h-screen p-4 bg-[#101014] flex flex-col rounded-r-2xl shadow-xl border-r border-border justify-between">
+      {/* Top: Logo/Title */}
+      <div>
+        <div className="mb-8">
+          <h1 className="text-2xl font-bold text-primary tracking-tight">Html Studio Pro</h1>
+          <div className="text-xs text-muted-foreground font-semibold tracking-widest uppercase mt-1">Admin</div>
+        </div>
+        <div className="space-y-2 mt-2">
+          {SIDEBAR_ITEMS.map(item => (
+            <Button
+              key={item.key}
+              variant={activeTab === item.key ? 'default' : 'ghost'}
+              className={`w-full justify-start text-base rounded-xl transition-all border-2 ${activeTab === item.key ? 'bg-primary text-primary-foreground shadow-md border-primary' : 'hover:bg-primary/10 text-white/90 border-neutral-800'}`}
+              onClick={() => setActiveTab(item.key)}
+            >
+              {item.icon}
+              {item.label}
+            </Button>
+          ))}
+        </div>
+      </div>
+      {/* Bottom: Back Button */}
       <Button
-        variant="outline"
-        className="w-full justify-start mb-6 font-semibold text-base border-2 border-primary text-primary bg-white hover:bg-primary/10 shadow-sm"
+        variant="default"
+        className="w-full justify-start mt-8 font-semibold text-base bg-black text-foreground border-2 border-neutral-800 shadow-md hover:bg-neutral-900 rounded-xl"
         onClick={() => navigate('/')}
       >
         <Home className="mr-2" />
         Back to Dashboard
       </Button>
-      <div className="space-y-2">
-        {SIDEBAR_ITEMS.map(item => (
-          <Button
-            key={item.key}
-            variant={activeTab === item.key ? 'default' : 'ghost'}
-            className="w-full justify-start text-base"
-            onClick={() => setActiveTab(item.key)}
-          >
-            {item.icon}
-            {item.label}
-          </Button>
-        ))}
-      </div>
     </div>
   );
 
@@ -164,26 +172,26 @@ export default function AdminPage() {
   };
 
   const CompaniesContent = (
-    <div className="p-6">
-      <h2 className="text-2xl font-semibold mb-4">Companies</h2>
+    <div className="p-6 bg-black min-h-screen">
+      <h2 className="text-2xl font-semibold mb-4 text-white">Companies</h2>
       <div className="flex gap-8">
         {/* Company List */}
-        <Card className="w-72 min-w-[260px] shadow-md bg-card border border-border">
+        <Card className="w-72 min-w-[260px] shadow-lg bg-card border border-border rounded-2xl">
           <CardContent className="pt-6">
-            <h3 className="text-lg font-medium mb-4 text-white/90">List</h3>
+            <h3 className="text-lg font-medium mb-4 text-primary">List</h3>
             <div className="flex flex-col gap-2">
               {companies.length === 0 && <div className="text-muted-foreground">No companies found.</div>}
               {companies.map(company => (
                 <Button
                   key={company.id}
                   variant={selectedCompany === company.id ? 'default' : 'ghost'}
-                  className={`justify-start rounded-lg transition-all ${selectedCompany === company.id ? 'bg-primary/90 text-white' : 'hover:bg-primary/20 bg-muted text-white/80'} text-base`}
+                  className={`justify-start rounded-lg transition-all border-2 ${selectedCompany === company.id ? 'bg-primary/90 text-white border-primary' : 'hover:bg-primary/20 bg-muted text-white/80 border-neutral-800'} text-base`}
                   onClick={() => setSelectedCompany(company.id)}
                 >
                   {company.name}
                 </Button>
               ))}
-              <Button variant="outline" className="mt-4 font-semibold text-primary border-primary border-2 hover:bg-primary/20 bg-muted text-white/80" onClick={() => setShowAddForm(v => !v)}>+ Add Company</Button>
+              <Button variant="outline" className="mt-4 font-semibold text-primary border-2 border-primary hover:bg-primary/20 bg-muted text-white/80 rounded-lg" onClick={() => setShowAddForm(v => !v)}>+ Add Company</Button>
               {showAddForm && (
                 <form onSubmit={handleAddCompanySubmit} className="mt-2 flex flex-col gap-2 p-3 border rounded-lg bg-muted/40 shadow-sm">
                   <Input
@@ -222,7 +230,7 @@ export default function AdminPage() {
                     onChange={e => handleAddCompanyChange('fileSuffix', e.target.value)}
                     className="bg-muted text-white/90 border border-border"
                   />
-                  <Button type="submit" className="bg-primary text-white rounded px-2 py-1 mt-2">Add</Button>
+                  <Button type="submit" className="bg-primary text-white rounded px-2 py-1 mt-2 border-2 border-primary">Add</Button>
                 </form>
               )}
             </div>
@@ -230,9 +238,9 @@ export default function AdminPage() {
         </Card>
         {/* Company Details */}
         {selectedCompany && editCompany ? (
-          <Card className="flex-1 max-w-xl shadow-lg bg-card border border-border">
+          <Card className="flex-1 max-w-xl shadow-lg bg-card border border-border rounded-2xl">
             <CardContent className="pt-6">
-              <h3 className="text-xl font-semibold mb-4 text-white/90">Settings</h3>
+              <h3 className="text-xl font-semibold mb-4 text-primary">Settings</h3>
               <div className="space-y-8">
                 <div className="space-y-2">
                   <Label className="block mb-1 font-medium text-white/80">Contact Link</Label>
@@ -244,7 +252,7 @@ export default function AdminPage() {
                   />
                 </div>
                 <hr className="my-4 border-t border-gray-700" />
-                <div className="mb-2 text-base font-semibold text-white/80">Image name to link converter Settings</div>
+                <div className="mb-2 text-base font-semibold text-primary">Image name to link converter Settings</div>
                 <div className="space-y-6">
                   <div className="space-y-2">
                     <Label className="block mb-1 font-medium text-white/80">Base Path</Label>
@@ -286,15 +294,15 @@ export default function AdminPage() {
                   />
                 </div>
                 <div className="pt-4">
-                  <h3 className="text-lg font-medium mb-2 text-center">Image file name to link converter</h3>
+                  <h3 className="text-lg font-medium mb-2 text-primary text-center">Image file name to link converter</h3>
                   <ImageFilenameConverter companyId={selectedCompany} displayOutputAsText />
                 </div>
                 <hr className="my-6 border-t border-gray-700" />
                 {/* Tag Editor Section */}
                 <AdminCompanyTagsEditor companyId={selectedCompany} />
                 <div className="flex gap-2 mt-6">
-                  <Button variant="default" onClick={handleSaveCompany}>Save</Button>
-                  <Button variant="destructive" onClick={handleDeleteCompany}>Delete</Button>
+                  <Button variant="default" className="rounded-lg border-2 border-primary" onClick={handleSaveCompany}>Save</Button>
+                  <Button variant="destructive" className="rounded-lg border-2 border-red-700" onClick={handleDeleteCompany}>Delete</Button>
                 </div>
               </div>
             </CardContent>
@@ -307,7 +315,7 @@ export default function AdminPage() {
   );
 
   return (
-    <div className="flex h-screen w-full">
+    <div className="flex h-screen w-full bg-black bg-[linear-gradient(rgba(255,255,255,0.18)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.18)_1px,transparent_1px)] [background-size:32px_32px] [background-position:center_center]">
       {Sidebar}
       <main className="flex-1 overflow-y-auto">
         {activeTab === 'companies' && CompaniesContent}

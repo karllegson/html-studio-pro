@@ -62,7 +62,7 @@ export const ImageFilenameConverter: React.FC<ImageFilenameConverterProps> = ({ 
       <CardContent className="p-0">
         <div className="flex flex-col gap-4">
           <div className="flex flex-col sm:flex-row sm:items-center gap-1 w-full">
-            <label className="block font-semibold mb-2 text-white text-center w-full">Image Filename</label>
+            <Label htmlFor="filename" className="w-full sm:w-32 text-xs sm:text-sm font-medium whitespace-nowrap truncate mb-2">Image Filename</Label>
             <Input
               id="filename"
               value={filename}

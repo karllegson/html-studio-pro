@@ -196,7 +196,7 @@ const Dashboard: React.FC = () => {
               key={task.id}
               className={cn(
                 "transition-colors",
-                currentTask?.id === task.id && "bg-purple-950 hover:bg-purple-1100 text-white-900"
+                currentTask?.id === task.id && "highlight-task-row"
               )}
             >
               {isSelectionMode && (
@@ -295,7 +295,7 @@ const Dashboard: React.FC = () => {
     <div>
       <div className="container mx-auto py-8 px-px">
         <div className="flex items-center justify-between mb-8">
-          <h1 className="text-3xl font-bold">Welcome to Workspace</h1>
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-[#3b82f6] to-[#2563eb] bg-clip-text text-transparent drop-shadow-md">Welcome to the Studio</h1>
           <div className="flex items-center gap-2">
             <Button variant="outline" onClick={handleLogout}>Log out</Button>
             <Button
@@ -324,7 +324,7 @@ const Dashboard: React.FC = () => {
 
         <div className="bg-card rounded-lg shadow-lg overflow-hidden task-table-container">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid grid-cols-4 mb-4">
+            <TabsList className="grid grid-cols-4 mb-2">
               <TabsTrigger value="ready">Ready ({readyTasks.length})</TabsTrigger>
               <TabsTrigger value="in-progress">In Progress ({inProgressTasks.length})</TabsTrigger>
               <TabsTrigger value="finished">Finished ({finishedTasks.length})</TabsTrigger>

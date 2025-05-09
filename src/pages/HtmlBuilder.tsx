@@ -709,15 +709,15 @@ const HtmlBuilder: React.FC = () => {
             {/* Left Sidebar: Back button + Tags/Components, sticky */}
             <div className="sticky top-4 h-[calc(100vh-2rem)] flex flex-col gap-4">
               <Button 
-                variant="outline" 
+                variant="default"
                 onClick={async () => {
                   await saveChanges(); // Save all changes before navigating
                   if (currentTask && currentTask.status !== TaskStatus.IN_PROGRESS) {
                     await updateTask(currentTask.id, { status: TaskStatus.IN_PROGRESS });
                   }
                   navigate('/');
-                }} 
-                className="shrink-0"
+                }}
+                className="shrink-0 bg-black text-foreground border border-neutral-800 shadow-lg hover:bg-neutral-900"
               >
                 <ArrowLeft className="mr-2 h-4 w-4" /> Back to Dashboard
               </Button>
@@ -792,7 +792,7 @@ const HtmlBuilder: React.FC = () => {
                   {/* Featured IMG section */}
                   <div className="flex flex-col items-center">
                     <div className="flex items-center gap-2 mb-2">
-                      <label className="font-medium">Featured IMG</label>
+                      <label className="font-medium text-primary">Featured IMG</label>
                     </div>
                     <div className="relative flex items-center justify-center w-full">
                       <Button
@@ -977,7 +977,7 @@ const HtmlBuilder: React.FC = () => {
                 <div className="w-full max-w-4xl mx-auto mt-6 grid grid-cols-2 grid-rows-2 gap-4">
                   {/* Top-left cell: Tags link */}
                   <div className="border rounded p-4 min-h-[80px] flex flex-col justify-center bg-card">
-                    <h3 className="text-lg font-medium mb-2 text-center w-full">Tags link</h3>
+                    <h3 className="text-lg font-medium mb-2 text-center w-full text-primary">Tags link</h3>
                     <div className="flex flex-col gap-3">
                       <div className="flex items-center gap-2">
                         <span className="w-32">Review</span>
@@ -1027,7 +1027,7 @@ const HtmlBuilder: React.FC = () => {
                   {/* Top-right cell: Google Maps Embed */}
                   <div className="border rounded p-4 min-h-[80px] flex flex-col gap-2 bg-card">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="mx-auto font-medium text-center w-full">Google Maps Embed</span>
+                      <span className="mx-auto font-medium text-center w-full text-primary">Google Maps Embed</span>
                       <GreenCircleCheckbox
                         checked={!!checkedFields.maps}
                         onChange={e => handleCheckmarkChange('maps', e.target.checked)}
@@ -1072,7 +1072,7 @@ const HtmlBuilder: React.FC = () => {
                   {/* Bottom-left cell: Instructions to Link */}
                   <div className="border rounded p-4 min-h-[80px] flex flex-col justify-between bg-card">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="mx-auto font-medium text-center w-full">Instructions to Link</span>
+                      <span className="mx-auto font-medium text-center w-full text-primary">Instructions to Link</span>
                       <GreenCircleCheckbox
                         checked={!!checkedFields.instructions}
                         onChange={e => handleCheckmarkChange('instructions', e.target.checked)}
@@ -1091,7 +1091,7 @@ const HtmlBuilder: React.FC = () => {
                   {/* Bottom-right cell: Notes */}
                   <div className="border rounded p-4 min-h-[80px] flex flex-col justify-between bg-card">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="mx-auto font-medium text-center w-full">Notes</span>
+                      <span className="mx-auto font-medium text-center w-full text-primary">Notes</span>
                     </div>
                     <Textarea
                       className="rounded-lg border p-2 mt-2 flex-1 resize-none"
