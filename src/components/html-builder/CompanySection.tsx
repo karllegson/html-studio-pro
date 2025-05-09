@@ -54,32 +54,36 @@ export const CompanySection: React.FC<CompanySectionProps> = ({
           </h2>
         )}
         <div className="space-y-0.5">
-          <Label htmlFor="company">Company</Label>
-          <Select value={companyId} onValueChange={onCompanyChange}>
-            <SelectTrigger id="company">
-              <SelectValue placeholder="Select company" />
-            </SelectTrigger>
-            <SelectContent>
-              {companies.map((company) => (
-                <SelectItem key={company.id} value={company.id}>
-                  {company.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-1 w-full">
+            <Label htmlFor="company" className="w-full sm:w-28 text-xs sm:text-sm font-medium whitespace-nowrap truncate">Company</Label>
+            <Select value={companyId} onValueChange={onCompanyChange}>
+              <SelectTrigger id="company" className="w-full">
+                <SelectValue placeholder="Select company" />
+              </SelectTrigger>
+              <SelectContent>
+                {companies.map((company) => (
+                  <SelectItem key={company.id} value={company.id}>
+                    {company.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
         <div className="space-y-0.5 mt-1">
-          <Label htmlFor="pageType">Page Type</Label>
-          <Select value={pageType} onValueChange={onPageTypeChange}>
-            <SelectTrigger id="pageType">
-              <SelectValue placeholder="Select page type" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Landing Page">Landing Page</SelectItem>
-              <SelectItem value="Sub Page">Sub Page</SelectItem>
-              <SelectItem value="Blog Post">Blog Post</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-1 w-full">
+            <Label htmlFor="pageType" className="w-full sm:w-28 text-xs sm:text-sm font-medium whitespace-nowrap truncate">Page Type</Label>
+            <Select value={pageType} onValueChange={onPageTypeChange}>
+              <SelectTrigger id="pageType" className="w-full">
+                <SelectValue placeholder="Select page type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Landing Page">Landing Page</SelectItem>
+                <SelectItem value="Sub Page">Sub Page</SelectItem>
+                <SelectItem value="Blog Post">Blog Post</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
         <div className="space-y-0.5 mt-1">
           <Label htmlFor="teamworkLink">Teamwork Link</Label>

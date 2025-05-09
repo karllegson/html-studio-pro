@@ -322,7 +322,7 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
 
-        <div className="bg-card rounded-lg shadow-lg overflow-hidden">
+        <div className="bg-card rounded-lg shadow-lg overflow-hidden task-table-container">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid grid-cols-4 mb-4">
               <TabsTrigger value="ready">Ready ({readyTasks.length})</TabsTrigger>

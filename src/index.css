@@ -4,34 +4,44 @@
 
 @layer base {
   :root {
-    --background: 222 47% 11%;
-    --foreground: 0 0% 98%;
+    /* Base Colors */
+    --background: 0 0% 0%;
+    --foreground: 0 0% 100%;
 
-    --card: 222 47% 15%;
-    --card-foreground: 0 0% 98%;
+    /* Card Colors */
+    --card: 0 0% 3%;
+    --card-foreground: 0 0% 100%;
 
-    --popover: 222 47% 11%;
-    --popover-foreground: 0 0% 98%;
+    /* Popover Colors */
+    --popover: 0 0% 3%;
+    --popover-foreground: 0 0% 100%;
 
+    /* Primary Colors */
     --primary: 217 91% 60%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 222 47% 20%;
-    --secondary-foreground: 0 0% 98%;
+    /* Secondary Colors */
+    --secondary: 0 0% 8%;
+    --secondary-foreground: 0 0% 100%;
 
-    --muted: 222 47% 20%;
+    /* Muted Colors */
+    --muted: 0 0% 8%;
     --muted-foreground: 215 20.2% 75.1%;
 
+    /* Accent Colors */
     --accent: 217 91% 60%;
-    --accent-foreground: 0 0% 98%;
+    --accent-foreground: 0 0% 100%;
 
+    /* Destructive Colors */
     --destructive: 0 62.8% 50.6%;
-    --destructive-foreground: 0 0% 98%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 222 47% 25%;
-    --input: 222 47% 25%;
+    /* Border Colors */
+    --border: 0 0% 15%;
+    --input: 0 0% 15%;
     --ring: 217 91% 60%;
 
+    /* Border Radius */
     --radius: 0.75rem;
   }
 
@@ -41,6 +51,11 @@
 
   body {
     @apply bg-background text-foreground;
+    background-image: 
+      linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+    background-size: 32px 32px;
+    background-position: center center;
   }
 }
 
@@ -51,7 +66,7 @@
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.2);
+  background: rgba(255, 255, 255, 0.05);
   border-radius: 4px;
 }
 
@@ -77,11 +92,7 @@
 
 /* CodeMirror editor styles */
 .cm-editor {
-  height: auto !important;
-  min-height: 300px !important;
-  max-height: none !important;
-  overflow-x: hidden !important;
-  overflow-y: visible !important;
+  @apply bg-card/50 border border-border/50 rounded-lg;
 }
 
 .cm-scroller {
@@ -120,11 +131,16 @@
 
 /* Remove the line highlighting */
 .cm-activeLine {
-  background-color: transparent !important;
+  @apply bg-muted/30;
 }
 
 .cm-activeLineGutter {
-  background-color: #2e2e44 !important;
+  @apply bg-muted/50;
+}
+
+/* Tag button styles */
+.tag-button {
+  @apply transition-all duration-200 hover:bg-primary/10;
 }
 
 .tag-button.active {
@@ -132,9 +148,7 @@
 }
 
 .cm-gutters {
-  background-color: #1a1a2e !important;
-  color: #6272a4 !important;
-  border-right: 1px solid #2d2d44 !important;
+  @apply bg-secondary/50 border-r border-border/50;
 }
 
 .cm-content {
@@ -150,17 +164,19 @@
   @apply max-w-7xl;
 }
 
-.card {
-  @apply border-0 shadow-lg bg-gradient-to-br from-card to-card/90;
-  backdrop-filter: blur(12px);
+.card, [role="dialog"], [role="status"] {
+  @apply border border-border;
+  background: hsl(0, 0%, 12%); /* Soft dark grey */
+  backdrop-filter: blur(8px);
+  box-shadow: 0 6px 24px 0 rgba(0,0,0,0.25), 0 1.5px 4px 0 rgba(0,0,0,0.10);
 }
 
-button {
-  @apply transition-all duration-200;
+button, .button-glow {
+  @apply shadow-md;
 }
 
 .button-glow:hover {
-  box-shadow: 0 0 15px 2px rgba(59, 130, 246, 0.5);
+  box-shadow: 0 0 18px 3px rgba(59, 130, 246, 0.4);
 }
 
 /* Table styling improvements */
@@ -169,26 +185,95 @@ table {
 }
 
 th {
-  @apply bg-secondary/50;
+  @apply bg-secondary/80 text-foreground;
+}
+
+td {
+  @apply bg-card/70;
 }
 
 tr:hover td {
-  @apply bg-muted/30;
+  @apply bg-accent/10;
 }
 
 /* Tabs styling */
 .tabs-list {
-  @apply bg-secondary/50 p-1;
+  @apply bg-secondary/80 p-1 rounded-lg border border-border/60;
 }
 
-.tab {
-  @apply transition-all duration-200 data-[state=active]:shadow-md;
+.tab[data-state="active"] {
+  @apply bg-primary text-primary-foreground shadow-lg;
 }
 
 /* Mobile-specific styles */
 @media (max-width: 768px) {
-  .container {
-    @apply px-2;
+  /* Typography */
+  h1 { font-size: 1.25rem; }
+  h2 { font-size: 1.1rem; }
+  h3, h4, h5, h6 { font-size: 1rem; }
+  label, .label, .text-sm, .text-xs, .text-muted-foreground { font-size: 0.85rem !important; }
+  body, p, .text-base { font-size: 0.95rem; }
+
+  /* Card/Box adjustments */
+  .card, .bg-card, .task-table-container {
+    border-radius: 0.75rem;
+    padding: 0.75rem !important;
+    box-shadow: 0 2px 8px 0 rgba(0,0,0,0.18);
+  }
+
+  /* Reduce spacing */
+  .container, .px-4, .py-4, .p-4, .px-6, .py-6, .gap-4, .gap-3, .mb-8, .mb-4, .mb-2, .mt-3, .mt-6, .mt-10 {
+    padding-left: 0.75rem !important;
+    padding-right: 0.75rem !important;
+    padding-top: 0.75rem !important;
+    padding-bottom: 0.75rem !important;
+    margin-bottom: 0.5rem !important;
+    margin-top: 0.5rem !important;
+    gap: 0.5rem !important;
+  }
+
+  /* Only stack main layout grids, not all .grid */
+  .main-layout-grid, .dashboard-grid, .editor-main-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .main-flex-col, .dashboard-flex, .editor-main-flex {
+    flex-direction: column !important;
+    gap: 0.5rem !important;
+  }
+
+  /* Buttons & Inputs */
+  button, .button, .btn, input, select, textarea {
+    font-size: 0.95rem !important;
+    min-height: 2.25rem !important;
+    padding: 0.5rem 0.75rem !important;
+    width: 100% !important;
+    border-radius: 0.5rem !important;
+  }
+  .button-glow:hover { box-shadow: none; }
+
+  /* Table: horizontal scroll */
+  table {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+    font-size: 0.9rem;
+  }
+  th, td {
+    padding: 0.5rem 0.25rem !important;
+    min-width: 100px;
+  }
+  tr { display: table-row; }
+
+  /* Hide/collapse non-essential UI */
+  .hide-on-mobile, .md\:block, .md\:flex, .md\:inline, .md\:mb-0, .md\:space-x-4 {
+    display: none !important;
+  }
+  .mobile-only { display: block !important; }
+
+  /* Misc: tighter checkboxes, icons, etc. */
+  .checkbox, .icon, .svg, .h-4, .w-4, .h-5, .w-5 {
+    width: 1.1rem !important;
+    height: 1.1rem !important;
   }
 }
 
@@ -197,4 +282,29 @@ tr:hover td {
 .cm-tagMatch {
   background-color: transparent !important;
   border: none !important;
+}
+
+/* Input and form styles */
+input, textarea, select {
+  @apply bg-secondary border border-border/80 text-foreground;
+  @apply focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary;
+}
+
+/* Section header contrast */
+h1, h2, h3, h4, h5, h6 {
+  color: hsl(var(--primary));
+  letter-spacing: 0.01em;
+}
+
+/* Toast styles */
+[role="status"] {
+  @apply bg-card/95 backdrop-blur-sm border border-border/50;
+}
+
+.task-table-container {
+  background: #181818 !important; /* Deep grey to match screenshot reference */
+}
+
+.bg-card {
+  background: #181818 !important; /* Deep grey to match screenshot reference */
 }
