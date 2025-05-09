@@ -214,10 +214,17 @@ th {
 /* Tabs styling */
 .tabs-list {
   @apply bg-secondary/80 p-1 rounded-lg border border-border/60;
+  border-bottom: none !important;
 }
 
-.tab[data-state="active"] {
-  @apply bg-primary text-primary-foreground shadow-lg;
+[data-state="active"].tabs-trigger,
+.tabs-trigger[data-state="active"],
+[data-state="active"] {
+  background: rgba(39, 39, 42, 0.8) !important;
+  color: var(--primary-foreground, #fff) !important;
+  box-shadow: none !important;
+  border-bottom: none !important;
+  border-radius: 0.75rem 0.75rem 0 0 !important;
 }
 
 /* Mobile-specific styles */
