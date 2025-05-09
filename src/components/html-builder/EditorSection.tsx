@@ -93,7 +93,7 @@ export const EditorSection = forwardRef<EditorSectionRef, EditorSectionProps>(({
         value={htmlContent}
         height="100%"
         theme={oneDark}
-        extensions={[html(), whiteTextTheme]}
+        extensions={[html({ autoCloseTags: false }), whiteTextTheme]}
         onChange={handleChange}
         basicSetup={{
           lineNumbers: true,
@@ -104,7 +104,7 @@ export const EditorSection = forwardRef<EditorSectionRef, EditorSectionProps>(({
           indentOnInput: false,
           syntaxHighlighting: true,
           bracketMatching: true,
-          closeBrackets: true,
+          closeBrackets: false,
           autocompletion: false,
           rectangularSelection: false,
           crosshairCursor: false,
