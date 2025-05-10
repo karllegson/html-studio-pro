@@ -3,9 +3,9 @@ import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage
 import { TaskImage } from '@/types';
 
 /**
- * Maximum file size in bytes (10MB)
+ * Maximum file size in bytes (50MB)
  */
-const MAX_FILE_SIZE = 10 * 1024 * 1024;
+const MAX_FILE_SIZE = 50 * 1024 * 1024;
 
 /**
  * Allowed image MIME types
@@ -31,7 +31,7 @@ const validateFile = (file: File): string | undefined => {
     return 'Invalid file type. Only JPEG, PNG, GIF, and WebP images are allowed.';
   }
   if (file.size > MAX_FILE_SIZE) {
-    return 'File is too large. Maximum size is 10MB.';
+    return 'File is too large. Maximum size is 50MB.';
   }
   return undefined;
 };
