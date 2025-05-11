@@ -19,6 +19,7 @@ interface SidebarContentProps {
   onlyTagsAndComponents?: boolean;
   sidebarWidth?: number;
   setSidebarWidth?: (width: number) => void;
+  visible?: boolean;
 }
 
 export const SidebarContent: React.FC<SidebarContentProps> = ({
@@ -35,9 +36,14 @@ export const SidebarContent: React.FC<SidebarContentProps> = ({
   onlyTagsAndComponents = false,
   sidebarWidth = 260,
   setSidebarWidth,
+  visible = true,
 }) => {
+  if (!visible) return null;
+
   const sidebarRef = useRef<HTMLDivElement>(null);
   const isResizing = useRef(false);
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 640;
+  const isTinyMobile = typeof window !== 'undefined' && window.innerWidth < 400;
 
   const startResize = (e: React.MouseEvent) => {
     isResizing.current = true;
@@ -63,6 +69,10 @@ export const SidebarContent: React.FC<SidebarContentProps> = ({
     };
   }, [setSidebarWidth]);
 
+  if (isTinyMobile && onlyTagsAndComponents) {
+    return null;
+  }
+
   if (onlyTagsAndComponents) {
     return (
       <div
@@ -82,28 +92,37 @@ export const SidebarContent: React.FC<SidebarContentProps> = ({
   }
 
   return (
-    <div className="flex flex-col h-full">
-      {/* Static sections - always visible */}
-      <div className="space-y-4 pr-4 mb-4">
-        <CompanySection
-          companyId={companyId}
-          contactLink={contactLink}
-          pageType={pageType}
-          onCompanyChange={onCompanyChange}
-          onContactLinkChange={onContactLinkChange}
-          onPageTypeChange={onPageTypeChange}
-        />
-        <CompanyTemplateList
-          companyId={companyId}
-          pageType={pageType}
-          onInsertTemplate={onInsertComponent}
-        />
-        <ImageConverter />
-      </div>
-      {/* Scrollable Tags section - stays in view when scrolling */}
-      <div className="flex-1 overflow-hidden">
-        <div className="sticky top-0 pr-4 max-h-full overflow-auto">
-          <TagsSection onTagClick={onTagClick} onInsertComponent={onInsertComponent} />
+    <div
+      className={
+        isMobile
+          ? 'w-full p-2 bg-transparent rounded-none shadow-none border-none'
+          : 'rounded-2xl bg-card/80 shadow-xl border border-border p-4 w-full h-full max-w-[340px] min-w-[180px]'
+      }
+      style={isMobile ? {} : { minWidth: sidebarWidth, maxWidth: sidebarWidth, width: sidebarWidth }}
+    >
+      <div className="flex flex-col h-full">
+        {/* Static sections - always visible */}
+        <div className="space-y-4 pr-4 mb-4">
+          <CompanySection
+            companyId={companyId}
+            contactLink={contactLink}
+            pageType={pageType}
+            onCompanyChange={onCompanyChange}
+            onContactLinkChange={onContactLinkChange}
+            onPageTypeChange={onPageTypeChange}
+          />
+          <CompanyTemplateList
+            companyId={companyId}
+            pageType={pageType}
+            onInsertTemplate={onInsertComponent}
+          />
+          <ImageConverter />
+        </div>
+        {/* Scrollable Tags section - stays in view when scrolling */}
+        <div className="flex-1 overflow-hidden">
+          <div className="sticky top-0 pr-4 max-h-full overflow-auto">
+            <TagsSection onTagClick={onTagClick} onInsertComponent={onInsertComponent} />
+          </div>
         </div>
       </div>
     </div>

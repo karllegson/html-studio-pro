@@ -1,11 +1,12 @@
 import React, { useRef, useImperativeHandle, forwardRef, useState, useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Copy, Save, Maximize2, Plus, Minus, ArrowDown } from 'lucide-react';
+import { Copy, Save, Maximize2, Minimize2, Plus, Minus, ArrowDown, Monitor, Eye, EyeOff } from 'lucide-react';
 import CopyButton from '@/components/ui/CopyButton';
 import CodeMirror from '@uiw/react-codemirror';
 import { html } from '@codemirror/lang-html';
 import { oneDark } from '@codemirror/theme-one-dark';
 import { EditorView } from '@codemirror/view';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 export interface EditorSectionRef {
   getView: () => EditorView | undefined;
@@ -17,6 +18,10 @@ interface EditorSectionProps {
   onUpdate: () => void;
   onSave: () => void;
   lastSavedAt?: Date | null;
+  onToggleEditorOnlyMode?: () => void;
+  editorOnlyMode?: boolean;
+  sidebarVisible?: boolean;
+  setSidebarVisible?: (visible: boolean) => void;
 }
 
 // Custom theme for white text
@@ -42,6 +47,10 @@ export const EditorSection = forwardRef<EditorSectionRef, EditorSectionProps>(({
   onUpdate,
   onSave,
   lastSavedAt,
+  onToggleEditorOnlyMode,
+  editorOnlyMode,
+  sidebarVisible,
+  setSidebarVisible,
 }, ref) => {
   const editorDivRef = useRef<HTMLDivElement>(null);
   const editorViewRef = useRef<EditorView | undefined>(undefined);
@@ -126,16 +135,28 @@ export const EditorSection = forwardRef<EditorSectionRef, EditorSectionProps>(({
 
   const renderToolbar = () => (
     <div className="flex items-center gap-2">
-      <Button 
-        variant="ghost" 
-        size="sm" 
-        onClick={() => setIsExtended(!isExtended)}
-        aria-label={isExtended ? "Collapse editor" : "Expand editor"}
-      >
-        <Maximize2 size={14} />
-      </Button>
-      <div>HTML Editor</div>
-      <div className="flex items-center gap-1 ml-2">
+      {/* Group 1: Expand/Sidebar Toggle */}
+      <div className="flex items-center gap-2 mr-4">
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          onClick={() => setIsExtended(!isExtended)}
+          aria-label={isExtended ? "Collapse editor" : "Expand editor"}
+        >
+          {isExtended ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setSidebarVisible && setSidebarVisible(!sidebarVisible)}
+          aria-label={sidebarVisible ? "Hide HTML Tags Sidebar" : "Show HTML Tags Sidebar"}
+        >
+          {sidebarVisible ? <EyeOff size={14} /> : <Eye size={14} />}
+          <span className="ml-1 text-xs">{sidebarVisible ? "Hide Tags" : "Show Tags"}</span>
+        </Button>
+      </div>
+      {/* Group 2: Font size controls */}
+      <div className="flex items-center gap-1 mr-4">
         <Button 
           variant="ghost" 
           size="sm" 
@@ -154,25 +175,48 @@ export const EditorSection = forwardRef<EditorSectionRef, EditorSectionProps>(({
           <Plus size={14} />
         </Button>
       </div>
-      <CopyButton value={htmlContent} className="ml-2" />
-      <Button 
-        variant="outline" 
-        size="sm"
-        onClick={onSave}
-        className="flex items-center gap-1"
-      >
-        <Save size={14} />
-        Save
-      </Button>
-      <Button
-        variant="ghost" 
-        size="sm"
-        onClick={scrollToBottom}
-        className="flex items-center gap-1"
-      >
-        <ArrowDown size={14} />
-        Scroll Bottom
-      </Button>
+      {/* Group 3: Copy/Save */}
+      <div className="flex items-center gap-2 mr-4">
+        <CopyButton value={htmlContent} />
+        <Button 
+          variant="outline" 
+          size="sm"
+          onClick={onSave}
+          className="flex items-center gap-1"
+        >
+          <Save size={14} />
+          Save
+        </Button>
+      </div>
+      {/* Group 4: Scroll/Focus */}
+      <div className="flex items-center gap-2">
+        <Button
+          variant="ghost" 
+          size="sm"
+          onClick={scrollToBottom}
+          className="flex items-center gap-1"
+        >
+          <ArrowDown size={14} />
+          Scroll Bottom
+        </Button>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant={editorOnlyMode ? "default" : "ghost"}
+                size="sm"
+                onClick={onToggleEditorOnlyMode}
+                className={`flex items-center gap-1 ${editorOnlyMode ? 'bg-primary/80 text-white' : ''}`}
+                aria-label={editorOnlyMode ? "Exit Focus Editor" : "Focus Editor"}
+              >
+                <Monitor size={16} />
+                {editorOnlyMode ? "Exit Focus" : "Focus Editor"}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>{editorOnlyMode ? "Exit Focus Mode" : "Focus: Distraction-Free Editor"}</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      </div>
     </div>
   );
 
@@ -197,7 +241,7 @@ export const EditorSection = forwardRef<EditorSectionRef, EditorSectionProps>(({
   );
 
   return (
-    <div className="w-full">
+    <div className={`w-full${editorOnlyMode ? ' h-screen overflow-auto bg-background' : ''}`}>
       {isExtended ? (
         <div className="w-full overflow-x-auto">
           {editorContainer}

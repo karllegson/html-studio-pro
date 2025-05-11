@@ -89,6 +89,10 @@ const HtmlBuilder: React.FC = () => {
   const [linkDialogOpen, setLinkDialogOpen] = useState(false);
 
   const [sidebarWidth, setSidebarWidth] = useState(260);
+  const [editorOnlyMode, setEditorOnlyMode] = useState(false);
+  const [sidebarVisible, setSidebarVisible] = useState(true);
+
+  const isTinyMobile = typeof window !== 'undefined' && window.innerWidth < 400;
 
   // Offline detection
   useEffect(() => {
@@ -406,7 +410,9 @@ const HtmlBuilder: React.FC = () => {
 
     // Only run this ONCE when task is first loaded
     if (!htmlContent && !companyId && !notes && !featuredTitle && !metaTitle) {
-      if (currentTask.status === TaskStatus.RECENTLY_DELETED) {
+      // Only auto-move out of Recently Deleted if NOT coming from the recently-deleted tab
+      const dashboardTab = window.localStorage.getItem('dashboardTab');
+      if (currentTask.status === TaskStatus.RECENTLY_DELETED && dashboardTab !== 'recently-deleted') {
         updateTask(currentTask.id, { status: TaskStatus.IN_PROGRESS });
       }
 
@@ -427,14 +433,11 @@ const HtmlBuilder: React.FC = () => {
       setMapsLocation(currentTask.mapsLocation || '');
       setMapsEmbedCode(currentTask.mapsEmbedCode || '');
       setFeaturedImg(currentTask.featuredImg || '');
-      
       // Restore checkmark states from currentTask
       setCheckedFields(currentTask.checkedFields || {});
-
       // Load saved tags
       setReviewsTag(currentTask.selectedReviewTag || '');
       setFaqTag(currentTask.selectedFaqTag || '');
-
       const company = getCompanyById(currentTask.companyId);
       if (company) {
         setContactLink(company.contactLink || '');
@@ -705,414 +708,458 @@ const HtmlBuilder: React.FC = () => {
 
   // If currentTask is set, render the builder UI
   if (currentTask) {
+    if (editorOnlyMode || isTinyMobile) {
+      return (
+        <div className="fixed inset-0 z-50 bg-background flex flex-col">
+          <EditorSection
+            ref={editorRef}
+            htmlContent={htmlContent}
+            onHtmlChange={handleHtmlChange}
+            onUpdate={handleEditorUpdate}
+            onSave={saveChanges}
+            onToggleEditorOnlyMode={() => setEditorOnlyMode(false)}
+            editorOnlyMode={true}
+            sidebarVisible={sidebarVisible}
+            setSidebarVisible={setSidebarVisible}
+          />
+        </div>
+      );
+    }
     return (
       <div className="min-h-screen w-full flex flex-col bg-[radial-gradient(circle,rgba(60,60,80,0.2)_1px,transparent_1px)] [background-size:32px_32px]">
         <div className="max-w-full px-4 py-4 mx-auto flex-1 flex flex-col pb-8">
-          <div
-            className="grid gap-4"
-            style={{
-              gridTemplateColumns: isMobile ? undefined : `${sidebarWidth}px 1fr`,
-            }}
-          >
-            {/* Left Sidebar: Back button + Tags/Components, sticky */}
-            <div className="sticky top-4 h-[calc(100vh-2rem)] flex flex-col gap-4">
-              <Button 
-                variant="default"
-                onClick={async () => {
-                  await saveChanges(); // Save all changes before navigating
-                  navigate('/');
-                }}
-                className="shrink-0 bg-black text-foreground border border-neutral-800 shadow-lg hover:bg-neutral-900"
-              >
-                <ArrowLeft className="mr-2 h-4 w-4" /> Back to Dashboard
-              </Button>
-              <div className="flex-1 overflow-hidden">
-                <SidebarContent 
-                  companyId={companyId}
-                  contactLink={contactLink}
-                  notes={notes}
-                  pageType={pageType}
-                  onTagClick={handleTagClick}
-                  onInsertComponent={handleInsertComponent}
-                  onCompanyChange={handleCompanyChange}
-                  onContactLinkChange={setContactLink}
-                  onNotesChange={handleNotesChange}
-                  onPageTypeChange={handlePageTypeChange}
-                  onlyTagsAndComponents={true}
-                  sidebarWidth={sidebarWidth}
-                  setSidebarWidth={setSidebarWidth}
-                />
-              </div>
+          {isMobile ? (
+            <div className="mb-4 w-full">
+              <SidebarContent
+                companyId={companyId}
+                contactLink={contactLink}
+                notes={notes}
+                pageType={pageType}
+                onTagClick={handleTagClick}
+                onInsertComponent={handleInsertComponent}
+                onCompanyChange={handleCompanyChange}
+                onContactLinkChange={setContactLink}
+                onNotesChange={handleNotesChange}
+                onPageTypeChange={handlePageTypeChange}
+                onlyTagsAndComponents={true}
+                sidebarWidth={sidebarWidth}
+                setSidebarWidth={setSidebarWidth}
+                visible={sidebarVisible}
+              />
             </div>
-            {/* Main Content: 3 columns, grouped cards as in wireframe, notes, and editor */}
-            <div className="flex flex-col h-full">
-              <div className="grid grid-cols-3 gap-3 mb-2 editor-main-grid">
-                {/* Row 1 */}
-                <div className="bg-card rounded-lg p-4 flex flex-col">
-                  {/* Company Section */}
-                  <CompanySection
-                    companyId={companyId}
-                    pageType={pageType}
-                    teamworkLink={teamworkLink}
-                    googleDocLink={googleDocLink}
-                    onCompanyChange={handleCompanyChange}
-                    onPageTypeChange={handlePageTypeChange}
-                    onTeamworkLinkChange={handleTeamworkLinkChange}
-                    onGoogleDocLinkChange={handleGoogleDocLinkChange}
-                  />
+          ) : (
+            <div
+              className={`grid gap-4 ${!sidebarVisible ? 'grid-cols-1' : ''}`}
+              style={!sidebarVisible ? { gridTemplateColumns: '1fr' } : { gridTemplateColumns: `${sidebarWidth}px 1fr` }}
+            >
+              {/* Left Sidebar: Back button + Tags/Components, sticky */}
+              {sidebarVisible && (
+                <div className="sticky top-4 h-[calc(100vh-2rem)] flex flex-col gap-4">
+                  <Button 
+                    variant="default"
+                    onClick={async () => {
+                      await saveChanges(); // Save all changes before navigating
+                      navigate('/');
+                    }}
+                    className="shrink-0 bg-black text-foreground border border-neutral-800 shadow-lg hover:bg-neutral-900"
+                  >
+                    <ArrowLeft className="mr-2 h-4 w-4" /> Back to Dashboard
+                  </Button>
+                  <div className="flex-1 overflow-hidden">
+                    <SidebarContent 
+                      companyId={companyId}
+                      contactLink={contactLink}
+                      notes={notes}
+                      pageType={pageType}
+                      onTagClick={handleTagClick}
+                      onInsertComponent={handleInsertComponent}
+                      onCompanyChange={handleCompanyChange}
+                      onContactLinkChange={setContactLink}
+                      onNotesChange={handleNotesChange}
+                      onPageTypeChange={handlePageTypeChange}
+                      onlyTagsAndComponents={true}
+                      sidebarWidth={sidebarWidth}
+                      setSidebarWidth={setSidebarWidth}
+                      visible={sidebarVisible}
+                    />
+                  </div>
                 </div>
-                <div className="flex flex-col">
-                  {/* HTML Templates */}
-                  <div className="bg-card rounded-lg p-4 flex flex-col h-full">
-                    <ScrollArea className="flex-1">
-                      <div>
-                        <CompanyTemplateList
-                          companyId={companyId}
-                          pageType={pageType}
-                          onInsertTemplate={handleInsertComponent}
-                        />
-                        {/* Contact Us Link */}
-                        <div className="mt-3">
-                          <label className="text-sm font-medium mb-1 block">Contact Us Link</label>
-                          <div className="flex gap-2">
-                            <Input
-                              type="text"
-                              value={contactLink}
-                              onChange={e => setContactLink(e.target.value)}
-                              onBlur={e => setContactLink(e.target.value)}
-                              className="font-mono text-xs flex-1 pl-3 rounded-md bg-card ml-2"
-                              placeholder="Paste Contact Us link"
-                            />
-                            <CopyButton value={contactLink} />
+              )}
+              {/* Main Content: 3 columns, grouped cards as in wireframe, notes, and editor */}
+              <div className="flex flex-col h-full">
+                <div className="grid grid-cols-3 gap-3 mb-2 editor-main-grid items-stretch">
+                  {/* Row 1 */}
+                  <div className="bg-card rounded-lg p-4 flex flex-col h-full min-h-[320px]">
+                    {/* Company Section */}
+                    <CompanySection
+                      companyId={companyId}
+                      pageType={pageType}
+                      teamworkLink={teamworkLink}
+                      googleDocLink={googleDocLink}
+                      onCompanyChange={handleCompanyChange}
+                      onPageTypeChange={handlePageTypeChange}
+                      onTeamworkLinkChange={handleTeamworkLinkChange}
+                      onGoogleDocLinkChange={handleGoogleDocLinkChange}
+                    />
+                  </div>
+                  <div className="flex flex-col h-full min-h-[320px]">
+                    {/* HTML Templates */}
+                    <div className="bg-card rounded-lg p-4 flex flex-col h-full min-h-[320px]">
+                      <ScrollArea className="flex-1">
+                        <div>
+                          <CompanyTemplateList
+                            companyId={companyId}
+                            pageType={pageType}
+                            onInsertTemplate={handleInsertComponent}
+                          />
+                          {/* Contact Us Link */}
+                          <div className="mt-3">
+                            <label className="text-sm font-medium mb-1 block">Contact Us Link</label>
+                            <div className="flex gap-2">
+                              <Input
+                                type="text"
+                                value={contactLink}
+                                onChange={e => setContactLink(e.target.value)}
+                                onBlur={e => setContactLink(e.target.value)}
+                                className="font-mono text-xs flex-1 pl-3 rounded-md bg-card ml-2"
+                                placeholder="Paste Contact Us link"
+                              />
+                              <CopyButton value={contactLink} />
+                            </div>
+                          </div>
+                          {/* Image file name to link converter */}
+                          <div className="mt-3">
+                            <h3 className="text-lg font-medium mb-2">Image file name to link converter</h3>
+                            <ImageFilenameConverter companyId={companyId} />
                           </div>
                         </div>
-                        {/* Image file name to link converter */}
-                        <div className="mt-3">
-                          <h3 className="text-lg font-medium mb-2">Image file name to link converter</h3>
-                          <ImageFilenameConverter companyId={companyId} />
-                        </div>
-                      </div>
-                    </ScrollArea>
-                  </div>
-                </div>
-                <div className="bg-card rounded-lg p-4 flex flex-col max-h-[400px]">
-                  {/* Featured IMG section */}
-                  <div className="flex flex-col items-center">
-                    <div className="flex items-center gap-2 mb-2">
-                      <label className="font-medium text-primary">Featured IMG</label>
+                      </ScrollArea>
                     </div>
-                    <div className="relative flex items-center justify-center w-full">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => setShowFeaturedDropdown(v => !v)}
-                        type="button"
-                        className="w-48 justify-between"
-                      >
-                        {featuredImg ? (
-                          <span
-                            className="truncate overflow-hidden whitespace-nowrap max-w-[180px] inline-block"
-                            title={currentTask?.images?.find(img => img.url === featuredImg)?.name || ''}
-                          >
-                            {currentTask?.images?.find(img => img.url === featuredImg)?.name || 'Select image'}
-                          </span>
-                        ) : 'Select image'}
-                        <span className="ml-2">▼</span>
-                      </Button>
-                      {/* Dropdown popover */}
-                      {showFeaturedDropdown && (
-                        <div className="absolute left-1/2 -translate-x-1/2 top-full z-10 mt-1 w-48 bg-background border border-border rounded shadow-lg">
-                          <ul className="max-h-48 overflow-auto">
-                            {(currentTask?.images || []).map(img => (
-                              <li
-                                key={img.url}
-                                className={`px-3 py-2 cursor-pointer hover:bg-muted ${featuredImg === img.url ? 'bg-muted' : ''}`}
-                                onClick={() => {
-                                  setFeaturedImg(img.url);
-                                  setShowFeaturedDropdown(false);
-                                  if (currentTask) {
-                                    updateTask(currentTask.id, { featuredImg: img.url });
-                                  }
-                                }}
-                              >
-                                {img.name}
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
+                  </div>
+                  <div className="bg-card rounded-lg p-4 flex flex-col max-h-[400px] h-full min-h-[320px]">
+                    {/* Featured IMG section */}
+                    <div className="flex flex-col items-center">
+                      <div className="flex items-center gap-2 mb-2">
+                        <label className="font-medium text-primary">Featured IMG</label>
+                      </div>
+                      <div className="relative flex items-center justify-center w-full">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setShowFeaturedDropdown(v => !v)}
+                          type="button"
+                          className="w-48 justify-between"
+                        >
+                          {featuredImg ? (
+                            <span
+                              className="truncate overflow-hidden whitespace-nowrap max-w-[180px] inline-block"
+                              title={currentTask?.images?.find(img => img.url === featuredImg)?.name || ''}
+                            >
+                              {currentTask?.images?.find(img => img.url === featuredImg)?.name || 'Select image'}
+                            </span>
+                          ) : 'Select image'}
+                          <span className="ml-2">▼</span>
+                        </Button>
+                        {/* Dropdown popover */}
+                        {showFeaturedDropdown && (
+                          <div className="absolute left-1/2 -translate-x-1/2 top-full z-10 mt-1 w-48 bg-background border border-border rounded shadow-lg">
+                            <ul className="max-h-48 overflow-auto">
+                              {(currentTask?.images || []).map(img => (
+                                <li
+                                  key={img.url}
+                                  className={`px-3 py-2 cursor-pointer hover:bg-muted ${featuredImg === img.url ? 'bg-muted' : ''}`}
+                                  onClick={() => {
+                                    setFeaturedImg(img.url);
+                                    setShowFeaturedDropdown(false);
+                                    if (currentTask) {
+                                      updateTask(currentTask.id, { featuredImg: img.url });
+                                    }
+                                  }}
+                                >
+                                  {img.name}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    {/* Preview of selected image */}
+                    <div className="flex flex-col items-center justify-center mt-3">
+                      {featuredImg ? (
+                        <img src={featuredImg} alt="Featured preview" className="max-h-24 max-w-24 rounded shadow border" />
+                      ) : (
+                        <div className="w-24 h-24 flex items-center justify-center border rounded bg-muted text-muted-foreground">No image</div>
                       )}
                     </div>
-                  </div>
-                  {/* Preview of selected image */}
-                  <div className="flex flex-col items-center justify-center mt-3">
-                    {featuredImg ? (
-                      <img src={featuredImg} alt="Featured preview" className="max-h-24 max-w-24 rounded shadow border" />
-                    ) : (
-                      <div className="w-24 h-24 flex items-center justify-center border rounded bg-muted text-muted-foreground">No image</div>
-                    )}
-                  </div>
-                  {/* Title and ALT fields */}
-                  <div className="flex flex-col gap-2 mt-3">
-                    <div className="flex items-center gap-2">
-                      <span className="w-12">Title:</span>
-                      <Input
-                        type="text"
-                        value={featuredTitle}
-                        onChange={e => handleFeaturedTitleChange(e.target.value)}
-                        onBlur={e => handleFeaturedTitleChange(e.target.value)}
-                        className="flex-1"
-                        placeholder="Enter title"
-                      />
-                      <CopyButton value={featuredTitle} />
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="w-12">ALT:</span>
-                      <Input
-                        type="text"
-                        value={featuredAlt}
-                        onChange={e => handleFeaturedAltChange(e.target.value)}
-                        onBlur={e => handleFeaturedAltChange(e.target.value)}
-                        className="flex-1"
-                        placeholder="Enter alt text"
-                      />
-                      <CopyButton value={featuredAlt} />
-                    </div>
-                  </div>
-                  {/* Featured Image Checkbox */}
-                  <div className="flex items-center justify-center gap-2 mt-10">
-                    <label className="text-sm font-medium">Applied Featured Image</label>
-                    <GreenCircleCheckbox
-                      checked={!!checkedFields.featuredImg}
-                      onChange={e => handleCheckmarkChange('featuredImg', e.target.checked)}
-                    />
-                  </div>
-                </div>
-
-                {/* Row 2 */}
-                <div className="border rounded p-4 min-h-[80px] flex flex-col justify-center bg-card">
-                  {[
-                    { label: 'Widget Title', key: 'widgetTitle', value: widgetTitle, handler: handleWidgetTitleChange },
-                    { label: 'Meta Title', key: 'metaTitle', value: metaTitle, handler: handleMetaTitleChange },
-                    { label: 'Meta URL', key: 'metaUrl', value: metaUrl, handler: handleMetaUrlChange },
-                    { label: 'Meta Description', key: 'metaDescription', value: metaDescription, handler: handleMetaDescriptionChange },
-                  ].map((item, idx) => (
-                    <div key={item.key} className="flex flex-col sm:flex-row sm:items-center gap-1 mb-2 last:mb-0 w-full">
-                      <span className="w-full sm:w-28 text-xs sm:text-sm font-medium whitespace-nowrap truncate">{item.label}</span>
-                      <div className="flex-1 flex flex-row gap-1 w-full">
+                    {/* Title and ALT fields */}
+                    <div className="flex flex-col gap-2 mt-3">
+                      <div className="flex items-center gap-2">
+                        <span className="w-12">Title:</span>
                         <Input
                           type="text"
-                          value={item.value}
-                          onChange={e => item.handler(e.target.value)}
-                          onBlur={e => item.handler(e.target.value)}
-                          className="w-full px-3 py-2 text-xs sm:text-sm rounded-md border"
-                          placeholder={item.label}
+                          value={featuredTitle}
+                          onChange={e => handleFeaturedTitleChange(e.target.value)}
+                          onBlur={e => handleFeaturedTitleChange(e.target.value)}
+                          className="flex-1"
+                          placeholder="Enter title"
                         />
-                        <CopyButton value={item.value} />
+                        <CopyButton value={featuredTitle} />
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="w-12">ALT:</span>
+                        <Input
+                          type="text"
+                          value={featuredAlt}
+                          onChange={e => handleFeaturedAltChange(e.target.value)}
+                          onBlur={e => handleFeaturedAltChange(e.target.value)}
+                          className="flex-1"
+                          placeholder="Enter alt text"
+                        />
+                        <CopyButton value={featuredAlt} />
                       </div>
                     </div>
-                  ))}
-                  {/* Meta Info Checkbox */}
-                  <div className="flex items-center justify-center gap-2 mt-10">
-                    <label className="text-sm font-medium">Applied Meta Info and Title</label>
-                    <GreenCircleCheckbox
-                      checked={!!checkedFields.widgetTitle}
-                      onChange={e => handleCheckmarkChange('widgetTitle', e.target.checked)}
-                    />
-                  </div>
-                </div>
-                <div className="bg-card rounded-lg p-4 flex flex-col max-h-[400px] col-span-2">
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-lg font-medium">Photos</h3>
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-                        onClick={() => (document.querySelector('input[type="file"]') as HTMLInputElement)?.click()}
-                      >
-                        Upload Photos
-                      </button>
-                      <button
-                        type="button"
-                        className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                        onClick={handleDownloadAll}
-                        disabled={!images.length || downloading}
-                      >
-                        {downloading ? (
-                          <>
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                            <span>Downloading...</span>
-                          </>
-                        ) : (
-                          'Download All'
-                        )}
-                      </button>
+                    {/* Featured Image Checkbox */}
+                    <div className="flex items-center justify-center gap-2 mt-10">
+                      <label className="text-sm font-medium">Applied Featured Image</label>
+                      <GreenCircleCheckbox
+                        checked={!!checkedFields.featuredImg}
+                        onChange={e => handleCheckmarkChange('featuredImg', e.target.checked)}
+                      />
                     </div>
                   </div>
-                  <div className="overflow-auto h-full">
-                    <PhotoUploadPreview 
-                      companyName={getCompanyById(companyId)?.name} 
-                      pageType={pageType} 
-                      taskId={currentTask?.id} 
-                      onImagesChange={setImages}
-                    />
-                  </div>
-                </div>
-              </div>
-              {/* HTML Editor always visible and fills remaining space */}
-              <div className="flex-1 flex flex-col" ref={editorContainerRef}>
-                <EditorSection
-                  ref={editorRef}
-                  htmlContent={htmlContent}
-                  onHtmlChange={handleHtmlChange}
-                  onUpdate={handleEditorUpdate}
-                  onSave={saveChanges}
-                />
-                {/* Go to top button below editor */}
-                <div className="w-full flex justify-center mt-2">
-                  <Button variant="outline" size="sm" onClick={() => {
-                    try {
-                      // Scroll to the very top of the page
-                      window.scrollTo({ top: 0, behavior: 'smooth' });
-                    } catch (error) {
-                      console.error('Error scrolling to top:', error);
-                    }
-                  }}>
-                    Go to top
-                  </Button>
-                </div>
-                {/* 2x2 Section Grid with Notes in bottom right as the cell itself */}
-                <div className="w-full max-w-4xl mx-auto mt-6 grid grid-cols-2 grid-rows-2 gap-4">
-                  {/* Top-left cell: Tags link */}
+
+                  {/* Row 2 */}
                   <div className="border rounded p-4 min-h-[80px] flex flex-col justify-center bg-card">
-                    <h3 className="text-lg font-medium mb-2 text-center w-full text-primary">Tags link</h3>
-                    <div className="flex flex-col gap-3">
-                      <div className="flex items-center gap-2">
-                        <span className="w-32">Review</span>
-                        <Select value={reviewsTag} onValueChange={setReviewsTag} disabled={tagsLoading}>
-                          <SelectTrigger className="w-48">
-                            <SelectValue placeholder={tagsLoading ? 'Loading...' : 'Select tag'} />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {(companyTags && companyTags.reviewTags && companyTags.reviewTags.length > 0)
-                              ? companyTags.reviewTags.map(tag => (
-                                  <SelectItem key={tag} value={tag}>{tag}</SelectItem>
-                                ))
-                              : <SelectItem value="no-tags" disabled>No tags</SelectItem>}
-                          </SelectContent>
-                        </Select>
-                        <CopyButton value={reviewsTag} />
+                    {[
+                      { label: 'Widget Title', key: 'widgetTitle', value: widgetTitle, handler: handleWidgetTitleChange },
+                      { label: 'Meta Title', key: 'metaTitle', value: metaTitle, handler: handleMetaTitleChange },
+                      { label: 'Meta URL', key: 'metaUrl', value: metaUrl, handler: handleMetaUrlChange },
+                      { label: 'Meta Description', key: 'metaDescription', value: metaDescription, handler: handleMetaDescriptionChange },
+                    ].map((item, idx) => (
+                      <div key={item.key} className="flex flex-col sm:flex-row sm:items-center gap-1 mb-2 last:mb-0 w-full">
+                        <span className="w-full sm:w-28 text-xs sm:text-sm font-medium whitespace-nowrap truncate">{item.label}</span>
+                        <div className="flex-1 flex flex-row gap-1 w-full">
+                          <Input
+                            type="text"
+                            value={item.value}
+                            onChange={e => item.handler(e.target.value)}
+                            onBlur={e => item.handler(e.target.value)}
+                            className="w-full px-3 py-2 text-xs sm:text-sm rounded-md border"
+                            placeholder={item.label}
+                          />
+                          <CopyButton value={item.value} />
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <span className="w-32">FAQ</span>
-                        <Select value={faqTag} onValueChange={setFaqTag} disabled={tagsLoading}>
-                          <SelectTrigger className="w-48">
-                            <SelectValue placeholder={tagsLoading ? 'Loading...' : 'Select tag'} />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {(companyTags && companyTags.faqTags && companyTags.faqTags.length > 0)
-                              ? companyTags.faqTags.map(tag => (
-                                  <SelectItem key={tag} value={tag}>{tag}</SelectItem>
-                                ))
-                              : <SelectItem value="no-tags" disabled>No tags</SelectItem>}
-                          </SelectContent>
-                        </Select>
-                        <CopyButton value={faqTag} />
-                      </div>
-                    </div>
-                    {/* More info section */}
-                    <div className="mt-6">
-                      <h4 className="text-base font-semibold text-center text-primary mb-2">More info</h4>
-                      <div className="bg-muted/30 border border-border rounded p-3 text-sm text-white/90 min-h-[60px]">
-                        {getCompanyById(companyId)?.info ? (
-                          <span>{getCompanyById(companyId)?.info}</span>
-                        ) : (
-                          <span className="text-muted-foreground">No info available for this company.</span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                  {/* Top-right cell: Google Maps Embed */}
-                  <div id="maps-embed-section" className="border rounded p-4 min-h-[80px] flex flex-col justify-between bg-card">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="mx-auto font-medium text-center w-full text-primary">Google Maps Embed</span>
+                    ))}
+                    {/* Meta Info Checkbox */}
+                    <div className="flex items-center justify-center gap-2 mt-10">
+                      <label className="text-sm font-medium">Applied Meta Info and Title</label>
                       <GreenCircleCheckbox
-                        checked={!!checkedFields.maps}
-                        onChange={e => handleCheckmarkChange('maps', e.target.checked)}
-                        className="ml-2"
+                        checked={!!checkedFields.widgetTitle}
+                        onChange={e => handleCheckmarkChange('widgetTitle', e.target.checked)}
                       />
                     </div>
-                    <label className="text-sm mb-1">Enter a City, ST:</label>
-                    <Input
-                      type="text"
-                      value={mapsLocation}
-                      onChange={e => handleMapsLocationChange(e.target.value)}
-                      onBlur={e => handleMapsLocationChange(e.target.value)}
-                      placeholder="e.g., Acton, MA"
-                      className="mb-2"
-                    />
-                    <Button
-                      type="button"
-                      className="mb-2 w-fit"
-                      onClick={() => {
-                        if (!mapsLocation.trim()) return;
-                        const encoded = encodeURIComponent(mapsLocation.trim());
-                        window.open(`https://www.google.com/maps/place/${encoded}`, '_blank');
-                      }}
-                    >
-                      Open in Google Maps
+                  </div>
+                  <div className="bg-card rounded-lg p-4 flex flex-col max-h-[400px] col-span-2">
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="text-lg font-medium">Photos</h3>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                          onClick={() => (document.querySelector('input[type="file"]') as HTMLInputElement)?.click()}
+                        >
+                          Upload Photos
+                        </button>
+                        <button
+                          type="button"
+                          className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                          onClick={handleDownloadAll}
+                          disabled={!images.length || downloading}
+                        >
+                          {downloading ? (
+                            <>
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                              <span>Downloading...</span>
+                            </>
+                          ) : (
+                            'Download All'
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                    <div className="overflow-auto h-full">
+                      <PhotoUploadPreview 
+                        companyName={getCompanyById(companyId)?.name} 
+                        pageType={pageType} 
+                        taskId={currentTask?.id} 
+                        onImagesChange={setImages}
+                      />
+                    </div>
+                  </div>
+                </div>
+                {/* HTML Editor always visible and fills remaining space */}
+                <div className="flex-1 flex flex-col" ref={editorContainerRef}>
+                  <EditorSection
+                    ref={editorRef}
+                    htmlContent={htmlContent}
+                    onHtmlChange={handleHtmlChange}
+                    onUpdate={handleEditorUpdate}
+                    onSave={saveChanges}
+                    onToggleEditorOnlyMode={() => setEditorOnlyMode(true)}
+                    editorOnlyMode={false}
+                    sidebarVisible={sidebarVisible}
+                    setSidebarVisible={setSidebarVisible}
+                  />
+                  {/* Go to top button below editor */}
+                  <div className="w-full flex justify-center mt-2">
+                    <Button variant="outline" size="sm" onClick={() => {
+                      try {
+                        // Scroll to the very top of the page
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                      } catch (error) {
+                        console.error('Error scrolling to top:', error);
+                      }
+                    }}>
+                      Go to top
                     </Button>
-                    <div className="text-xs text-muted-foreground mb-1">
-                      <strong>Instructions:</strong> In the new tab, click "Share" → "Embed a map" → choose "Satellite" → copy the iframe code and paste it below:
+                  </div>
+                  {/* 2x2 Section Grid with Notes in bottom right as the cell itself */}
+                  <div className="w-full max-w-4xl mx-auto mt-6 grid grid-cols-2 grid-rows-2 gap-4">
+                    {/* Top-left cell: Tags link */}
+                    <div className="border rounded p-4 min-h-[80px] flex flex-col justify-center bg-card">
+                      <h3 className="text-lg font-medium mb-2 text-center w-full text-primary">Tags link</h3>
+                      <div className="flex flex-col gap-3">
+                        <div className="flex items-center gap-2">
+                          <span className="w-32">Review</span>
+                          <Select value={reviewsTag} onValueChange={setReviewsTag} disabled={tagsLoading}>
+                            <SelectTrigger className="w-48">
+                              <SelectValue placeholder={tagsLoading ? 'Loading...' : 'Select tag'} />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {(companyTags && companyTags.reviewTags && companyTags.reviewTags.length > 0)
+                                ? companyTags.reviewTags.map(tag => (
+                                    <SelectItem key={tag} value={tag}>{tag}</SelectItem>
+                                  ))
+                                : <SelectItem value="no-tags" disabled>No tags</SelectItem>}
+                            </SelectContent>
+                          </Select>
+                          <CopyButton value={reviewsTag} />
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="w-32">FAQ</span>
+                          <Select value={faqTag} onValueChange={setFaqTag} disabled={tagsLoading}>
+                            <SelectTrigger className="w-48">
+                              <SelectValue placeholder={tagsLoading ? 'Loading...' : 'Select tag'} />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {(companyTags && companyTags.faqTags && companyTags.faqTags.length > 0)
+                                ? companyTags.faqTags.map(tag => (
+                                    <SelectItem key={tag} value={tag}>{tag}</SelectItem>
+                                  ))
+                                : <SelectItem value="no-tags" disabled>No tags</SelectItem>}
+                            </SelectContent>
+                          </Select>
+                          <CopyButton value={faqTag} />
+                        </div>
+                      </div>
+                      {/* More info section */}
+                      <div className="mt-6">
+                        <h4 className="text-base font-semibold text-center text-primary mb-2">More info</h4>
+                        <div className="bg-muted/30 border border-border rounded p-3 text-sm text-white/90 min-h-[60px]">
+                          {getCompanyById(companyId)?.info ? (
+                            <span>{getCompanyById(companyId)?.info}</span>
+                          ) : (
+                            <span className="text-muted-foreground">No info available for this company.</span>
+                          )}
+                        </div>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2">
+                    {/* Top-right cell: Google Maps Embed */}
+                    <div id="maps-embed-section" className="border rounded p-4 min-h-[80px] flex flex-col justify-between bg-card">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="mx-auto font-medium text-center w-full text-primary">Google Maps Embed</span>
+                        <GreenCircleCheckbox
+                          checked={!!checkedFields.maps}
+                          onChange={e => handleCheckmarkChange('maps', e.target.checked)}
+                          className="ml-2"
+                        />
+                      </div>
+                      <label className="text-sm mb-1">Enter a City, ST:</label>
+                      <Input
+                        type="text"
+                        value={mapsLocation}
+                        onChange={e => handleMapsLocationChange(e.target.value)}
+                        onBlur={e => handleMapsLocationChange(e.target.value)}
+                        placeholder="e.g., Acton, MA"
+                        className="mb-2"
+                      />
+                      <Button
+                        type="button"
+                        className="mb-2 w-fit"
+                        onClick={() => {
+                          if (!mapsLocation.trim()) return;
+                          const encoded = encodeURIComponent(mapsLocation.trim());
+                          window.open(`https://www.google.com/maps/place/${encoded}`, '_blank');
+                        }}
+                      >
+                        Open in Google Maps
+                      </Button>
+                      <div className="text-xs text-muted-foreground mb-1">
+                        <strong>Instructions:</strong> In the new tab, click "Share" → "Embed a map" → choose "Satellite" → copy the iframe code and paste it below:
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Textarea
+                          rows={3}
+                          value={mapsEmbedCode}
+                          onChange={e => handleMapsEmbedCodeChange(e.target.value)}
+                          onBlur={e => handleMapsEmbedCodeChange(e.target.value)}
+                          placeholder="Paste your iframe code here..."
+                          className="flex-1"
+                        />
+                        <CopyButton value={mapsEmbedCode} />
+                      </div>
+                    </div>
+                    {/* Bottom-left cell: Instructions to Link */}
+                    <div className="border rounded p-4 min-h-[80px] flex flex-col justify-between bg-card">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="mx-auto font-medium text-center w-full text-primary">Instructions to Link</span>
+                        <GreenCircleCheckbox
+                          checked={!!checkedFields.instructions}
+                          onChange={e => handleCheckmarkChange('instructions', e.target.checked)}
+                          className="ml-2"
+                        />
+                      </div>
                       <Textarea
-                        rows={3}
-                        value={mapsEmbedCode}
-                        onChange={e => handleMapsEmbedCodeChange(e.target.value)}
-                        onBlur={e => handleMapsEmbedCodeChange(e.target.value)}
-                        placeholder="Paste your iframe code here..."
-                        className="flex-1"
-                      />
-                      <CopyButton value={mapsEmbedCode} />
-                    </div>
-                  </div>
-                  {/* Bottom-left cell: Instructions to Link */}
-                  <div className="border rounded p-4 min-h-[80px] flex flex-col justify-between bg-card">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="mx-auto font-medium text-center w-full text-primary">Instructions to Link</span>
-                      <GreenCircleCheckbox
-                        checked={!!checkedFields.instructions}
-                        onChange={e => handleCheckmarkChange('instructions', e.target.checked)}
-                        className="ml-2"
+                        className="rounded-lg border p-2 mt-2 flex-1 resize-none"
+                        rows={4}
+                        value={instructionsToLink}
+                        onChange={e => handleTextChange('instructionsToLink', e.target.value)}
+                        onBlur={e => handleTextChange('instructionsToLink', e.target.value)}
+                        placeholder="Enter instructions..."
                       />
                     </div>
-                    <Textarea
-                      className="rounded-lg border p-2 mt-2 flex-1 resize-none"
-                      rows={4}
-                      value={instructionsToLink}
-                      onChange={e => handleTextChange('instructionsToLink', e.target.value)}
-                      onBlur={e => handleTextChange('instructionsToLink', e.target.value)}
-                      placeholder="Enter instructions..."
-                    />
-                  </div>
-                  {/* Bottom-right cell: Notes */}
-                  <div className="border rounded p-4 min-h-[80px] flex flex-col justify-between bg-card">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="mx-auto font-medium text-center w-full text-primary">Notes</span>
+                    {/* Bottom-right cell: Notes */}
+                    <div className="border rounded p-4 min-h-[80px] flex flex-col justify-between bg-card">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="mx-auto font-medium text-center w-full text-primary">Notes</span>
+                      </div>
+                      <Textarea
+                        className="rounded-lg border p-2 mt-2 flex-1 resize-none"
+                        rows={4}
+                        value={notes}
+                        onChange={e => handleTextChange('notes', e.target.value)}
+                        onBlur={e => handleTextChange('notes', e.target.value)}
+                        placeholder="Enter notes..."
+                      />
                     </div>
-                    <Textarea
-                      className="rounded-lg border p-2 mt-2 flex-1 resize-none"
-                      rows={4}
-                      value={notes}
-                      onChange={e => handleTextChange('notes', e.target.value)}
-                      onBlur={e => handleTextChange('notes', e.target.value)}
-                      placeholder="Enter notes..."
-                    />
                   </div>
                 </div>
               </div>
             </div>
-          </div>
+          )}
+          {/* Main content rendering here, outside sidebar logic */}
         </div>
         {/* Help button at the bottom right, not floating */}
         <div className="w-full flex justify-end mt-4 mb-4">

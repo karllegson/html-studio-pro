@@ -24,6 +24,14 @@ import {
 import { cn } from "@/lib/utils";
 import { auth } from '@/firebase';
 import { signOut } from 'firebase/auth';
+import { useIsMobile } from '@/hooks/use-mobile';
+
+const statusToTabMap: Record<TaskStatus, string> = {
+  [TaskStatus.READY]: 'ready',
+  [TaskStatus.IN_PROGRESS]: 'in-progress',
+  [TaskStatus.FINISHED]: 'posted-live',
+  [TaskStatus.RECENTLY_DELETED]: 'recently-deleted'
+};
 
 const Dashboard: React.FC = () => {
   const {
@@ -43,23 +51,22 @@ const Dashboard: React.FC = () => {
   const [selectedTasks, setSelectedTasks] = useState<string[]>([]);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [taskToDelete, setTaskToDelete] = useState<string[] | null>(null);
-  const [activeTab, setActiveTab] = useState<string>('ready');
+  const [activeTab, setActiveTab] = useState<string>(() => window.localStorage.getItem('dashboardTab') || 'ready');
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   // Add local state for editing notes
   const [editingNotes, setEditingNotes] = useState<{ [taskId: string]: string }>({});
   // Add local state for editing teamwork links
   const [editingTeamworkLinks, setEditingTeamworkLinks] = useState<{ [taskId: string]: string }>({});
+  const isMobile = useIsMobile();
 
   // Set the active tab based on the current task's status
   useEffect(() => {
     if (currentTask) {
-      const statusToTabMap: Record<TaskStatus, string> = {
-        [TaskStatus.READY]: 'ready',
-        [TaskStatus.IN_PROGRESS]: 'in-progress',
-        [TaskStatus.FINISHED]: 'finished',
-        [TaskStatus.RECENTLY_DELETED]: 'recently-deleted'
-      };
-      setActiveTab(statusToTabMap[currentTask.status] || 'ready');
+      // Only auto-switch tab if not recently deleted
+      if (currentTask.status !== TaskStatus.RECENTLY_DELETED) {
+        setActiveTab(statusToTabMap[currentTask.status] || 'ready');
+      }
+      // If recently deleted, do not change the tab
     }
   }, [currentTask]);
 
@@ -151,7 +158,7 @@ const Dashboard: React.FC = () => {
   // Filter tasks by status
   const readyTasks = tasks.filter(task => task.status === TaskStatus.READY);
   const inProgressTasks = tasks.filter(task => task.status === TaskStatus.IN_PROGRESS);
-  const finishedTasks = tasks.filter(task => task.status === TaskStatus.FINISHED);
+  const postedLiveTasks = tasks.filter(task => task.status === TaskStatus.FINISHED);
   const recentlyDeletedTasks = tasks.filter(task => task.status === TaskStatus.RECENTLY_DELETED);
 
   const formatDate = (dateString: string) => {
@@ -165,53 +172,23 @@ const Dashboard: React.FC = () => {
   };
 
   const renderTaskTable = (taskList: Task[], tabKey?: string) => (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          {isSelectionMode && (
-            <TableHead className="w-[30px]">
-              <Checkbox
-                checked={taskList.length > 0 && taskList.every(task => selectedTasks.includes(task.id))}
-                onCheckedChange={(checked) => handleSelectAllTasks(taskList, checked as boolean)}
-              />
-            </TableHead>
-          )}
-          <TableHead className="w-[180px]">Company</TableHead>
-          <TableHead className="w-[180px]">Teamwork Link</TableHead>
-          <TableHead className="w-[120px]">Type</TableHead>
-          <TableHead className="w-[120px]">Status</TableHead>
-          <TableHead>Notes</TableHead>
-          <TableHead className="w-[120px]">Date</TableHead>
-          <TableHead className="w-[140px]">Actions</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
+    isMobile ? (
+      <div className="flex flex-col gap-2 w-full">
         {taskList.length === 0 ? (
-          <TableRow>
-            <TableCell colSpan={isSelectionMode ? 8 : 7} className="text-center py-6">No tasks found</TableCell>
-          </TableRow>
+          <div className="text-center py-6 text-xs">No tasks found</div>
         ) : (
           taskList.map(task => (
-            <TableRow 
-              key={task.id}
-              className={cn(
-                "transition-colors",
-                currentTask?.id === task.id && "highlight-task-row"
-              )}
-            >
-              {isSelectionMode && (
-                <TableCell>
-                  <Checkbox
-                    checked={selectedTasks.includes(task.id)}
-                    onCheckedChange={(checked) => handleSelectTask(task.id, checked as boolean)}
-                  />
-                </TableCell>
-              )}
-              <TableCell>
-                {task.companyId ? companies.find(c => c.id === task.companyId)?.name || 'Unknown Company' : 'Unassigned Company'}
-              </TableCell>
-              <TableCell>
-                <div className="flex gap-2 items-center">
+            <div key={task.id} className={cn(
+              "rounded-lg border bg-card p-2 flex flex-col gap-1 shadow-sm text-xs",
+              currentTask?.id === task.id && "ring-2 ring-primary"
+            )}>
+              <div className="flex justify-between items-center">
+                <span className="font-semibold">{companies.find(c => c.id === task.companyId)?.name || 'Unassigned'}</span>
+                <span className="bg-muted px-2 py-0.5 rounded text-[10px]">{task.type}</span>
+              </div>
+              <div className="flex flex-col gap-0.5 mt-1">
+                <span className="text-muted-foreground">Teamwork Link:</span>
+                <div className="flex gap-1 items-center">
                   <Input
                     value={editingTeamworkLinks[task.id] !== undefined ? editingTeamworkLinks[task.id] : task.teamworkLink}
                     onChange={e => setEditingTeamworkLinks(prev => ({ ...prev, [task.id]: e.target.value }))}
@@ -220,33 +197,32 @@ const Dashboard: React.FC = () => {
                         handleUpdateTaskField(task.id, 'teamworkLink', editingTeamworkLinks[task.id]);
                       }
                     }}
-                    className="w-full"
+                    className="w-full text-xs px-2 py-1"
                   />
-                  <Button variant="outline" size="icon" onClick={() => copyToClipboard(task.teamworkLink)} className="flex-shrink-0">
-                    <Copy size={16} />
+                  <Button variant="outline" size="icon" onClick={() => copyToClipboard(task.teamworkLink)} className="flex-shrink-0 p-1 h-6 w-6">
+                    <Copy size={12} />
                   </Button>
                 </div>
-              </TableCell>
-              <TableCell>
-                {task.type}
-              </TableCell>
-              <TableCell>
+              </div>
+              <div className="flex flex-col gap-0.5 mt-1">
+                <span className="text-muted-foreground">Status:</span>
                 <Select value={task.status} onValueChange={value => handleUpdateTaskField(task.id, 'status', value)}>
-                  <SelectTrigger>
+                  <SelectTrigger className="w-full text-xs px-2 py-1">
                     <SelectValue placeholder="Select status" />
                   </SelectTrigger>
                   <SelectContent>
                     {Object.values(TaskStatus)
                       .filter(status => status !== TaskStatus.RECENTLY_DELETED)
                       .map(status => (
-                        <SelectItem key={status} value={status}>
+                        <SelectItem key={status} value={status} className="text-xs">
                           {status}
                         </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
-              </TableCell>
-              <TableCell>
+              </div>
+              <div className="flex flex-col gap-0.5 mt-1">
+                <span className="text-muted-foreground">Notes:</span>
                 <Input
                   value={editingNotes[task.id] !== undefined ? editingNotes[task.id] : task.notes}
                   onChange={e => setEditingNotes(prev => ({ ...prev, [task.id]: e.target.value }))}
@@ -255,35 +231,141 @@ const Dashboard: React.FC = () => {
                       handleUpdateTaskField(task.id, 'notes', editingNotes[task.id]);
                     }
                   }}
-                  className="w-full"
+                  className="w-full text-xs px-2 py-1"
                 />
-              </TableCell>
-              <TableCell>
-                {formatDate(task.updatedAt)}
-              </TableCell>
-              <TableCell>
-                <div className="flex gap-2">
-                  {tabKey === 'ready' ? (
-                    <Button size="sm" variant="default" onClick={() => handleEditTask(task)}>
-                      Open
-                    </Button>
-                  ) : (
-                    <Button size="sm" variant="default" onClick={() => handleEditTask(task)}>
-                      Edit
-                    </Button>
-                  )}
-                  {!isSelectionMode && (
-                    <Button size="sm" variant="destructive" onClick={() => handleDeleteTask(task.id)}>
-                      <Trash2 size={16} />
-                    </Button>
-                  )}
+              </div>
+              <div className="flex justify-between items-center mt-1">
+                <span className="text-muted-foreground">{formatDate(task.updatedAt)}</span>
+                <div className="flex gap-1">
+                  <Button size="sm" className="text-xs px-2 py-1 h-6">Edit</Button>
+                  <Button size="sm" variant="destructive" className="text-xs px-2 py-1 h-6">Delete</Button>
                 </div>
-              </TableCell>
-            </TableRow>
+              </div>
+            </div>
           ))
         )}
-      </TableBody>
-    </Table>
+      </div>
+    ) : (
+      <Table>
+        <TableHeader>
+          <TableRow>
+            {isSelectionMode && (
+              <TableHead className="w-[30px]">
+                <Checkbox
+                  checked={taskList.length > 0 && taskList.every(task => selectedTasks.includes(task.id))}
+                  onCheckedChange={(checked) => handleSelectAllTasks(taskList, checked as boolean)}
+                />
+              </TableHead>
+            )}
+            <TableHead className="w-[180px]">Title</TableHead>
+            <TableHead className="w-[180px]">Teamwork Link</TableHead>
+            <TableHead className="w-[120px]">Type</TableHead>
+            <TableHead className="w-[120px]">Status</TableHead>
+            <TableHead>Notes</TableHead>
+            <TableHead className="w-[120px]">Date</TableHead>
+            <TableHead className="w-[140px]">Actions</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {taskList.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={isSelectionMode ? 8 : 7} className="text-center py-6">No tasks found</TableCell>
+            </TableRow>
+          ) : (
+            taskList.map(task => (
+              <TableRow 
+                key={task.id}
+                className={cn(
+                  "transition-colors",
+                  currentTask?.id === task.id && "highlight-task-row"
+                )}
+              >
+                {isSelectionMode && (
+                  <TableCell>
+                    <Checkbox
+                      checked={selectedTasks.includes(task.id)}
+                      onCheckedChange={(checked) => handleSelectTask(task.id, checked as boolean)}
+                    />
+                  </TableCell>
+                )}
+                <TableCell>
+                  {task.widgetTitle || 'No Widget Title'}
+                </TableCell>
+                <TableCell>
+                  <div className="flex gap-2 items-center">
+                    <Input
+                      value={editingTeamworkLinks[task.id] !== undefined ? editingTeamworkLinks[task.id] : task.teamworkLink}
+                      onChange={e => setEditingTeamworkLinks(prev => ({ ...prev, [task.id]: e.target.value }))}
+                      onBlur={e => {
+                        if (editingTeamworkLinks[task.id] !== undefined && editingTeamworkLinks[task.id] !== task.teamworkLink) {
+                          handleUpdateTaskField(task.id, 'teamworkLink', editingTeamworkLinks[task.id]);
+                        }
+                      }}
+                      className="w-full"
+                    />
+                    <Button variant="outline" size="icon" onClick={() => copyToClipboard(task.teamworkLink)} className="flex-shrink-0">
+                      <Copy size={16} />
+                    </Button>
+                  </div>
+                </TableCell>
+                <TableCell>
+                  {task.type}
+                </TableCell>
+                <TableCell>
+                  <Select value={task.status} onValueChange={value => handleUpdateTaskField(task.id, 'status', value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.values(TaskStatus)
+                        .filter(status => status !== TaskStatus.RECENTLY_DELETED)
+                        .map(status => (
+                          <SelectItem key={status} value={status}>
+                            {status}
+                          </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </TableCell>
+                <TableCell>
+                  <Input
+                    value={editingNotes[task.id] !== undefined ? editingNotes[task.id] : task.notes}
+                    onChange={e => setEditingNotes(prev => ({ ...prev, [task.id]: e.target.value }))}
+                    onBlur={e => {
+                      if (editingNotes[task.id] !== undefined && editingNotes[task.id] !== task.notes) {
+                        handleUpdateTaskField(task.id, 'notes', editingNotes[task.id]);
+                      }
+                    }}
+                    className="w-full"
+                  />
+                </TableCell>
+                <TableCell>
+                  {formatDate(task.updatedAt)}
+                </TableCell>
+                <TableCell>
+                  <div className="flex gap-2">
+                    {tabKey === 'ready' ? (
+                      <Button size="sm" variant="default" onClick={() => handleEditTask(task)}>
+                        Open
+                      </Button>
+                    ) : (
+                      <Button size="sm" variant="default" onClick={() => handleEditTask(task)}>
+                        Edit
+                      </Button>
+                    )}
+                    {!isSelectionMode && (
+                      <Button size="sm" variant="destructive" onClick={() => handleDeleteTask(task.id)}>
+                        <Trash2 size={16} />
+                      </Button>
+                    )}
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))
+          )}
+        </TableBody>
+      </Table>
+    )
   );
 
   const handleLogout = async () => {
@@ -323,11 +405,11 @@ const Dashboard: React.FC = () => {
         </div>
 
         <div className="bg-card rounded-lg shadow-lg overflow-hidden task-table-container">
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <Tabs value={activeTab} onValueChange={tab => { setActiveTab(tab); window.localStorage.setItem('dashboardTab', tab); }} className="w-full">
             <TabsList className="grid grid-cols-4 mb-2">
               <TabsTrigger value="ready">Ready ({readyTasks.length})</TabsTrigger>
               <TabsTrigger value="in-progress">In Progress ({inProgressTasks.length})</TabsTrigger>
-              <TabsTrigger value="finished">Finished ({finishedTasks.length})</TabsTrigger>
+              <TabsTrigger value="posted-live">Posted Live ({postedLiveTasks.length})</TabsTrigger>
               <TabsTrigger value="recently-deleted">Recently Deleted ({recentlyDeletedTasks.length})</TabsTrigger>
             </TabsList>
 
@@ -353,8 +435,8 @@ const Dashboard: React.FC = () => {
               {renderTaskTable(inProgressTasks, 'in-progress')}
             </TabsContent>
             
-            <TabsContent value="finished">
-              {renderTaskTable(finishedTasks, 'finished')}
+            <TabsContent value="posted-live">
+              {renderTaskTable(postedLiveTasks, 'posted-live')}
             </TabsContent>
             
             <TabsContent value="recently-deleted">

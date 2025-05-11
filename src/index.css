@@ -93,6 +93,62 @@
     h3 { @apply text-2xl; }
     p { @apply text-lg; }
   }
+
+  /* Ultra-mobile styles for screens < 640px */
+  @media (max-width: 639px) {
+    body, p, h1, h2, h3, h4, h5, h6, label, .label, .text-base, .text-sm, .text-xs, .text-muted-foreground {
+      font-size: 0.85rem !important;
+      line-height: 1.2 !important;
+    }
+    .container, .px-4, .py-4, .p-4, .px-6, .py-6, .gap-4, .gap-3, .mb-8, .mb-4, .mb-2, .mt-3, .mt-6, .mt-10 {
+      padding-left: 0.5rem !important;
+      padding-right: 0.5rem !important;
+      padding-top: 0.5rem !important;
+      padding-bottom: 0.5rem !important;
+      margin-bottom: 0.25rem !important;
+      margin-top: 0.25rem !important;
+      gap: 0.25rem !important;
+    }
+    button, .button, .btn, input, select, textarea {
+      font-size: 0.85rem !important;
+      min-height: 2rem !important;
+      padding: 0.4rem 0.6rem !important;
+      width: 100% !important;
+      border-radius: 0.4rem !important;
+    }
+    .card, .bg-card, .task-table-container {
+      border-radius: 0.5rem;
+      padding: 0.5rem !important;
+      box-shadow: 0 1px 4px 0 rgba(0,0,0,0.12);
+    }
+    .main-layout-grid, .dashboard-grid, .editor-main-grid, .grid, .flex {
+      grid-template-columns: 1fr !important;
+      flex-direction: column !important;
+      gap: 0.25rem !important;
+    }
+    table {
+      display: block;
+      width: 100%;
+      overflow-x: auto;
+      font-size: 0.8rem;
+    }
+    th, td {
+      padding: 0.4rem 0.2rem !important;
+      min-width: 90px;
+    }
+    .hide-on-mobile, .md\:block, .md\:flex, .md\:inline, .md\:mb-0, .md\:space-x-4 {
+      display: none !important;
+    }
+    .mobile-only { display: block !important; }
+    .checkbox, .icon, .svg, .h-4, .w-4, .h-5, .w-5 {
+      width: 1rem !important;
+      height: 1rem !important;
+    }
+    .footer, footer {
+      font-size: 0.8rem !important;
+      padding: 0.5rem 0 !important;
+    }
+  }
 }
 
 /* Custom Scrollbar Styles */
