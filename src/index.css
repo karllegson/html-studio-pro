@@ -59,6 +59,42 @@
   }
 }
 
+/* Responsive Styles */
+@layer utilities {
+  /* Phone Styles (320px and up) */
+  @media (min-width: 320px) {
+    .container {
+      @apply px-4;
+    }
+    h1 { @apply text-2xl; }
+    h2 { @apply text-xl; }
+    h3 { @apply text-lg; }
+    p { @apply text-sm; }
+  }
+
+  /* Tablet Styles (768px and up) */
+  @media (min-width: 768px) {
+    .container {
+      @apply px-6;
+    }
+    h1 { @apply text-3xl; }
+    h2 { @apply text-2xl; }
+    h3 { @apply text-xl; }
+    p { @apply text-base; }
+  }
+
+  /* Web Styles (1024px and up) */
+  @media (min-width: 1024px) {
+    .container {
+      @apply px-8;
+    }
+    h1 { @apply text-4xl; }
+    h2 { @apply text-3xl; }
+    h3 { @apply text-2xl; }
+    p { @apply text-lg; }
+  }
+}
+
 /* Custom Scrollbar Styles */
 ::-webkit-scrollbar {
   width: 8px;

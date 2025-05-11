@@ -43,7 +43,7 @@ export const TagsSection: React.FC<TagsSectionProps> = ({
                   <RotateCcw size={14} className="text-muted-foreground" />
                 </button>
               </div>
-              <div className="flex flex-wrap gap-1.5 mb-2">
+              <div className="flex flex-wrap gap-1.5 mb-2 w-full min-w-0" style={{overflowX: 'hidden'}}>
                 {Object.entries(htmlTags).map(([tag, [openTag, closeTag]]) => (
                   <TagButton 
                     key={tag}
@@ -53,7 +53,7 @@ export const TagsSection: React.FC<TagsSectionProps> = ({
                     isOpen={openStates[tag]}
                     setIsOpen={isOpen => setOpenStates(prev => ({ ...prev, [tag]: isOpen }))}
                     onTagClick={(open, close) => handleTagClick(tag, open, close)}
-                    className="text-sm px-3 py-1 rounded min-w-0 min-h-0 h-7"
+                    className="text-sm px-3 py-1 rounded min-w-[90px] min-h-0 h-7 max-w-full truncate"
                   />
                 ))}
               </div>
@@ -61,14 +61,15 @@ export const TagsSection: React.FC<TagsSectionProps> = ({
 
             <div>
               <h3 className="text-sm font-semibold mb-1 tracking-wide uppercase text-white/80">Components</h3>
-              <div className="flex flex-wrap gap-1.5">
+              <div className="flex flex-wrap gap-1.5 w-full min-w-0" style={{overflowX: 'hidden'}}>
                 {Object.entries(htmlComponents).map(([name, template]) => (
-                  <ComponentButton
-                    key={name}
-                    label={name}
-                    template={template}
-                    onInsert={onInsertComponent}
-                  />
+                  <div key={name} className="min-w-[110px] max-w-full h-7 truncate">
+                    <ComponentButton
+                      label={name}
+                      template={template}
+                      onInsert={onInsertComponent}
+                    />
+                  </div>
                 ))}
               </div>
             </div>

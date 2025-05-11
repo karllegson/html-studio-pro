@@ -88,6 +88,8 @@ const HtmlBuilder: React.FC = () => {
 
   const [linkDialogOpen, setLinkDialogOpen] = useState(false);
 
+  const [sidebarWidth, setSidebarWidth] = useState(260);
+
   // Offline detection
   useEffect(() => {
     const handleOnline = () => setIsOffline(false);
@@ -706,7 +708,12 @@ const HtmlBuilder: React.FC = () => {
     return (
       <div className="min-h-screen w-full flex flex-col bg-[radial-gradient(circle,rgba(60,60,80,0.2)_1px,transparent_1px)] [background-size:32px_32px]">
         <div className="max-w-full px-4 py-4 mx-auto flex-1 flex flex-col pb-8">
-          <div className={`grid gap-4 ${isMobile ? "grid-cols-1" : "grid-cols-[260px_1fr]"}`}>
+          <div
+            className="grid gap-4"
+            style={{
+              gridTemplateColumns: isMobile ? undefined : `${sidebarWidth}px 1fr`,
+            }}
+          >
             {/* Left Sidebar: Back button + Tags/Components, sticky */}
             <div className="sticky top-4 h-[calc(100vh-2rem)] flex flex-col gap-4">
               <Button 
@@ -732,6 +739,8 @@ const HtmlBuilder: React.FC = () => {
                   onNotesChange={handleNotesChange}
                   onPageTypeChange={handlePageTypeChange}
                   onlyTagsAndComponents={true}
+                  sidebarWidth={sidebarWidth}
+                  setSidebarWidth={setSidebarWidth}
                 />
               </div>
             </div>
