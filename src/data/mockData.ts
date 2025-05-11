@@ -264,7 +264,7 @@ export const htmlComponents: Record<string, string> = {
 </div> <!-- End Mini CTA -->
 </div> <!-- End Three Column Grid -->`,
   "CTA": "[cta]",
-  "CTA Button": `[cta-btn`,
+  "CTA Button": `[cta-btn]`,
   "FAQs": `[faqs category=""]`,
   "Highlight": `<div class="highlight-box"> <!-- Start Highlight Box -->
   <h3 class="title">Title</h3>
@@ -410,5 +410,5 @@ export const htmlComponents: Record<string, string> = {
     <!-- Add/remove .content blocks for more/fewer tabs -->
   </div>
 </div>`,
-  "Tel": `[tel text=""]`
+  "Tel": `[tel]`
 };

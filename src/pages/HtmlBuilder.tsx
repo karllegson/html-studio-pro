@@ -544,6 +544,7 @@ const HtmlBuilder: React.FC = () => {
     const selectedContent = view.state.doc.sliceString(selection.from, selection.to);
     // Special handling for link tag
     if (openTag.startsWith('<a ') && closeTag === '</a>') {
+      setSelectedText(selectedContent); // Set the selected text before opening dialog
       setLinkDialogOpen(true);
       return;
     }
@@ -712,9 +713,6 @@ const HtmlBuilder: React.FC = () => {
                 variant="default"
                 onClick={async () => {
                   await saveChanges(); // Save all changes before navigating
-                  if (currentTask && currentTask.status !== TaskStatus.IN_PROGRESS) {
-                    await updateTask(currentTask.id, { status: TaskStatus.IN_PROGRESS });
-                  }
                   navigate('/');
                 }}
                 className="shrink-0 bg-black text-foreground border border-neutral-800 shadow-lg hover:bg-neutral-900"
@@ -1025,7 +1023,7 @@ const HtmlBuilder: React.FC = () => {
                     </div>
                   </div>
                   {/* Top-right cell: Google Maps Embed */}
-                  <div className="border rounded p-4 min-h-[80px] flex flex-col gap-2 bg-card">
+                  <div id="maps-embed-section" className="border rounded p-4 min-h-[80px] flex flex-col justify-between bg-card">
                     <div className="flex items-center justify-between mb-2">
                       <span className="mx-auto font-medium text-center w-full text-primary">Google Maps Embed</span>
                       <GreenCircleCheckbox

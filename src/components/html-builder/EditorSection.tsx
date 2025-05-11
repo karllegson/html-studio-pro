@@ -77,8 +77,9 @@ export const EditorSection = forwardRef<EditorSectionRef, EditorSectionProps>(({
   }, [htmlContent]);
 
   const scrollToBottom = useCallback(() => {
-    if (editorDivRef.current) {
-      editorDivRef.current.scrollTop = editorDivRef.current.scrollHeight;
+    const mapsEmbedSection = document.getElementById('maps-embed-section');
+    if (mapsEmbedSection) {
+      mapsEmbedSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   }, []);
 
