@@ -4,6 +4,7 @@ import { useTaskContext } from '@/context/TaskContext';
 import { TaskImage } from '@/types';
 import { Loader2, Copy } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { Progress } from '@/components/ui/progress';
 
 interface PhotoUploadPreviewProps {
   companyName?: string;
@@ -31,6 +32,7 @@ export const PhotoUploadPreview: React.FC<PhotoUploadPreviewProps> = ({
   const [previewIdx, setPreviewIdx] = useState<number | null>(null);
   const [downloading, setDownloading] = useState(false);
   const { toast } = useToast();
+  const [uploadProgress, setUploadProgress] = useState<{ [fileName: string]: number }>({});
 
   // Load images from Firestore on mount/task change
   useEffect(() => {
@@ -82,7 +84,10 @@ export const PhotoUploadPreview: React.FC<PhotoUploadPreviewProps> = ({
     await Promise.all(files.map(async (file, i) => {
       const path = `tasks/${taskId}`;
       try {
-        const result = await uploadImage(file, path);
+        // Add progress callback to uploadImage
+        const result = await uploadImage(file, path, (progress: number) => {
+          setUploadProgress(prev => ({ ...prev, [file.name]: progress }));
+        });
         if (result.success && result.url) {
           const meta: TaskImage = {
             url: result.url,
@@ -95,6 +100,11 @@ export const PhotoUploadPreview: React.FC<PhotoUploadPreviewProps> = ({
           setImages(prev => {
             const withoutUploading = prev.filter(img => img.file !== file);
             return [...withoutUploading, meta];
+          });
+          setUploadProgress(prev => {
+            const copy = { ...prev };
+            delete copy[file.name];
+            return copy;
           });
         } else {
           setImages(prev => prev.map(img =>
@@ -182,17 +192,29 @@ export const PhotoUploadPreview: React.FC<PhotoUploadPreviewProps> = ({
   return (
     <div className="h-full flex flex-col">
       {/* Image previews */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 p-4 overflow-auto flex-1">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 p-4 place-items-center auto-rows-[120px] md:auto-rows-[140px] justify-center">
         {images.map((img, idx) => (
-          <div key={img.url + '-' + idx} className="relative aspect-square rounded-lg overflow-hidden bg-muted border-2 border-gray-300 hover:border-blue-500 transition-colors">
+          <div key={img.url + '-' + idx} className="relative w-[140px] h-[105px] md:w-[160px] md:h-[120px] aspect-[4/3] rounded-lg overflow-hidden bg-muted border-2 border-gray-300 hover:border-blue-500 transition-colors flex-shrink-0 flex items-center justify-center">
             <img
               src={img.url}
               alt={img.name}
               className="w-full h-full object-cover hover:opacity-90 transition-opacity cursor-pointer"
               onClick={() => setPreviewIdx(idx)}
+              draggable={false}
+              loading="lazy"
             />
             {img.uploading && (
-              <div className="absolute inset-0 flex items-center justify-center bg-black/40 text-white">Uploading...</div>
+              <>
+                {/* Subtle overlay only if you want, or remove for just the bar */}
+                <div className="absolute inset-0 flex items-center justify-center bg-black/20 text-white pointer-events-none select-none">
+                  <div className="text-xs">Uploading...</div>
+                </div>
+                {/* Progress bar at the bottom, not overlapping image or buttons */}
+                <div className="absolute left-0 right-0 bottom-0 px-2 pb-2 z-10">
+                  <Progress value={uploadProgress[img.name] || 0} className="h-2" />
+                  <div className="text-xs text-center mt-1 text-white drop-shadow-sm">{uploadProgress[img.name] ? `${uploadProgress[img.name]}%` : ''}</div>
+                </div>
+              </>
             )}
             {img.error && (
               <div className="absolute inset-0 flex items-center justify-center bg-red-700/80 text-white text-xs p-2">{img.error}</div>

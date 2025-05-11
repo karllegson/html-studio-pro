@@ -1,5 +1,5 @@
 import { storage } from '@/firebase';
-import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
+import { ref, uploadBytes, getDownloadURL, deleteObject, uploadBytesResumable } from 'firebase/storage';
 import { TaskImage } from '@/types';
 
 /**
@@ -40,9 +40,14 @@ const validateFile = (file: File): string | undefined => {
  * Uploads an image to Firebase Storage
  * @param file - The file to upload
  * @param path - The storage path to upload to
+ * @param onProgress - Optional progress callback
  * @returns Promise resolving to the upload result
  */
-export const uploadImage = async (file: File, path: string): Promise<UploadResult> => {
+export const uploadImage = async (
+  file: File,
+  path: string,
+  onProgress?: (progress: number) => void
+): Promise<UploadResult> => {
   console.log('[uploadImage] called', { file, path });
   try {
     // Validate file
@@ -57,23 +62,42 @@ export const uploadImage = async (file: File, path: string): Promise<UploadResul
     const filename = `${timestamp}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
     const fullPath = `${path}/${filename}`;
 
-    // Upload file
+    // Upload file with progress
     const storageRef = ref(storage, fullPath);
-    await uploadBytes(storageRef, file);
+    const uploadTask = uploadBytesResumable(storageRef, file);
 
-    // Get download URL
-    const url = await getDownloadURL(storageRef);
+    return await new Promise<UploadResult>((resolve, reject) => {
+      uploadTask.on(
+        'state_changed',
+        (snapshot) => {
+          if (onProgress) {
+            const percent = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
+            onProgress(percent);
+          }
+        },
+        (error) => {
+          console.error('[uploadImage] error', error);
+          resolve({ success: false, error: error instanceof Error ? error.message : 'Failed to upload image' });
+        },
+        async () => {
+          try {
+            const url = await getDownloadURL(uploadTask.snapshot.ref);
+            // Create image metadata
+            const imageData: TaskImage = {
+              url,
+              name: file.name,
+              size: file.size,
+              uploadedAt: new Date().toISOString()
+            };
 
-    // Create image metadata
-    const imageData: TaskImage = {
-      url,
-      name: file.name,
-      size: file.size,
-      uploadedAt: new Date().toISOString()
-    };
-
-    console.log('[uploadImage] success', imageData);
-    return { success: true, url: imageData.url };
+            console.log('[uploadImage] success', imageData);
+            resolve({ success: true, url: imageData.url });
+          } catch (error) {
+            resolve({ success: false, error: error instanceof Error ? error.message : 'Failed to get download URL' });
+          }
+        }
+      );
+    });
   } catch (error) {
     console.error('[uploadImage] error', error);
     return {
