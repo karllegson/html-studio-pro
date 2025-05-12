@@ -414,3 +414,10 @@ h1, h2, h3, h4, h5, h6 {
 [role="status"] {
   @apply bg-card/95 backdrop-blur-sm border border-border/50;
 }
+
+.cm-literal-highlight {
+  background: #ffe066 !important;
+  color: #222 !important;
+  border-radius: 0.15em;
+  padding: 0.05em 0.15em;
+}

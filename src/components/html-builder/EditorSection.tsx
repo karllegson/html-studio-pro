@@ -22,6 +22,8 @@ interface EditorSectionProps {
   editorOnlyMode?: boolean;
   sidebarVisible?: boolean;
   setSidebarVisible?: (visible: boolean) => void;
+  onHighlight?: () => void;
+  highlightDisabled?: boolean;
 }
 
 // Custom theme for white text
@@ -51,6 +53,8 @@ export const EditorSection = forwardRef<EditorSectionRef, EditorSectionProps>(({
   editorOnlyMode,
   sidebarVisible,
   setSidebarVisible,
+  onHighlight,
+  highlightDisabled,
 }, ref) => {
   const editorDivRef = useRef<HTMLDivElement>(null);
   const editorViewRef = useRef<EditorView | undefined>(undefined);
@@ -222,18 +226,14 @@ export const EditorSection = forwardRef<EditorSectionRef, EditorSectionProps>(({
 
   const editorContainer = (
     <div
-      className={`bg-[#23263a] border border-border shadow-xl rounded-xl flex flex-col px-0 my-4 focus-within:ring-2 focus-within:ring-primary/60 transition-all duration-300 ${isExtended ? 'min-w-[1200px] w-[2000px] max-w-none' : 'w-full'}`}
+      className={`bg-[#23263a] border border-border shadow-xl rounded-xl flex flex-col px-0 my-4 focus-within:ring-2 focus-within:ring-primary/60 transition-all duration-300 ${isExtended ? 'min-w-[1200px] w-[2000px] max-w-none' : 'w-full'} max-w-full overflow-x-auto`}
+      style={{ maxWidth: '100%', overflowX: 'auto' }}
     >
       <div className="p-2 bg-secondary text-secondary-foreground text-sm font-mono flex justify-between items-center rounded-t-xl">
         {renderToolbar()}
-        {lastSavedAt && (
-          <div className="text-xs text-muted-foreground ml-4 whitespace-nowrap">
-            Last saved: {lastSavedAt.toLocaleTimeString()}
-          </div>
-        )}
       </div>
       <div className="flex-1 rounded-b-xl overflow-hidden" style={{overflow: 'hidden', borderRadius: '0 0 1rem 1rem'}}>
-        <div className="w-full max-w-full">
+        <div className="w-full max-w-full overflow-x-auto" style={{ maxWidth: '100%' }}>
           {renderEditor()}
         </div>
       </div>

@@ -701,6 +701,25 @@ const HtmlBuilder: React.FC = () => {
     }
   };
 
+  // 1. Add a highlight handler
+  const handleHighlight = () => {
+    const view = editorRef.current?.getView();
+    if (!view) return;
+    const selection = view.state.selection.main;
+    const selectedContent = view.state.doc.sliceString(selection.from, selection.to);
+    if (selectedContent) {
+      view.dispatch({
+        changes: {
+          from: selection.from,
+          to: selection.to,
+          insert: `<mark>${selectedContent}</mark>`
+        },
+        selection: { anchor: selection.from + `<mark>`.length + selectedContent.length + `</mark>`.length }
+      });
+      view.focus();
+    }
+  };
+
   // Remove the useEffect from inside the if (currentTask) block
   if (tasksLoading) {
     return null;
@@ -1007,10 +1026,13 @@ const HtmlBuilder: React.FC = () => {
                     onHtmlChange={handleHtmlChange}
                     onUpdate={handleEditorUpdate}
                     onSave={saveChanges}
-                    onToggleEditorOnlyMode={() => setEditorOnlyMode(true)}
-                    editorOnlyMode={false}
+                    lastSavedAt={currentTask?.updatedAt ? new Date(currentTask.updatedAt) : null}
+                    onToggleEditorOnlyMode={() => setEditorOnlyMode(v => !v)}
+                    editorOnlyMode={editorOnlyMode}
                     sidebarVisible={sidebarVisible}
                     setSidebarVisible={setSidebarVisible}
+                    onHighlight={handleHighlight}
+                    highlightDisabled={!selectedText}
                   />
                   {/* Go to top button below editor */}
                   <div className="w-full flex justify-center mt-2">
