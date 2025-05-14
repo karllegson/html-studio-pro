@@ -59,7 +59,7 @@ export const EditorSection = forwardRef<EditorSectionRef, EditorSectionProps>(({
   const editorDivRef = useRef<HTMLDivElement>(null);
   const editorViewRef = useRef<EditorView | undefined>(undefined);
   const [isExtended, setIsExtended] = useState(false);
-  const [fontSize, setFontSize] = useState(14);
+  const [fontSize, setFontSize] = useState(16);
   
   useImperativeHandle(ref, () => ({
     getView: () => editorViewRef.current
