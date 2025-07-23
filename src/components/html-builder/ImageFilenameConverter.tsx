@@ -18,6 +18,7 @@ export const ImageFilenameConverter: React.FC<ImageFilenameConverterProps> = ({ 
   const arrowRef = useRef<HTMLDivElement>(null);
   const [lastLink, setLastLink] = useState('');
   const [arrowActive, setArrowActive] = useState(false);
+  const [filenameWarning, setFilenameWarning] = useState('');
 
   const selectedCompany = getCompanyById(companyId);
 
@@ -66,10 +67,23 @@ export const ImageFilenameConverter: React.FC<ImageFilenameConverterProps> = ({ 
             <Input
               id="filename"
               value={filename}
-              onChange={(e) => setFilename(e.target.value)}
+              onChange={(e) => {
+                const raw = e.target.value;
+                // Only allow a-z, A-Z, 0-9, and dash
+                const sanitized = raw.replace(/[^a-zA-Z0-9-]/g, '');
+                if (raw !== sanitized) {
+                  setFilenameWarning('Only letters, numbers, and dash (-) are allowed.');
+                } else {
+                  setFilenameWarning('');
+                }
+                setFilename(sanitized);
+              }}
               placeholder="Enter filename"
               className="bg-muted text-white/90 border border-border w-full"
             />
+            {filenameWarning && (
+              <span className="text-xs text-red-400 mt-1">{filenameWarning}</span>
+            )}
           </div>
           <div
             ref={arrowRef}
