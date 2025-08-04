@@ -69,12 +69,14 @@ export const ImageFilenameConverter: React.FC<ImageFilenameConverterProps> = ({ 
               value={filename}
               onChange={(e) => {
                 const raw = e.target.value;
-                // Only allow a-z, A-Z, 0-9, and dash
-                let sanitized = raw.replace(/[^a-zA-Z0-9-]/g, '');
+                // Only allow a-z, A-Z, 0-9, dash, and period
+                let sanitized = raw.replace(/[^a-zA-Z0-9-.]/g, '');
                 // Replace multiple consecutive dashes with a single dash
                 sanitized = sanitized.replace(/-+/g, '-');
+                // Replace multiple consecutive periods with a single period
+                sanitized = sanitized.replace(/\.+/g, '.');
                 if (raw !== sanitized) {
-                  setFilenameWarning('Only letters, numbers, and dash (-) are allowed. No consecutive dashes.');
+                  setFilenameWarning('Only letters, numbers, dash (-), and period (.) are allowed. No consecutive dashes or periods.');
                 } else {
                   setFilenameWarning('');
                 }
