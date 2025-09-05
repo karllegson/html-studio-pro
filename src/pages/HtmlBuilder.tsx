@@ -666,12 +666,6 @@ const HtmlBuilder: React.FC = () => {
     }
   };
 
-  const handleEditorUpdate = (viewUpdate: any) => {
-    const state = viewUpdate.state;
-    const selection = state.selection.main;
-    setSelectedText(state.doc.sliceString(selection.from, selection.to));
-    setCursorPosition({ from: selection.from, to: selection.to });
-  };
 
   // Add the useEffect here, at the top level
   useEffect(() => {
@@ -800,7 +794,16 @@ const HtmlBuilder: React.FC = () => {
             ref={editorRef}
             htmlContent={htmlContent}
             onHtmlChange={handleHtmlChange}
-            onUpdate={handleEditorUpdate}
+            onUpdate={() => {
+              // Get the current editor view to extract selection info
+              const view = editorRef.current?.getView();
+              if (view) {
+                const state = view.state;
+                const selection = state.selection.main;
+                setSelectedText(state.doc.sliceString(selection.from, selection.to));
+                setCursorPosition({ from: selection.from, to: selection.to });
+              }
+            }}
             onSave={saveChanges}
             onToggleEditorOnlyMode={() => setEditorOnlyMode(false)}
             editorOnlyMode={true}
@@ -1416,7 +1419,16 @@ const HtmlBuilder: React.FC = () => {
                     ref={editorRef}
                     htmlContent={htmlContent}
                     onHtmlChange={handleHtmlChange}
-                    onUpdate={handleEditorUpdate}
+                    onUpdate={() => {
+                      // Get the current editor view to extract selection info
+                      const view = editorRef.current?.getView();
+                      if (view) {
+                        const state = view.state;
+                        const selection = state.selection.main;
+                        setSelectedText(state.doc.sliceString(selection.from, selection.to));
+                        setCursorPosition({ from: selection.from, to: selection.to });
+                      }
+                    }}
                     onSave={saveChanges}
                     lastSavedAt={currentTask?.updatedAt ? new Date(currentTask.updatedAt) : null}
                     onToggleEditorOnlyMode={() => setEditorOnlyMode(v => !v)}
@@ -1630,7 +1642,7 @@ const HtmlBuilder: React.FC = () => {
         
         {/* Task Completion Popup */}
         <Dialog open={completionPopupOpen} onOpenChange={setCompletionPopupOpen}>
-          <DialogContent className="max-w-md">
+          <DialogContent className="max-w-lg">
             <DialogHeader>
               <DialogTitle className="text-center text-xl font-bold">Task Completion Checklist</DialogTitle>
             </DialogHeader>
@@ -1638,37 +1650,68 @@ const HtmlBuilder: React.FC = () => {
               <div className="space-y-3">
                 {/* Only show Google Maps for Landing Page and Sub Page */}
                 {pageType !== 'Blog' && (
-                  <div className="flex items-center justify-between">
+                  <div 
+                    className="flex items-center justify-between cursor-pointer p-2 rounded transition-colors"
+                    onClick={() => handleCheckmarkChange('maps', !checkedFields.maps)}
+                  >
                     <span className="font-medium">Google Maps Embed</span>
-                    <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${checkedFields.maps ? 'bg-green-500 border-green-500' : 'border-gray-300'}`}>
+                    <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center hover:scale-110 transition-transform ${checkedFields.maps ? 'bg-green-500 border-green-500' : 'border-gray-300'}`}>
                       {checkedFields.maps && <span className="text-white text-sm">✓</span>}
                     </div>
                   </div>
                 )}
                 
                 {/* Always show these for all page types */}
-                <div className="flex items-center justify-between">
+                <div 
+                  className="flex items-center justify-between cursor-pointer p-2 rounded transition-colors"
+                  onClick={() => handleCheckmarkChange('featuredImg', !checkedFields.featuredImg)}
+                >
                   <span className="font-medium">Featured Image</span>
-                  <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${checkedFields.featuredImg ? 'bg-green-500 border-green-500' : 'border-gray-300'}`}>
+                  <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center hover:scale-110 transition-transform ${checkedFields.featuredImg ? 'bg-green-500 border-green-500' : 'border-gray-300'}`}>
                     {checkedFields.featuredImg && <span className="text-white text-sm">✓</span>}
                   </div>
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="font-medium">Important Steps</span>
-                  <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${checkedFields.instructions ? 'bg-green-500 border-green-500' : 'border-gray-300'}`}>
-                    {checkedFields.instructions && <span className="text-white text-sm">✓</span>}
-                  </div>
-                </div>
-                <div className="flex items-center justify-between">
+                
+                <div 
+                  className="flex items-center justify-between cursor-pointer p-2 rounded transition-colors"
+                  onClick={() => handleCheckmarkChange('photos', !checkedFields.photos)}
+                >
                   <span className="font-medium">Photos Downloaded</span>
-                  <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${checkedFields.photos ? 'bg-green-500 border-green-500' : 'border-gray-300'}`}>
+                  <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center hover:scale-110 transition-transform ${checkedFields.photos ? 'bg-green-500 border-green-500' : 'border-gray-300'}`}>
                     {checkedFields.photos && <span className="text-white text-sm">✓</span>}
                   </div>
                 </div>
-                <div className="flex items-center justify-between">
+                <div 
+                  className="flex items-center justify-between cursor-pointer p-2 rounded transition-colors"
+                  onClick={() => handleCheckmarkChange('widgetTitle', !checkedFields.widgetTitle)}
+                >
                   <span className="font-medium">Widget Title and Meta info</span>
-                  <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${checkedFields.widgetTitle ? 'bg-green-500 border-green-500' : 'border-gray-300'}`}>
+                  <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center hover:scale-110 transition-transform ${checkedFields.widgetTitle ? 'bg-green-500 border-green-500' : 'border-gray-300'}`}>
                     {checkedFields.widgetTitle && <span className="text-white text-sm">✓</span>}
+                  </div>
+                </div>
+                
+                {/* Important Steps - Always visible at the end */}
+                <div className="border border-gray-600 rounded-lg bg-gradient-to-r from-gray-800 to-gray-700 shadow-sm">
+                  <div 
+                    className="flex items-center justify-between cursor-pointer p-3 rounded-t-lg transition-colors"
+                    onClick={() => handleCheckmarkChange('instructions', !checkedFields.instructions)}
+                  >
+                    <span className="font-medium text-white">Important Steps</span>
+                    <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center hover:scale-110 transition-transform ${checkedFields.instructions ? 'bg-green-500 border-green-500' : 'border-gray-300'}`}>
+                      {checkedFields.instructions && <span className="text-white text-sm">✓</span>}
+                    </div>
+                  </div>
+                  <div className="px-3 pb-3">
+                    <div className="bg-black rounded-lg p-4 text-sm border border-gray-600 shadow-sm">
+                      <div className="font-semibold mb-2 text-white flex items-center">
+                        <div className="w-2 h-2 bg-blue-400 rounded-full mr-2"></div>
+                        Current Instructions:
+                      </div>
+                      <div className="whitespace-pre-wrap leading-relaxed text-gray-100">
+                        {instructionsToLink || (pageType === 'Blog' ? "Don't forget to select at least 2 categories for Blog Post! Schedule to post two days after the last blog post." : pageType === 'Landing Page' ? "Don't forget to go to \"Sorting\", and put in right group in alphabetical order if needed" : pageType === 'Sub Page' ? "Link this new sub page to a relevant keyword on the parent Landing page." : "Enter instructions...")}
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>

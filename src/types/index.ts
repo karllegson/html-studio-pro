@@ -95,6 +95,8 @@ export interface Task {
   featuredImg?: string;
   selectedReviewTag?: string;
   selectedFaqTag?: string;
+  /** Checked fields for completion tracking */
+  checkedFields?: { [key: string]: boolean };
 }
 
 /**
