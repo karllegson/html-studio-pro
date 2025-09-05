@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { useTaskContext } from '@/context/TaskContext';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -27,9 +27,14 @@ import { LinkDialog } from '@/components/html-builder/LinkDialog';
 
 const HtmlBuilder: React.FC = () => {
   const { taskId } = useParams<{ taskId: string }>();
-  const { tasks, currentTask, setCurrentTask, updateTask, getCompanyById, tasksLoading } = useTaskContext();
+  const { tasks, currentTask, setCurrentTask, updateTask, getCompanyById, tasksLoading, getTemplatesByCompany, getBlogTemplatesFromAllCompanies } = useTaskContext();
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
+  
+  // Check if we're in images-only mode
+  const isImagesOnlyMode = location.pathname.includes('/images');
+  
   const isMobile = useIsMobile();
   const editorRef = useRef<EditorSectionRef>(null);
   const editorContainerRef = useRef<HTMLDivElement>(null);
@@ -38,7 +43,7 @@ const HtmlBuilder: React.FC = () => {
   const [companyId, setCompanyId] = useState('');
   const [contactLink, setContactLink] = useState('');
   const [notes, setNotes] = useState('');
-  const [pageType, setPageType] = useState<TaskType>(TaskType.BLOG);
+  const [pageType, setPageType] = useState<TaskType | undefined>(undefined);
   const [selectedText, setSelectedText] = useState('');
   const [cursorPosition, setCursorPosition] = useState({ from: 0, to: 0 });
   const [reviewsTag, setReviewsTag] = useState('');
@@ -65,6 +70,8 @@ const HtmlBuilder: React.FC = () => {
   const [mapsChecked, setMapsChecked] = useState(false);
 
   const [helpOpen, setHelpOpen] = useState(false);
+  const [completionPopupOpen, setCompletionPopupOpen] = useState(false);
+  const [uploadingImages, setUploadingImages] = useState<{ [fileName: string]: boolean }>({});
 
   const [teamworkLink, setTeamworkLink] = useState('');
   const [googleDocLink, setGoogleDocLink] = useState('');
@@ -420,7 +427,7 @@ const HtmlBuilder: React.FC = () => {
       setHtmlContent(currentTask.htmlContent || '');
       setCompanyId(currentTask.companyId || '');
       setNotes(currentTask.notes || '');
-      setPageType(currentTask.type || TaskType.BLOG);
+      setPageType(currentTask.type);
       setTeamworkLink(currentTask.teamworkLink || '');
       setGoogleDocLink(currentTask.googleDocLink || '');
       setFeaturedTitle(currentTask.featuredTitle || '');
@@ -461,7 +468,7 @@ const HtmlBuilder: React.FC = () => {
     } else if (!tasksLoading && tasks.length > 0) {
       navigate("/", { replace: true });
     }
-  }, [taskId, tasksLoading, tasks, setCurrentTask, navigate]);
+  }, [taskId, tasksLoading, tasks, setCurrentTask, navigate, isImagesOnlyMode]);
 
   // Save all changes (used for HTML editor and manual saves)
   const saveChanges = async () => {
@@ -518,15 +525,74 @@ const HtmlBuilder: React.FC = () => {
     if (company) {
       setContactLink(company.contactLink || '');
     }
+
+    // Auto-apply template if page type is already selected and HTML content is empty
+    if (pageType && !htmlContent.trim()) {
+      let availableTemplates = [];
+      if (pageType === TaskType.BLOG) {
+        // For blog posts, get templates from all companies
+        availableTemplates = getBlogTemplatesFromAllCompanies();
+      } else {
+        // For other page types, get templates from the selected company
+        const companyTemplates = getTemplatesByCompany(value);
+        availableTemplates = companyTemplates.filter(template => 
+          template.pageType === pageType && template.isActive
+        );
+      }
+
+      // Apply the first available template
+      if (availableTemplates.length > 0) {
+        const template = availableTemplates[0];
+        setHtmlContent(template.content);
+        if (currentTask) {
+          updateTask(currentTask.id, { htmlContent: template.content });
+        }
+        toast({
+          title: "Template applied",
+          description: `Applied template: ${template.name}`,
+          duration: 3000,
+        });
+      }
+    }
   };
 
   const handlePageTypeChange = (value: string) => {
-    let mappedType: TaskType = TaskType.BLOG;
+    let mappedType: TaskType | undefined = undefined;
     if (value === TaskType.SUB_PAGE) mappedType = TaskType.SUB_PAGE;
     else if (value === TaskType.LANDING_PAGE) mappedType = TaskType.LANDING_PAGE;
+    else if (value === TaskType.BLOG) mappedType = TaskType.BLOG;
     setPageType(mappedType);
     if (currentTask) {
       updateTask(currentTask.id, { type: mappedType });
+    }
+
+    // Auto-apply template if available and HTML content is empty
+    if (mappedType && !htmlContent.trim()) {
+      let availableTemplates = [];
+      if (mappedType === TaskType.BLOG) {
+        // For blog posts, get templates from all companies
+        availableTemplates = getBlogTemplatesFromAllCompanies();
+      } else if (companyId) {
+        // For other page types, get templates from the selected company
+        const companyTemplates = getTemplatesByCompany(companyId);
+        availableTemplates = companyTemplates.filter(template => 
+          template.pageType === mappedType && template.isActive
+        );
+      }
+
+      // Apply the first available template
+      if (availableTemplates.length > 0) {
+        const template = availableTemplates[0];
+        setHtmlContent(template.content);
+        if (currentTask) {
+          updateTask(currentTask.id, { htmlContent: template.content });
+        }
+        toast({
+          title: "Template applied",
+          description: `Applied template: ${template.name}`,
+          duration: 3000,
+        });
+      }
     }
   };
 
@@ -744,8 +810,303 @@ const HtmlBuilder: React.FC = () => {
         </div>
       );
     }
+    
+    // Images-only mode - show only Images section and Image Converter
+    if (isImagesOnlyMode) {
+      
+      // Show loading state if task is not loaded yet
+      if (!currentTask) {
+        if (tasksLoading) {
+          return (
+            <div className="min-h-screen w-full flex items-center justify-center bg-[radial-gradient(circle,rgba(60,60,80,0.08)_1px,transparent_1px)] [background-size:32px_32px] backdrop-blur-[0.5px]">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                <p className="text-lg">Loading task...</p>
+              </div>
+            </div>
+          );
+        } else {
+          return (
+            <div className="min-h-screen w-full flex items-center justify-center bg-[radial-gradient(circle,rgba(60,60,80,0.08)_1px,transparent_1px)] [background-size:32px_32px] backdrop-blur-[0.5px]">
+              <div className="text-center">
+                <p className="text-lg mb-4">Task not found</p>
+                <Button onClick={() => navigate('/')}>
+                  Back to Dashboard
+                </Button>
+              </div>
+            </div>
+          );
+        }
+      }
+      
+      return (
+        <div className="min-h-screen w-full flex flex-col bg-[radial-gradient(circle,rgba(60,60,80,0.08)_1px,transparent_1px)] [background-size:32px_32px] backdrop-blur-[0.5px]">
+          <div className="max-w-6xl px-4 py-4 mx-auto flex-1 flex flex-col pb-8">
+            {/* Header with back button */}
+            <div className="flex items-center gap-4 mb-6">
+              <Button 
+                variant="outline"
+                onClick={() => navigate(`/builder/${currentTask.id}`)}
+                className="flex items-center gap-2"
+              >
+                <ArrowLeft className="h-4 w-4" /> Back to Main Editor
+              </Button>
+              <div className="h-6 w-px bg-border"></div>
+              <h1 className="text-lg font-medium text-foreground">
+                Images & Converter
+              </h1>
+            </div>
+            
+            {/* Images Section and Image Converter */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Images Section */}
+              <div className="bg-card rounded-lg p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-xl font-semibold">Photos</h2>
+                  <div className="flex items-center gap-2">
+                    <label className="text-sm font-medium">Downloaded</label>
+                    <GreenCircleCheckbox
+                      checked={!!checkedFields.photos}
+                      onChange={e => handleCheckmarkChange('photos', e.target.checked)}
+                      className="scale-110 shadow-lg hover:shadow-xl transition-all duration-200 drop-shadow-[0_0_8px_rgba(34,197,94,0.4)] hover:drop-shadow-[0_0_12px_rgba(34,197,94,0.6)]"
+                    />
+                  </div>
+                </div>
+                
+                <div className="space-y-4">
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                      onClick={() => (document.querySelector('input[type="file"]') as HTMLInputElement)?.click()}
+                      disabled={Object.keys(uploadingImages).length > 0}
+                    >
+                      {Object.keys(uploadingImages).length > 0 ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          Uploading...
+                        </>
+                      ) : (
+                        <>
+                          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                          </svg>
+                          Upload Photos
+                        </>
+                      )}
+                    </button>
+                    <button
+                      type="button"
+                      className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                      onClick={handleDownloadAll}
+                      disabled={!images.length || downloading}
+                    >
+                      {downloading ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          Downloading...
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="h-4 w-4" />
+                          Download All
+                        </>
+                      )}
+                    </button>
+                  </div>
+                  
+                  {/* Hidden file input */}
+                  <input
+                    type="file"
+                    multiple
+                    accept="image/*"
+                    onChange={async (e) => {
+                      if (!e.target.files?.length || !currentTask?.id) return;
+                      const files = Array.from(e.target.files);
+                      
+                      // Set loading state for all files
+                      const loadingState: { [fileName: string]: boolean } = {};
+                      files.forEach(file => {
+                        loadingState[file.name] = true;
+                      });
+                      setUploadingImages(loadingState);
+                      
+                      // Import uploadImage function
+                      const { uploadImage } = await import('@/utils/imageUpload');
+                      
+                      // Upload each file
+                      for (const file of files) {
+                        try {
+                          const path = `tasks/${currentTask.id}`;
+                          const result = await uploadImage(file, path);
+                          
+                          if (result.success && result.url) {
+                            const newImage = {
+                              url: result.url,
+                              name: file.name,
+                              size: file.size,
+                              uploadedAt: new Date().toISOString(),
+                            };
+                            
+                            // Update task with new image
+                            const updatedImages = [...(currentTask.images || []), newImage];
+                            await updateTask(currentTask.id, { images: updatedImages });
+                            
+                            toast({
+                              title: "Image uploaded!",
+                              description: `${file.name} has been uploaded successfully.`,
+                            });
+                          }
+                        } catch (error) {
+                          console.error('Upload error:', error);
+                          toast({
+                            title: "Upload failed",
+                            description: `Failed to upload ${file.name}`,
+                            variant: "destructive",
+                          });
+                        } finally {
+                          // Remove loading state for this file
+                          setUploadingImages(prev => {
+                            const newState = { ...prev };
+                            delete newState[file.name];
+                            return newState;
+                          });
+                        }
+                      }
+                      
+                      // Clear the input
+                      e.target.value = '';
+                    }}
+                    className="hidden"
+                  />
+                  
+                  {/* Magic Image List with URLs */}
+                  <div className="space-y-3 max-h-96 overflow-auto">
+                    {/* Show uploading images */}
+                    {Object.keys(uploadingImages).map((fileName) => (
+                      <div key={`uploading-${fileName}`} className="flex items-center gap-4 p-3 bg-muted rounded-lg border border-blue-500">
+                        {/* Loading placeholder */}
+                        <div className="flex-shrink-0">
+                          <div className="w-16 h-16 bg-muted-foreground/20 rounded border flex items-center justify-center">
+                            <Loader2 className="h-6 w-6 animate-spin text-blue-500" />
+                          </div>
+                        </div>
+                        
+                        {/* Upload info */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-sm font-medium text-foreground truncate">
+                              {fileName}
+                            </span>
+                            <span className="text-xs text-blue-500 font-medium">
+                              Uploading...
+                            </span>
+                          </div>
+                          
+                          {/* Loading bar */}
+                          <div className="w-full bg-muted-foreground/20 rounded-full h-2">
+                            <div className="bg-blue-500 h-2 rounded-full animate-pulse" style={{ width: '60%' }}></div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                    
+                    {/* Show uploaded images */}
+                    {images.length > 0 ? (
+                      images.map((image, index) => {
+                        // Extract filename from the image name
+                        const filename = image.name.replace(/\.[^/.]+$/, ""); // Remove file extension
+                        
+                        // Generate the full URL using company settings
+                        const generateImageUrl = (filename: string) => {
+                          const company = getCompanyById(companyId);
+                          if (!company) return '';
+                          
+                          const now = new Date();
+                          const year = now.getFullYear();
+                          const month = String(now.getMonth() + 1).padStart(2, '0');
+                          
+                          return `${company.basePath}${year}/${month}/${company.prefix}${filename}${company.fileSuffix}`;
+                        };
+                        
+                        const fullUrl = generateImageUrl(filename);
+                        
+                        return (
+                          <div key={index} className="flex items-center gap-4 p-3 bg-muted rounded-lg border">
+                            {/* Image Thumbnail */}
+                            <div className="flex-shrink-0">
+                              <img
+                                src={image.url}
+                                alt={image.name}
+                                className="w-16 h-16 object-cover rounded border"
+                              />
+                            </div>
+                            
+                            {/* Image Info and URL */}
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="text-sm font-medium text-foreground truncate">
+                                  {image.name}
+                                </span>
+                                <span className="text-xs text-muted-foreground">
+                                  ({(image.size / 1024).toFixed(1)} KB)
+                                </span>
+                              </div>
+                              
+                              {/* Generated URL */}
+                              <div className="flex items-center gap-2">
+                                <div className="flex-1 min-w-0">
+                                  <input
+                                    type="text"
+                                    value={fullUrl}
+                                    readOnly
+                                    className="w-full px-2 py-1 text-xs font-mono bg-background border border-border rounded text-blue-400 truncate"
+                                  />
+                                </div>
+                                <CopyButton 
+                                  value={fullUrl} 
+                                  className="flex-shrink-0"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })
+                    ) : (
+                      <div className="text-center py-8 text-muted-foreground">
+                        <p>No images uploaded yet</p>
+                        <p className="text-sm mt-1">Upload images to see them with their generated URLs</p>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Upload Section */}
+                  <div className="border-t pt-4">
+                    <PhotoUploadPreview 
+                      companyName={getCompanyById(companyId)?.name} 
+                      pageType={pageType} 
+                      taskId={currentTask?.id} 
+                      onImagesChange={setImages}
+                    />
+                  </div>
+                </div>
+              </div>
+              
+              {/* Image Converter */}
+              <div className="bg-card rounded-lg p-6">
+                <h2 className="text-xl font-semibold mb-4">Image Converter</h2>
+                <ImageFilenameConverter 
+                  companyId={companyId} 
+                  displayOutputAsText={true}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
     return (
-      <div className="min-h-screen w-full flex flex-col bg-[radial-gradient(circle,rgba(60,60,80,0.2)_1px,transparent_1px)] [background-size:32px_32px]">
+      <div className="min-h-screen w-full flex flex-col bg-[radial-gradient(circle,rgba(60,60,80,0.08)_1px,transparent_1px)] [background-size:32px_32px] backdrop-blur-[0.5px]">
         <div className="max-w-full px-4 py-4 mx-auto flex-1 flex flex-col pb-8">
           {isMobile ? (
             <div className="mb-4 w-full">
@@ -774,16 +1135,6 @@ const HtmlBuilder: React.FC = () => {
               {/* Left Sidebar: Back button + Tags/Components, sticky */}
               {sidebarVisible && (
                 <div className="sticky top-4 h-[calc(100vh-2rem)] flex flex-col gap-4">
-                  <Button 
-                    variant="default"
-                    onClick={async () => {
-                      await saveChanges(); // Save all changes before navigating
-                      navigate('/');
-                    }}
-                    className="shrink-0 bg-black text-foreground border border-neutral-800 shadow-lg hover:bg-neutral-900"
-                  >
-                    <ArrowLeft className="mr-2 h-4 w-4" /> Back to Dashboard
-                  </Button>
                   <div className="flex-1 overflow-hidden">
                     <SidebarContent 
                       companyId={companyId}
@@ -944,6 +1295,7 @@ const HtmlBuilder: React.FC = () => {
                       <GreenCircleCheckbox
                         checked={!!checkedFields.featuredImg}
                         onChange={e => handleCheckmarkChange('featuredImg', e.target.checked)}
+                        className="scale-110 shadow-lg hover:shadow-xl transition-all duration-200 drop-shadow-[0_0_6px_rgba(34,197,94,0.3)] hover:drop-shadow-[0_0_8px_rgba(34,197,94,0.4)]"
                       />
                     </div>
                   </div>
@@ -977,6 +1329,7 @@ const HtmlBuilder: React.FC = () => {
                       <GreenCircleCheckbox
                         checked={!!checkedFields.widgetTitle}
                         onChange={e => handleCheckmarkChange('widgetTitle', e.target.checked)}
+                        className="scale-110 shadow-lg hover:shadow-xl transition-all duration-200 drop-shadow-[0_0_6px_rgba(34,197,94,0.3)] hover:drop-shadow-[0_0_8px_rgba(34,197,94,0.4)]"
                       />
                     </div>
                   </div>
@@ -984,6 +1337,23 @@ const HtmlBuilder: React.FC = () => {
                     <div className="flex items-center justify-between mb-2">
                       <h3 className="text-lg font-medium">Photos</h3>
                       <div className="flex items-center gap-2">
+                        <label className="text-sm font-medium">Downloaded</label>
+                        <GreenCircleCheckbox
+                          checked={!!checkedFields.photos}
+                          onChange={e => handleCheckmarkChange('photos', e.target.checked)}
+                          className="mr-2 scale-110 shadow-lg hover:shadow-xl transition-all duration-200 drop-shadow-[0_0_6px_rgba(34,197,94,0.3)] hover:drop-shadow-[0_0_8px_rgba(34,197,94,0.4)]"
+                        />
+                        <button
+                          type="button"
+                          className="px-3 py-1.5 text-sm text-foreground hover:text-blue-400 transition-colors border border-white hover:border-blue-400 rounded-md"
+                          onClick={() => {
+                            const imageTabUrl = `/task/${currentTask?.id}/images`;
+                            window.open(imageTabUrl, '_blank');
+                          }}
+                          title="Open Images in New Tab"
+                        >
+                          Open in New Tab
+                        </button>
                         <button
                           type="button"
                           className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
@@ -1020,6 +1390,28 @@ const HtmlBuilder: React.FC = () => {
                 </div>
                 {/* HTML Editor always visible and fills remaining space */}
                 <div className="flex-1 flex flex-col" ref={editorContainerRef}>
+                  {/* Back to Dashboard and Task Finished Buttons */}
+                  <div className="flex justify-between items-center my-2">
+                    <Button 
+                      variant="default"
+                      onClick={async () => {
+                        await saveChanges(); // Save all changes before navigating
+                        navigate('/');
+                      }}
+                      className="bg-black text-foreground border-2 border-neutral-600 shadow-xl hover:shadow-2xl hover:bg-neutral-900 transition-all duration-200 transform hover:scale-105"
+                    >
+                      <ArrowLeft className="mr-2 h-4 w-4" /> Back to Dashboard
+                    </Button>
+                    <Button
+                      size="lg"
+                      className="bg-green-600 hover:bg-green-700 text-white font-bold text-lg px-8 py-3 shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 border-2 border-green-500 rounded-lg"
+                      onClick={() => {
+                        setCompletionPopupOpen(true);
+                      }}
+                    >
+                      Task finished 100% <span className="text-white">✓</span>
+                    </Button>
+                  </div>
                   <EditorSection
                     ref={editorRef}
                     htmlContent={htmlContent}
@@ -1050,7 +1442,7 @@ const HtmlBuilder: React.FC = () => {
                   {/* 2x2 Section Grid with Notes in bottom right as the cell itself */}
                   <div className="w-full max-w-4xl mx-auto mt-6 grid grid-cols-2 grid-rows-2 gap-4">
                     {/* Top-left cell: Tags link */}
-                    <div className="border rounded p-4 min-h-[80px] flex flex-col justify-center bg-card">
+                    <div className={`border rounded p-4 min-h-[80px] flex flex-col justify-center bg-card ${companyId && pageType === 'Blog' ? 'opacity-50 pointer-events-none' : ''}`}>
                       <h3 className="text-lg font-medium mb-2 text-center w-full text-primary">Tags link</h3>
                       <div className="flex flex-col gap-3">
                         <div className="flex items-center gap-2">
@@ -1099,13 +1491,13 @@ const HtmlBuilder: React.FC = () => {
                       </div>
                     </div>
                     {/* Top-right cell: Google Maps Embed */}
-                    <div id="maps-embed-section" className="border rounded p-4 min-h-[80px] flex flex-col justify-between bg-card">
+                    <div id="maps-embed-section" className={`border rounded p-4 min-h-[80px] flex flex-col justify-between bg-card ${companyId && pageType === 'Blog' ? 'opacity-50 pointer-events-none' : ''}`}>
                       <div className="flex items-center justify-between mb-2">
                         <span className="mx-auto font-medium text-center w-full text-primary">Google Maps Embed</span>
                         <GreenCircleCheckbox
                           checked={!!checkedFields.maps}
                           onChange={e => handleCheckmarkChange('maps', e.target.checked)}
-                          className="ml-2"
+                          className="ml-2 scale-110 shadow-lg hover:shadow-xl transition-all duration-200 drop-shadow-[0_0_15px_rgba(34,197,94,0.7)] hover:drop-shadow-[0_0_25px_rgba(34,197,94,0.9)]"
                         />
                       </div>
                       <label className="text-sm mb-1">Enter a City, ST:</label>
@@ -1146,20 +1538,20 @@ const HtmlBuilder: React.FC = () => {
                     {/* Bottom-left cell: Instructions to Link */}
                     <div className="border rounded p-4 min-h-[80px] flex flex-col justify-between bg-card">
                       <div className="flex items-center justify-between mb-2">
-                        <span className="mx-auto font-medium text-center w-full text-primary">Instructions to Link</span>
+                        <span className="mx-auto font-medium text-center w-full text-primary">Important Steps</span>
                         <GreenCircleCheckbox
                           checked={!!checkedFields.instructions}
                           onChange={e => handleCheckmarkChange('instructions', e.target.checked)}
-                          className="ml-2"
+                          className="ml-2 scale-110 shadow-lg hover:shadow-xl transition-all duration-200 drop-shadow-[0_0_15px_rgba(34,197,94,0.7)] hover:drop-shadow-[0_0_25px_rgba(34,197,94,0.9)]"
                         />
                       </div>
                       <Textarea
-                        className="rounded-lg border p-2 mt-2 flex-1 resize-none"
+                        className="rounded-lg border p-2 mt-2 flex-1 resize-none text-lg"
                         rows={4}
                         value={instructionsToLink}
                         onChange={e => handleTextChange('instructionsToLink', e.target.value)}
                         onBlur={e => handleTextChange('instructionsToLink', e.target.value)}
-                        placeholder="Enter instructions..."
+                        placeholder={pageType === 'Blog' ? "Don't forget to select at least 2 categories for Blog Post! Schedule to post two days after the last blog post." : pageType === 'Landing Page' ? "Don't forget to go to \"Sorting\", and put in right group in alphabetical order if needed" : "Enter instructions..."}
                       />
                     </div>
                     {/* Bottom-right cell: Notes */}
@@ -1235,6 +1627,88 @@ const HtmlBuilder: React.FC = () => {
           onConfirm={handleLinkConfirm}
           selectedText={selectedText}
         />
+        
+        {/* Task Completion Popup */}
+        <Dialog open={completionPopupOpen} onOpenChange={setCompletionPopupOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="text-center text-xl font-bold">Task Completion Checklist</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-3">
+                {/* Only show Google Maps for Landing Page and Sub Page */}
+                {pageType !== 'Blog' && (
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium">Google Maps Embed</span>
+                    <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${checkedFields.maps ? 'bg-green-500 border-green-500' : 'border-gray-300'}`}>
+                      {checkedFields.maps && <span className="text-white text-sm">✓</span>}
+                    </div>
+                  </div>
+                )}
+                
+                {/* Always show these for all page types */}
+                <div className="flex items-center justify-between">
+                  <span className="font-medium">Featured Image</span>
+                  <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${checkedFields.featuredImg ? 'bg-green-500 border-green-500' : 'border-gray-300'}`}>
+                    {checkedFields.featuredImg && <span className="text-white text-sm">✓</span>}
+                  </div>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="font-medium">Important Steps</span>
+                  <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${checkedFields.instructions ? 'bg-green-500 border-green-500' : 'border-gray-300'}`}>
+                    {checkedFields.instructions && <span className="text-white text-sm">✓</span>}
+                  </div>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="font-medium">Photos Downloaded</span>
+                  <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${checkedFields.photos ? 'bg-green-500 border-green-500' : 'border-gray-300'}`}>
+                    {checkedFields.photos && <span className="text-white text-sm">✓</span>}
+                  </div>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="font-medium">Widget Title and Meta info</span>
+                  <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${checkedFields.widgetTitle ? 'bg-green-500 border-green-500' : 'border-gray-300'}`}>
+                    {checkedFields.widgetTitle && <span className="text-white text-sm">✓</span>}
+                  </div>
+                </div>
+              </div>
+              
+              <div className="flex gap-3 pt-4">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => setCompletionPopupOpen(false)}
+                >
+                  Go Edit
+                </Button>
+                <Button
+                  className="flex-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                  disabled={(() => {
+                    // Check all required fields based on page type
+                    const requiredFields = pageType === 'Blog' 
+                      ? ['featuredImg', 'instructions', 'photos', 'widgetTitle']
+                      : ['maps', 'featuredImg', 'instructions', 'photos', 'widgetTitle'];
+                    
+                    return !requiredFields.every(field => checkedFields[field as keyof typeof checkedFields]);
+                  })()}
+                  onClick={() => {
+                    if (currentTask) {
+                      updateTask(currentTask.id, { status: TaskStatus.FINISHED });
+                      toast({
+                        title: "Task Completed! 🎉",
+                        description: "Task has been moved to 'Posted Live' status",
+                        duration: 5000,
+                      });
+                    }
+                    setCompletionPopupOpen(false);
+                  }}
+                >
+                  Mark as Completed
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     );
   }

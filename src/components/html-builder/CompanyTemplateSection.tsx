@@ -7,7 +7,7 @@ import { TaskType } from '@/types';
 
 interface CompanyTemplateSectionProps {
   companyId: string;
-  pageType: TaskType;
+  pageType: TaskType | undefined;
   onInsertTemplate: (template: string) => void;
 }
 
@@ -16,17 +16,22 @@ export const CompanyTemplateList: React.FC<CompanyTemplateSectionProps> = ({
   pageType,
   onInsertTemplate,
 }) => {
-  const { getCompanyById, getTemplatesByCompany, getTemplatesByPageType } = useTaskContext();
+  const { getCompanyById, getTemplatesByCompany, getBlogTemplatesFromAllCompanies } = useTaskContext();
   const { toast } = useToast();
   
   const company = getCompanyById(companyId);
   const companyTemplates = getTemplatesByCompany(companyId);
-  const pageTypeTemplates = getTemplatesByPageType(pageType);
   
-  // Filter templates that are both for this company and page type
-  const availableTemplates = companyTemplates.filter(template => 
-    template.pageType === pageType && template.isActive
-  );
+  // For blog posts, get templates from all companies. For other page types, filter by company
+  // If no page type is selected, show no templates
+  const availableTemplates = !pageType 
+    ? []
+    : pageType === TaskType.BLOG 
+      ? getBlogTemplatesFromAllCompanies()
+      : companyTemplates.filter(template => 
+          template.pageType === pageType && template.isActive
+        );
+
 
   const handleCopyTemplate = (template: string) => {
     navigator.clipboard.writeText(template);
@@ -75,19 +80,29 @@ export const CompanyTemplateList: React.FC<CompanyTemplateSectionProps> = ({
       <div className="space-y-2">
         {availableTemplates.length === 0 ? (
           <div className="text-muted-foreground text-sm">
-            No templates available for this company and page type.
+            {!pageType 
+              ? "Please select a page type to see available templates."
+              : pageType === TaskType.BLOG 
+                ? "No blog post templates available from any company."
+                : "No templates available for this company and page type."
+            }
           </div>
         ) : (
-          availableTemplates.map(template => (
-            <div key={template.id} className="flex gap-2">
-              <Button
-                variant="outline"
-                className="flex-1 flex justify-between items-center"
-                onClick={() => handleCopyTemplate(template.content)}
-              >
-                <span>{template.name}</span>
-                <Copy size={16} />
-              </Button>
+          availableTemplates.map(template => {
+            const templateCompany = getCompanyById(template.companyId);
+            return (
+              <div key={template.id} className="flex gap-2">
+                <Button
+                  variant="outline"
+                  className="flex-1 flex justify-between items-center"
+                  onClick={() => handleCopyTemplate(template.content)}
+                >
+                  <div className="flex flex-col items-start">
+                    <span>{template.name}</span>
+                    {/* Hide company names for blog templates since they're universal */}
+                  </div>
+                  <Copy size={16} />
+                </Button>
               <Button
                 variant="outline"
                 onClick={() => onInsertTemplate(template.content)}
@@ -103,7 +118,8 @@ export const CompanyTemplateList: React.FC<CompanyTemplateSectionProps> = ({
                 <ExternalLink size={16} />
               </Button>
             </div>
-          ))
+            );
+          })
         )}
       </div>
     </div>

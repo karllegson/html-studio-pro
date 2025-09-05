@@ -67,7 +67,7 @@ export interface Task {
   /** URL to the task in Teamwork */
   teamworkLink: string;
   /** Type of the task */
-  type: TaskType;
+  type: TaskType | undefined;
   /** Current status of the task */
   status: TaskStatus;
   /** Additional notes about the task */
