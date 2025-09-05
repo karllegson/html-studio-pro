@@ -12,6 +12,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 
+
 export const TemplateManager: React.FC = () => {
   const { 
     companies, 
@@ -19,7 +20,8 @@ export const TemplateManager: React.FC = () => {
     addTemplate, 
     updateTemplate, 
     deleteTemplate,
-    getTemplatesByCompany 
+    getTemplatesByCompany,
+    getBlogTemplatesFromAllCompanies
   } = useTaskContext();
   const { toast } = useToast();
 
@@ -31,7 +33,8 @@ export const TemplateManager: React.FC = () => {
     description: '',
     content: '',
     pageType: TaskType.BLOG,
-    isActive: true
+    isActive: true,
+    companyId: ''
   });
 
   const handleCompanyChange = (companyId: string) => {
@@ -42,8 +45,9 @@ export const TemplateManager: React.FC = () => {
       name: '',
       description: '',
       content: '',
-      pageType: TaskType.BLOG,
-      isActive: true
+      pageType: companyId === 'universal-blog' ? TaskType.BLOG : TaskType.BLOG,
+      isActive: true,
+      companyId: ''
     });
   };
 
@@ -57,7 +61,8 @@ export const TemplateManager: React.FC = () => {
         description: template.description,
         content: template.content,
         pageType: template.pageType,
-        isActive: template.isActive
+        isActive: template.isActive,
+        companyId: template.companyId
       });
     }
   };
@@ -70,9 +75,22 @@ export const TemplateManager: React.FC = () => {
     e.preventDefault();
     try {
       if (editMode === 'add') {
+        const companyId = selectedCompany === 'universal-blog' 
+          ? templateForm.companyId 
+          : selectedCompany;
+        
+        if (!companyId) {
+          toast({
+            title: "Error",
+            description: "Please select a company for this template.",
+            variant: "destructive"
+          });
+          return;
+        }
+
         await addTemplate({
           ...templateForm,
-          companyId: selectedCompany
+          companyId: companyId
         });
         toast({
           title: "Template added",
@@ -91,7 +109,8 @@ export const TemplateManager: React.FC = () => {
         description: '',
         content: '',
         pageType: TaskType.BLOG,
-        isActive: true
+        isActive: true,
+        companyId: ''
       });
       setEditMode('add');
       setSelectedTemplate(null);
@@ -119,7 +138,8 @@ export const TemplateManager: React.FC = () => {
           description: '',
           content: '',
           pageType: TaskType.BLOG,
-          isActive: true
+          isActive: true,
+          companyId: ''
         });
       } catch (error) {
         toast({
@@ -131,7 +151,11 @@ export const TemplateManager: React.FC = () => {
     }
   };
 
-  const companyTemplates = selectedCompany ? getTemplatesByCompany(selectedCompany) : [];
+  const companyTemplates = selectedCompany === 'universal-blog' 
+    ? getBlogTemplatesFromAllCompanies()
+    : selectedCompany 
+      ? getTemplatesByCompany(selectedCompany) 
+      : [];
 
   return (
     <div className="p-6">
@@ -141,6 +165,13 @@ export const TemplateManager: React.FC = () => {
         <div className="w-64">
           <h3 className="text-lg font-medium mb-2">Companies</h3>
           <div className="flex flex-col gap-2">
+            <Button
+              variant={selectedCompany === 'universal-blog' ? 'default' : 'ghost'}
+              className="justify-start"
+              onClick={() => handleCompanyChange('universal-blog')}
+            >
+              Universal Blog Templates
+            </Button>
             {companies.map(company => (
               <Button
                 key={company.id}
@@ -164,21 +195,31 @@ export const TemplateManager: React.FC = () => {
                   <h3 className="text-lg font-medium mb-2">Templates</h3>
                   <ScrollArea className="h-[200px]">
                     <div className="space-y-2">
-                      {companyTemplates.map(template => (
-                        <Button
-                          key={template.id}
-                          variant={selectedTemplate === template.id ? 'default' : 'outline'}
-                          className="w-full justify-start"
-                          onClick={() => handleTemplateSelect(template.id)}
-                        >
-                          <div className="flex items-center justify-between w-full">
-                            <span>{template.name}</span>
-                            <span className="text-xs text-muted-foreground">
-                              {template.pageType}
-                            </span>
-                          </div>
-                        </Button>
-                      ))}
+                      {companyTemplates.map(template => {
+                        const templateCompany = companies.find(c => c.id === template.companyId);
+                        return (
+                          <Button
+                            key={template.id}
+                            variant={selectedTemplate === template.id ? 'default' : 'outline'}
+                            className="w-full justify-start"
+                            onClick={() => handleTemplateSelect(template.id)}
+                          >
+                            <div className="flex items-center justify-between w-full">
+                              <div className="flex flex-col items-start">
+                                <span>{template.name}</span>
+                                {selectedCompany !== 'universal-blog' && templateCompany && (
+                                  <span className="text-xs text-muted-foreground">
+                                    {templateCompany.name}
+                                  </span>
+                                )}
+                              </div>
+                              <span className="text-xs text-muted-foreground">
+                                {template.pageType}
+                              </span>
+                            </div>
+                          </Button>
+                        );
+                      })}
                     </div>
                   </ScrollArea>
                 </CardContent>
@@ -191,6 +232,30 @@ export const TemplateManager: React.FC = () => {
                     {editMode === 'add' ? 'Add New Template' : 'Edit Template'}
                   </h3>
                   <form onSubmit={handleSubmit} className="space-y-4">
+                    {selectedCompany === 'universal-blog' && editMode === 'add' && (
+                      <div className="space-y-2">
+                        <Label htmlFor="company">Company</Label>
+                        <Select
+                          value={templateForm.companyId || ''}
+                          onValueChange={value => handleFormChange('companyId', value)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select company for this blog template" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {companies.map(company => (
+                              <SelectItem key={company.id} value={company.id}>
+                                {company.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <div className="text-xs text-muted-foreground">
+                          This template will be available for all companies when creating blog posts.
+                        </div>
+                      </div>
+                    )}
+
                     <div className="space-y-2">
                       <Label htmlFor="name">Template Name</Label>
                       <Input
@@ -216,6 +281,7 @@ export const TemplateManager: React.FC = () => {
                       <Select
                         value={templateForm.pageType}
                         onValueChange={value => handleFormChange('pageType', value as TaskType)}
+                        disabled={selectedCompany === 'universal-blog'}
                       >
                         <SelectTrigger>
                           <SelectValue />
@@ -226,6 +292,11 @@ export const TemplateManager: React.FC = () => {
                           <SelectItem value={TaskType.LANDING_PAGE}>Landing Page</SelectItem>
                         </SelectContent>
                       </Select>
+                      {selectedCompany === 'universal-blog' && (
+                        <p className="text-xs text-muted-foreground">
+                          Universal blog templates are always set to "Blog Post"
+                        </p>
+                      )}
                     </div>
 
                     <div className="space-y-2">

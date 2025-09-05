@@ -9,7 +9,7 @@ interface SidebarContentProps {
   companyId: string;
   contactLink: string;
   notes: string;
-  pageType: string;
+  pageType: string | undefined;
   onTagClick: (openTag: string, closeTag: string | null) => void;
   onInsertComponent: (html: string) => void;
   onCompanyChange: (value: string) => void;

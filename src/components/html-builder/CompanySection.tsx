@@ -16,7 +16,7 @@ import CopyButton from '@/components/ui/CopyButton';
 
 interface CompanySectionProps {
   companyId: string;
-  pageType: string;
+  pageType: string | undefined;
   teamworkLink: string;
   googleDocLink: string;
   onCompanyChange: (value: string) => void;
@@ -80,7 +80,7 @@ export const CompanySection: React.FC<CompanySectionProps> = ({
               <SelectContent>
                 <SelectItem value="Landing Page">Landing Page</SelectItem>
                 <SelectItem value="Sub Page">Sub Page</SelectItem>
-                <SelectItem value="Blog Post">Blog Post</SelectItem>
+                <SelectItem value="Blog">Blog Post</SelectItem>
               </SelectContent>
             </Select>
           </div>

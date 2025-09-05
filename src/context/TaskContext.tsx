@@ -25,7 +25,7 @@ interface TaskContextType {
   updateTemplate: (templateId: string, updates: Partial<HtmlTemplate>) => Promise<void>;
   deleteTemplate: (templateId: string) => Promise<void>;
   getTemplatesByCompany: (companyId: string) => HtmlTemplate[];
-  getTemplatesByPageType: (pageType: TaskType) => HtmlTemplate[];
+  getBlogTemplatesFromAllCompanies: () => HtmlTemplate[];
   tasksLoading: boolean;
   getCompanyTags: (companyId: string) => Promise<CompanyTags | null>;
   setCompanyTags: (companyId: string, tags: CompanyTags) => Promise<void>;
@@ -57,7 +57,7 @@ function removeUndefined<T>(obj: T): T {
 const defaultTask: Partial<Task> = {
   companyId: '',
   teamworkLink: '',
-  type: TaskType.BLOG,
+  type: undefined, // No default type - user must select
   status: TaskStatus.IN_PROGRESS,
   notes: '',
   htmlContent: '',
@@ -263,7 +263,7 @@ export const TaskProvider: React.FC<TaskProviderProps> = ({ children, user }) =>
         id: uuidv4(),
         companyId: task.companyId ?? "",
         teamworkLink: task.teamworkLink ?? "",
-        type: task.type ?? TaskType.BLOG,
+        type: task.type ?? undefined,
         status: task.status ?? TaskStatus.IN_PROGRESS,
         notes: task.notes ?? "",
         htmlContent: task.htmlContent ?? "",
@@ -477,11 +477,14 @@ export const TaskProvider: React.FC<TaskProviderProps> = ({ children, user }) =>
     return templates.filter(template => template.companyId === companyId);
   };
 
+
   /**
-   * Gets templates for a specific page type
+   * Gets all blog templates from all companies
    */
-  const getTemplatesByPageType = (pageType: TaskType) => {
-    return templates.filter(template => template.pageType === pageType);
+  const getBlogTemplatesFromAllCompanies = () => {
+    return templates.filter(template => 
+      template.pageType === TaskType.BLOG && template.isActive
+    );
   };
 
   return (
@@ -505,7 +508,7 @@ export const TaskProvider: React.FC<TaskProviderProps> = ({ children, user }) =>
         updateTemplate,
         deleteTemplate,
         getTemplatesByCompany,
-        getTemplatesByPageType,
+        getBlogTemplatesFromAllCompanies,
         tasksLoading,
         getCompanyTags,
         setCompanyTags,
