@@ -1563,7 +1563,7 @@ const HtmlBuilder: React.FC = () => {
                         value={instructionsToLink}
                         onChange={e => handleTextChange('instructionsToLink', e.target.value)}
                         onBlur={e => handleTextChange('instructionsToLink', e.target.value)}
-                        placeholder={pageType === 'Blog' ? "Don't forget to select at least 2 categories for Blog Post! Schedule to post two days after the last blog post." : pageType === 'Landing Page' ? "Don't forget to go to \"Sorting\", and put in right group in alphabetical order if needed" : "Enter instructions..."}
+                        placeholder={pageType === 'Blog' ? "Don't forget to select at least 2 categories for Blog Post! Schedule to post two days after the last blog post." : pageType === 'Landing Page' ? "Don't forget to go to \"Sorting\", and put in right group in alphabetical order if needed" : "Link this new sub page to a relevant keyword on the parent Landing page."}
                       />
                     </div>
                     {/* Bottom-right cell: Notes */}
