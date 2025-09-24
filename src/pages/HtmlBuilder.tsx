@@ -565,35 +565,6 @@ const HtmlBuilder: React.FC = () => {
     if (currentTask) {
       updateTask(currentTask.id, { type: mappedType });
     }
-
-    // Auto-apply template if available and HTML content is empty
-    if (mappedType && !htmlContent.trim()) {
-      let availableTemplates = [];
-      if (mappedType === TaskType.BLOG) {
-        // For blog posts, get templates from all companies
-        availableTemplates = getBlogTemplatesFromAllCompanies();
-      } else if (companyId) {
-        // For other page types, get templates from the selected company
-        const companyTemplates = getTemplatesByCompany(companyId);
-        availableTemplates = companyTemplates.filter(template => 
-          template.pageType === mappedType && template.isActive
-        );
-      }
-
-      // Apply the first available template
-      if (availableTemplates.length > 0) {
-        const template = availableTemplates[0];
-        setHtmlContent(template.content);
-        if (currentTask) {
-          updateTask(currentTask.id, { htmlContent: template.content });
-        }
-        toast({
-          title: "Template applied",
-          description: `Applied template: ${template.name}`,
-          duration: 3000,
-        });
-      }
-    }
   };
 
   const handleNotesChange = (value: string) => {
