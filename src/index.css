@@ -4,45 +4,45 @@
 
 @layer base {
   :root {
-    /* Base Colors */
-    --background: 0 0% 0%;
-    --foreground: 0 0% 100%;
+    /* Base Colors - Deep Professional Dark Theme */
+    --background: 0 0% 4%;
+    --foreground: 0 0% 95%;
 
-    /* Card Colors */
-    --card: 0 0% 3%;
-    --card-foreground: 0 0% 100%;
+    /* Card Colors - Rich dark cards */
+    --card: 0 0% 6%;
+    --card-foreground: 0 0% 95%;
 
     /* Popover Colors */
-    --popover: 0 0% 3%;
-    --popover-foreground: 0 0% 100%;
+    --popover: 0 0% 6%;
+    --popover-foreground: 0 0% 95%;
 
-    /* Primary Colors */
-    --primary: 217 91% 60%;
-    --primary-foreground: 0 0% 100%;
+    /* Primary Colors - Sophisticated warm gold */
+    --primary: 38 85% 45%;
+    --primary-foreground: 0 0% 4%;
 
-    /* Secondary Colors */
-    --secondary: 0 0% 8%;
-    --secondary-foreground: 0 0% 100%;
+    /* Secondary Colors - Dark charcoal */
+    --secondary: 0 0% 12%;
+    --secondary-foreground: 0 0% 95%;
 
     /* Muted Colors */
-    --muted: 0 0% 8%;
-    --muted-foreground: 215 20.2% 75.1%;
+    --muted: 0 0% 12%;
+    --muted-foreground: 0 0% 65%;
 
-    /* Accent Colors */
-    --accent: 217 91% 60%;
-    --accent-foreground: 0 0% 100%;
+    /* Accent Colors - Sophisticated warm gold */
+    --accent: 38 85% 45%;
+    --accent-foreground: 0 0% 4%;
 
     /* Destructive Colors */
-    --destructive: 0 62.8% 50.6%;
-    --destructive-foreground: 0 0% 100%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
 
-    /* Border Colors */
-    --border: 0 0% 15%;
-    --input: 0 0% 15%;
-    --ring: 217 91% 60%;
+    /* Border Colors - Subtle but visible */
+    --border: 0 0% 20%;
+    --input: 0 0% 12%;
+    --ring: 38 85% 45%;
 
-    /* Border Radius */
-    --radius: 0.75rem;
+    /* Border Radius - More rounded corners */
+    --radius: 0.875rem;
   }
 
   * {
@@ -52,9 +52,8 @@
   body {
     @apply bg-background text-foreground;
     background-image: 
-      linear-gradient(rgba(255, 255, 255, 0.10) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255, 255, 255, 0.10) 1px, transparent 1px);
-    background-size: 32px 32px;
+      radial-gradient(circle, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+    background-size: 24px 24px;
     background-position: center center;
   }
 }
@@ -258,23 +257,25 @@
 
 .card, [role="dialog"], [role="status"] {
   @apply border border-border;
-  background: hsl(0, 0%, 12%);
+  background: hsl(0, 0%, 6%);
   backdrop-filter: blur(8px);
-  box-shadow: 0 6px 24px 0 rgba(0,0,0,0.25), 0 1.5px 4px 0 rgba(0,0,0,0.10);
+  box-shadow: 0 8px 32px 0 rgba(0,0,0,0.4), 0 2px 8px 0 rgba(0,0,0,0.2);
+  border-radius: 0.875rem;
 }
 
 .bg-card, .task-table-container {
-  background: hsl(220, 6%, 13%) !important;
+  background: hsl(0, 0%, 6%) !important;
+  border-radius: 0.875rem;
 }
 
 td {
   @apply bg-card/70;
-  background: hsl(220, 6%, 13%) !important;
+  background: hsl(0, 0%, 6%) !important;
 }
 
 tr:hover td {
   @apply bg-accent/10;
-  background: hsl(220, 6%, 16%) !important;
+  background: hsl(0, 0%, 10%) !important;
 }
 
 .highlight-task-row td {
@@ -287,7 +288,7 @@ tr:hover td {
 }
 
 button, .button-glow {
-  @apply shadow-md;
+  @apply shadow-md rounded-xl transition-all duration-200;
 }
 
 .button-glow:hover {
@@ -296,27 +297,36 @@ button, .button-glow {
 
 /* Table styling improvements */
 table {
-  @apply border-separate border-spacing-0;
+  @apply border-separate border-spacing-0 rounded-xl overflow-hidden;
 }
 
 th {
   @apply bg-secondary/80 text-foreground;
 }
 
+th:first-child {
+  border-top-left-radius: 0.75rem;
+}
+
+th:last-child {
+  border-top-right-radius: 0.75rem;
+}
+
 /* Tabs styling */
 .tabs-list {
-  @apply bg-secondary/80 p-1 rounded-lg border border-border/60;
+  @apply bg-secondary/80 p-1 rounded-xl border border-border/60;
   border-bottom: none !important;
 }
 
 [data-state="active"].tabs-trigger,
 .tabs-trigger[data-state="active"],
 [data-state="active"] {
-  background: rgba(39, 39, 42, 0.8) !important;
-  color: var(--primary-foreground, #fff) !important;
-  box-shadow: none !important;
-  border-bottom: none !important;
-  border-radius: 0.75rem 0.75rem 0 0 !important;
+  background: hsl(0, 0%, 15%) !important;
+  color: hsl(0, 0%, 95%) !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3) !important;
+  border: 1px solid hsl(0, 0%, 25%) !important;
+  border-radius: 0.75rem !important;
+  font-weight: 600 !important;
 }
 
 /* Mobile-specific styles */
@@ -330,7 +340,7 @@ th {
 
   /* Card/Box adjustments */
   .card, .bg-card, .task-table-container {
-    border-radius: 0.75rem;
+    border-radius: 0.875rem;
     padding: 0.75rem !important;
     box-shadow: 0 2px 8px 0 rgba(0,0,0,0.18);
   }
@@ -361,7 +371,7 @@ th {
     min-height: 2.25rem !important;
     padding: 0.5rem 0.75rem !important;
     width: 100% !important;
-    border-radius: 0.5rem !important;
+    border-radius: 0.875rem !important;
   }
   .button-glow:hover { box-shadow: none; }
 
@@ -400,14 +410,61 @@ th {
 
 /* Input and form styles */
 input, textarea, select {
-  @apply bg-secondary border border-border/80 text-foreground;
+  @apply bg-secondary border border-border text-foreground rounded-xl;
   @apply focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary;
+  @apply transition-all duration-200;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+/* Responsive text wrapping */
+p, span, div, label, button {
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  hyphens: auto;
+}
+
+/* Company section responsive text */
+.company-name, .page-type-tag {
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  white-space: normal;
+  line-height: 1.2;
+}
+
+/* Tablet and mobile responsive adjustments */
+@media (max-width: 1024px) {
+  .company-name {
+    font-size: 1.5rem;
+    line-height: 1.3;
+  }
+  
+  .page-type-tag {
+    font-size: 0.875rem;
+    padding: 0.25rem 0.5rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .company-name {
+    font-size: 1.25rem;
+    line-height: 1.4;
+  }
+  
+  .page-type-tag {
+    font-size: 0.75rem;
+    padding: 0.2rem 0.4rem;
+  }
 }
 
 /* Section header contrast */
 h1, h2, h3, h4, h5, h6 {
-  color: hsl(var(--primary));
+  color: hsl(38, 85%, 45%);
   letter-spacing: 0.01em;
+  font-weight: 600;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  hyphens: auto;
 }
 
 /* Toast styles */
@@ -416,7 +473,6 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .cm-literal-highlight {
-  background: #ffe066 !important;
   color: #222 !important;
   border-radius: 0.15em;
   padding: 0.05em 0.15em;

@@ -26,19 +26,19 @@ interface EditorSectionProps {
   highlightDisabled?: boolean;
 }
 
-// Custom theme for white text
-const whiteTextTheme = EditorView.theme({
+// Custom theme for professional dark theme with better code visibility
+const professionalDarkTheme = EditorView.theme({
   '&': {
-    color: '#fff',
-    backgroundColor: '#23263a',
+    color: 'hsl(0, 0%, 95%)',
+    backgroundColor: 'hsl(0, 0%, 12%)',
   },
   '.cm-content': {
-    color: '#fff',
-    caretColor: '#fff',
+    color: 'hsl(0, 0%, 95%)',
+    caretColor: 'hsl(38, 85%, 45%)',
   },
   '.cm-lineNumbers, .cm-gutters': {
-    backgroundColor: '#23263a',
-    color: '#888',
+    backgroundColor: 'hsl(0, 0%, 12%)',
+    color: 'hsl(0, 0%, 65%)',
     border: 'none',
   },
 });
@@ -107,7 +107,7 @@ export const EditorSection = forwardRef<EditorSectionRef, EditorSectionProps>(({
         value={htmlContent}
         height="100%"
         theme={oneDark}
-        extensions={[html({ autoCloseTags: false }), whiteTextTheme]}
+        extensions={[html({ autoCloseTags: false }), professionalDarkTheme]}
         onChange={handleChange}
         basicSetup={{
           lineNumbers: true,
@@ -226,13 +226,13 @@ export const EditorSection = forwardRef<EditorSectionRef, EditorSectionProps>(({
 
   const editorContainer = (
     <div
-      className={`bg-[#23263a] border border-border shadow-xl rounded-xl flex flex-col px-0 my-4 focus-within:ring-2 focus-within:ring-primary/60 transition-all duration-300 ${isExtended ? 'min-w-[1200px] w-[2000px] max-w-none' : 'w-full'} max-w-full overflow-x-auto`}
+      className={`bg-secondary border border-border shadow-lg rounded-2xl flex flex-col px-0 my-4 focus-within:ring-2 focus-within:ring-primary/60 transition-all duration-300 ${isExtended ? 'min-w-[1200px] w-[2000px] max-w-none' : 'w-full'} max-w-full overflow-x-auto`}
       style={{ maxWidth: '100%', overflowX: 'auto' }}
     >
-      <div className="p-2 bg-secondary text-secondary-foreground text-sm font-mono flex justify-between items-center rounded-t-xl">
+      <div className="p-2 bg-secondary text-secondary-foreground text-sm font-mono flex justify-between items-center rounded-t-2xl">
         {renderToolbar()}
       </div>
-      <div className="flex-1 rounded-b-xl overflow-hidden" style={{overflow: 'hidden', borderRadius: '0 0 1rem 1rem'}}>
+      <div className="flex-1 rounded-b-2xl overflow-hidden" style={{overflow: 'hidden', borderRadius: '0 0 1rem 1rem'}}>
         <div className="w-full max-w-full overflow-x-auto" style={{ maxWidth: '100%' }}>
           {renderEditor()}
         </div>

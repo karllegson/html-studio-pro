@@ -78,7 +78,7 @@ export const SidebarContent: React.FC<SidebarContentProps> = ({
       <div
         ref={sidebarRef}
         style={{ width: sidebarWidth, minWidth: 180, maxWidth: 500, position: 'relative', transition: 'width 0.2s' }}
-        className="h-full bg-card border-r border-border flex flex-col"
+        className="h-full bg-card border-r border-border flex flex-col rounded-l-2xl"
       >
         <div
           onMouseDown={startResize}
@@ -96,7 +96,7 @@ export const SidebarContent: React.FC<SidebarContentProps> = ({
       className={
         isMobile
           ? 'w-full p-2 bg-transparent rounded-none shadow-none border-none'
-          : 'rounded-2xl bg-card/80 shadow-xl border border-border p-4 w-full h-full max-w-[340px] min-w-[180px]'
+          : 'rounded-2xl bg-card shadow-lg border border-border p-4 w-full h-full max-w-[340px] min-w-[180px]'
       }
       style={isMobile ? {} : { minWidth: sidebarWidth, maxWidth: sidebarWidth, width: sidebarWidth }}
     >
