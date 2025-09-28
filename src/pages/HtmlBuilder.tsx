@@ -814,7 +814,7 @@ const HtmlBuilder: React.FC = () => {
       }
       
       return (
-        <div className="min-h-screen w-full flex flex-col bg-[radial-gradient(circle,rgba(60,60,80,0.08)_1px,transparent_1px)] [background-size:32px_32px] backdrop-blur-[0.5px]">
+        <div className="min-h-screen w-full flex flex-col bg-background">
           <div className="max-w-6xl px-4 py-4 mx-auto flex-1 flex flex-col pb-8">
             {/* Header with back button */}
             <div className="flex items-center gap-4 mb-6">
@@ -834,7 +834,7 @@ const HtmlBuilder: React.FC = () => {
             {/* Images Section and Image Converter */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Images Section */}
-              <div className="bg-card rounded-lg p-6">
+              <div className="bg-card rounded-2xl shadow-lg border border-border p-6">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-xl font-semibold">Photos</h2>
                   <div className="flex items-center gap-2">
@@ -1067,7 +1067,7 @@ const HtmlBuilder: React.FC = () => {
               </div>
               
               {/* Image Converter */}
-              <div className="bg-card rounded-lg p-6">
+              <div className="bg-card rounded-2xl shadow-lg border border-border p-6">
                 <h2 className="text-xl font-semibold mb-4">Image Converter</h2>
                 <ImageFilenameConverter 
                   companyId={companyId} 
@@ -1080,7 +1080,7 @@ const HtmlBuilder: React.FC = () => {
       );
     }
     return (
-      <div className="min-h-screen w-full flex flex-col bg-[radial-gradient(circle,rgba(60,60,80,0.08)_1px,transparent_1px)] [background-size:32px_32px] backdrop-blur-[0.5px]">
+      <div className="min-h-screen w-full flex flex-col bg-background">
         <div className="max-w-full px-4 py-4 mx-auto flex-1 flex flex-col pb-8">
           {isMobile ? (
             <div className="mb-4 w-full">
@@ -1133,7 +1133,7 @@ const HtmlBuilder: React.FC = () => {
               <div className="flex flex-col h-full">
                 <div className="grid grid-cols-3 gap-3 mb-2 editor-main-grid items-stretch">
                   {/* Row 1 */}
-                  <div className="bg-card rounded-lg p-4 flex flex-col h-full min-h-[320px]">
+                  <div className="bg-card rounded-2xl shadow-lg border border-border p-4 flex flex-col h-full min-h-[320px]">
                     {/* Company Section */}
                     <CompanySection
                       companyId={companyId}
@@ -1148,7 +1148,7 @@ const HtmlBuilder: React.FC = () => {
                   </div>
                   <div className="flex flex-col h-full min-h-[320px]">
                     {/* HTML Templates */}
-                    <div className="bg-card rounded-lg p-4 flex flex-col h-full min-h-[320px]">
+                    <div className="bg-card rounded-2xl shadow-lg border border-border p-4 flex flex-col h-full min-h-[320px]">
                       <ScrollArea className="flex-1">
                         <div>
                           <CompanyTemplateList
@@ -1180,7 +1180,7 @@ const HtmlBuilder: React.FC = () => {
                       </ScrollArea>
                     </div>
                   </div>
-                  <div className="bg-card rounded-lg p-4 flex flex-col max-h-[400px] h-full min-h-[320px]">
+                  <div className="bg-card rounded-2xl shadow-lg border border-border p-4 flex flex-col max-h-[400px] h-full min-h-[320px]">
                     {/* Featured IMG section */}
                     <div className="flex flex-col items-center">
                       <div className="flex items-center gap-2 mb-2">
@@ -1275,7 +1275,7 @@ const HtmlBuilder: React.FC = () => {
                   </div>
 
                   {/* Row 2 */}
-                  <div className="border rounded p-4 min-h-[80px] flex flex-col justify-center bg-card">
+                  <div className="border border-border rounded-2xl p-4 shadow-lg bg-card min-h-[80px] flex flex-col justify-center bg-card">
                     {[
                       { label: 'Widget Title', key: 'widgetTitle', value: widgetTitle, handler: handleWidgetTitleChange },
                       { label: 'Meta Title', key: 'metaTitle', value: metaTitle, handler: handleMetaTitleChange },
@@ -1307,7 +1307,7 @@ const HtmlBuilder: React.FC = () => {
                       />
                     </div>
                   </div>
-                  <div className="bg-card rounded-lg p-4 flex flex-col max-h-[400px] col-span-2">
+                  <div className="bg-card rounded-2xl shadow-lg border border-border p-4 flex flex-col max-h-[400px] col-span-2">
                     <div className="flex items-center justify-between mb-2">
                       <h3 className="text-lg font-medium">Photos</h3>
                       <div className="flex items-center gap-2">
@@ -1372,13 +1372,14 @@ const HtmlBuilder: React.FC = () => {
                         await saveChanges(); // Save all changes before navigating
                         navigate('/');
                       }}
-                      className="bg-black text-foreground border-2 border-neutral-600 shadow-xl hover:shadow-2xl hover:bg-neutral-900 transition-all duration-200 transform hover:scale-105"
+                      className="bg-card text-foreground border-2 border-amber-600/30 shadow-lg hover:shadow-xl hover:bg-secondary hover:border-amber-600/50 transition-all duration-200 transform hover:scale-105 rounded-2xl"
                     >
                       <ArrowLeft className="mr-2 h-4 w-4" /> Back to Dashboard
                     </Button>
                     <Button
                       size="lg"
-                      className="bg-green-600 hover:bg-green-700 text-white font-bold text-lg px-8 py-3 shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 border-2 border-green-500 rounded-lg"
+                      className="bg-green-600 hover:bg-green-700 text-white font-semibold text-lg px-8 py-3 shadow-lg hover:shadow-xl transition-all duration-200 border border-green-500 rounded-xl"
+                      style={{ fontWeight: 600, letterSpacing: '0.01em' }}
                       onClick={() => {
                         setCompletionPopupOpen(true);
                       }}
@@ -1425,7 +1426,7 @@ const HtmlBuilder: React.FC = () => {
                   {/* 2x2 Section Grid with Notes in bottom right as the cell itself */}
                   <div className="w-full max-w-4xl mx-auto mt-6 grid grid-cols-2 grid-rows-2 gap-4">
                     {/* Top-left cell: Tags link */}
-                    <div className={`border rounded p-4 min-h-[80px] flex flex-col justify-center bg-card ${companyId && pageType === 'Blog' ? 'opacity-50 pointer-events-none' : ''}`}>
+                    <div className={`border-l-4 border-l-amber-600 border border-border rounded-2xl p-4 shadow-lg bg-card min-h-[80px] flex flex-col justify-center ${companyId && pageType === 'Blog' ? 'opacity-50 pointer-events-none' : ''}`}>
                       <h3 className="text-lg font-medium mb-2 text-center w-full text-primary">Tags link</h3>
                       <div className="flex flex-col gap-3">
                         <div className="flex items-center gap-2">
@@ -1474,7 +1475,7 @@ const HtmlBuilder: React.FC = () => {
                       </div>
                     </div>
                     {/* Top-right cell: Google Maps Embed */}
-                    <div id="maps-embed-section" className={`border rounded p-4 min-h-[80px] flex flex-col justify-between bg-card ${companyId && pageType === 'Blog' ? 'opacity-50 pointer-events-none' : ''}`}>
+                    <div id="maps-embed-section" className={`border-l-4 border-l-orange-600 border border-border rounded-2xl p-4 shadow-lg bg-card min-h-[80px] flex flex-col justify-between ${companyId && pageType === 'Blog' ? 'opacity-50 pointer-events-none' : ''}`}>
                       <div className="flex items-center justify-between mb-2">
                         <span className="mx-auto font-medium text-center w-full text-primary">Google Maps Embed</span>
                         <GreenCircleCheckbox
@@ -1519,7 +1520,7 @@ const HtmlBuilder: React.FC = () => {
                       </div>
                     </div>
                     {/* Bottom-left cell: Instructions to Link */}
-                    <div className="border rounded p-4 min-h-[80px] flex flex-col justify-between bg-card">
+                    <div className="border-l-4 border-l-emerald-600 border border-border rounded-2xl p-4 shadow-lg bg-card min-h-[80px] flex flex-col justify-between">
                       <div className="flex items-center justify-between mb-2">
                         <span className="mx-auto font-medium text-center w-full text-primary">Important Steps</span>
                         <GreenCircleCheckbox
@@ -1529,7 +1530,7 @@ const HtmlBuilder: React.FC = () => {
                         />
                       </div>
                       <Textarea
-                        className="rounded-lg border p-2 mt-2 flex-1 resize-none text-lg"
+                        className="rounded-xl border border-border p-2 mt-2 flex-1 resize-none text-lg bg-secondary"
                         rows={4}
                         value={instructionsToLink}
                         onChange={e => handleTextChange('instructionsToLink', e.target.value)}
@@ -1538,12 +1539,12 @@ const HtmlBuilder: React.FC = () => {
                       />
                     </div>
                     {/* Bottom-right cell: Notes */}
-                    <div className="border rounded p-4 min-h-[80px] flex flex-col justify-between bg-card">
+                    <div className="border-l-4 border-l-violet-600 border border-border rounded-2xl p-4 shadow-lg bg-card min-h-[80px] flex flex-col justify-between">
                       <div className="flex items-center justify-between mb-2">
                         <span className="mx-auto font-medium text-center w-full text-primary">Notes</span>
                       </div>
                       <Textarea
-                        className="rounded-lg border p-2 mt-2 flex-1 resize-none"
+                        className="rounded-xl border border-border p-2 mt-2 flex-1 resize-none bg-secondary"
                         rows={4}
                         value={notes}
                         onChange={e => handleTextChange('notes', e.target.value)}
@@ -1562,7 +1563,7 @@ const HtmlBuilder: React.FC = () => {
         <div className="w-full flex justify-end mt-4 mb-4">
           <Dialog open={helpOpen} onOpenChange={setHelpOpen}>
             <DialogTrigger asChild>
-              <Button variant="secondary" size="lg" className="px-8 py-2 text-lg font-semibold rounded-full shadow-md mx-4 my-1">
+              <Button variant="secondary" size="lg" className="px-8 py-2 text-lg font-semibold rounded-2xl shadow-lg mx-4 my-1">
                 Help
               </Button>
             </DialogTrigger>
@@ -1663,7 +1664,7 @@ const HtmlBuilder: React.FC = () => {
                 </div>
                 
                 {/* Important Steps - Always visible at the end */}
-                <div className="border border-gray-600 rounded-lg bg-gradient-to-r from-gray-800 to-gray-700 shadow-sm">
+                <div className="border border-border rounded-2xl bg-card shadow-lg">
                   <div 
                     className="flex items-center justify-between cursor-pointer p-3 rounded-t-lg transition-colors"
                     onClick={() => handleCheckmarkChange('instructions', !checkedFields.instructions)}
@@ -1674,12 +1675,12 @@ const HtmlBuilder: React.FC = () => {
                     </div>
                   </div>
                   <div className="px-3 pb-3">
-                    <div className="bg-black rounded-lg p-4 text-sm border border-gray-600 shadow-sm">
-                      <div className="font-semibold mb-2 text-white flex items-center">
+                    <div className="bg-secondary rounded-xl p-4 text-sm border border-border shadow-sm">
+                      <div className="font-semibold mb-2 text-foreground flex items-center">
                         <div className="w-2 h-2 bg-blue-400 rounded-full mr-2"></div>
                         Current Instructions:
                       </div>
-                      <div className="whitespace-pre-wrap leading-relaxed text-gray-100">
+                      <div className="whitespace-pre-wrap leading-relaxed text-foreground">
                         {instructionsToLink || (pageType === 'Blog' ? "Don't forget to select at least 2 categories for Blog Post! Schedule to post two days after the last blog post." : pageType === 'Landing Page' ? "Don't forget to go to \"Sorting\", and put in right group in alphabetical order if needed" : pageType === 'Sub Page' ? "Link this new sub page to a relevant keyword on the parent Landing page." : "Enter instructions...")}
                       </div>
                     </div>

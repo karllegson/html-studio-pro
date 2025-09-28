@@ -404,11 +404,16 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
 
-        <div className="bg-card rounded-lg shadow-lg overflow-hidden task-table-container">
+        <div className="bg-card rounded-xl shadow-lg overflow-hidden task-table-container">
           <Tabs value={activeTab} onValueChange={tab => { setActiveTab(tab); window.localStorage.setItem('dashboardTab', tab); }} className="w-full">
             <TabsList className="grid grid-cols-4 mb-2">
               <TabsTrigger value="ready">Ready ({readyTasks.length})</TabsTrigger>
-              <TabsTrigger value="in-progress">In Progress ({inProgressTasks.length})</TabsTrigger>
+              <TabsTrigger 
+                value="in-progress" 
+                className="data-[state=active]:bg-amber-600 data-[state=active]:text-white data-[state=active]:border-amber-500 data-[state=active]:shadow-lg font-semibold"
+              >
+                In Progress ({inProgressTasks.length})
+              </TabsTrigger>
               <TabsTrigger value="posted-live">Posted Live ({postedLiveTasks.length})</TabsTrigger>
               <TabsTrigger value="recently-deleted">Recently Deleted ({recentlyDeletedTasks.length})</TabsTrigger>
             </TabsList>
