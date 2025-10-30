@@ -1426,7 +1426,7 @@ const HtmlBuilder: React.FC = () => {
                   {/* 2x2 Section Grid with Notes in bottom right as the cell itself */}
                   <div className="w-full max-w-4xl mx-auto mt-6 grid grid-cols-2 grid-rows-2 gap-4">
                     {/* Top-left cell: Tags link */}
-                    <div className={`border-l-4 border-l-amber-600 border border-border rounded-2xl p-4 shadow-lg bg-card min-h-[80px] flex flex-col justify-center ${companyId && pageType === 'Blog' ? 'opacity-50 pointer-events-none' : ''}`}>
+                    <div className={`border-l-4 border-l-amber-600 border border-border rounded-2xl p-4 shadow-lg bg-card min-h-[80px] flex flex-col justify-center`}>
                       <h3 className="text-lg font-medium mb-2 text-center w-full text-primary">Tags link</h3>
                       <div className="flex flex-col gap-3">
                         <div className="flex items-center gap-2">
