@@ -246,7 +246,8 @@ const Dashboard: React.FC = () => {
         )}
       </div>
     ) : (
-      <Table>
+      <div className="overflow-x-auto w-full">
+        <Table className="min-w-[800px]">
         <TableHeader>
           <TableRow>
             {isSelectionMode && (
@@ -257,13 +258,13 @@ const Dashboard: React.FC = () => {
                 />
               </TableHead>
             )}
-            <TableHead className="w-[180px]">Title</TableHead>
-            <TableHead className="w-[180px]">Teamwork Link</TableHead>
-            <TableHead className="w-[120px]">Type</TableHead>
-            <TableHead className="w-[120px]">Status</TableHead>
-            <TableHead>Notes</TableHead>
-            <TableHead className="w-[120px]">Date</TableHead>
-            <TableHead className="w-[140px]">Actions</TableHead>
+            <TableHead className="min-w-[120px]">Title</TableHead>
+            <TableHead className="min-w-[120px]">Teamwork Link</TableHead>
+            <TableHead className="min-w-[80px]">Type</TableHead>
+            <TableHead className="min-w-[80px]">Status</TableHead>
+            <TableHead className="min-w-[100px]">Notes</TableHead>
+            <TableHead className="min-w-[80px]">Date</TableHead>
+            <TableHead className="min-w-[100px]">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -365,6 +366,7 @@ const Dashboard: React.FC = () => {
           )}
         </TableBody>
       </Table>
+      </div>
     )
   );
 

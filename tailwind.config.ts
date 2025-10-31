@@ -12,6 +12,7 @@ export default {
 	theme: {
 		screens: {
 			'phone': '320px',
+			'md': '640px',
 			'tablet': '768px',
 			'web': '1024px',
 		},

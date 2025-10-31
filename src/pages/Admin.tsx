@@ -315,7 +315,7 @@ export default function AdminPage() {
   );
 
   return (
-    <div className="flex h-screen w-full bg-black bg-[linear-gradient(rgba(255,255,255,0.18)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.18)_1px,transparent_1px)] [background-size:32px_32px] [background-position:center_center]">
+    <div className="flex h-screen w-full bg-black">
       {Sidebar}
       <main className="flex-1 overflow-y-auto">
         {activeTab === 'companies' && CompaniesContent}

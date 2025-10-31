@@ -101,6 +101,26 @@ const HtmlBuilder: React.FC = () => {
 
   const isTinyMobile = typeof window !== 'undefined' && window.innerWidth < 400;
 
+  // Auto-hide sidebar on medium screens (480-1024px) for better responsive layout
+  useEffect(() => {
+    const handleResize = () => {
+      const width = window.innerWidth;
+      // Hide sidebar on medium screens (480-1024px) to give more room for content
+      if (width >= 480 && width < 1024) {
+        setSidebarVisible(false);
+      } else if (width >= 1024) {
+        setSidebarVisible(true);
+      }
+      // Don't touch sidebar state on actual mobile (< 480px)
+    };
+
+    // Set initial state
+    handleResize();
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   // Offline detection
   useEffect(() => {
     const handleOnline = () => setIsOffline(false);
@@ -1131,7 +1151,7 @@ const HtmlBuilder: React.FC = () => {
               )}
               {/* Main Content: 3 columns, grouped cards as in wireframe, notes, and editor */}
               <div className="flex flex-col h-full">
-                <div className="grid grid-cols-3 gap-3 mb-2 editor-main-grid items-stretch">
+                <div className="grid grid-cols-1 web:grid-cols-3 gap-3 mb-2 editor-main-grid items-stretch">
                   {/* Row 1 */}
                   <div className="bg-card rounded-2xl shadow-lg border border-border p-4 flex flex-col h-full min-h-[320px]">
                     {/* Company Section */}

@@ -71,6 +71,105 @@
     p { @apply text-sm; }
   }
 
+  /* Medium screens (480-1024px) - Make everything fit nicely */
+  @media (min-width: 480px) and (max-width: 1023px) {
+    /* Reduce card padding for better fit */
+    .bg-card, .card {
+      padding: 0.75rem !important;
+    }
+
+    /* Make inputs more compact - ONLY inside cards */
+    .bg-card input,
+    .bg-card select,
+    .bg-card textarea,
+    .card input,
+    .card select,
+    .card textarea {
+      font-size: 0.875rem !important;
+      padding: 0.5rem 0.75rem !important;
+      height: auto !important;
+      min-height: 2.25rem !important;
+    }
+
+    /* Only pure icon/copy buttons inside cards should be small squares */
+    .bg-card button:has(svg:only-child),
+    .card button:has(svg:only-child),
+    .bg-card button[aria-label*="Copy"],
+    .card button[aria-label*="Copy"] {
+      min-height: 2.25rem !important;
+      height: 2.25rem !important;
+      width: 2.25rem !important;
+      min-width: 2.25rem !important;
+      padding: 0.5rem !important;
+      flex-shrink: 0;
+    }
+
+    /* Regular buttons inside cards - smaller but proportional */
+    .bg-card button,
+    .card button {
+      font-size: 0.875rem !important;
+      padding: 0.5rem 0.75rem !important;
+    }
+
+    /* Dropdown buttons need proper width */
+    .bg-card button.w-48,
+    .card button.w-48,
+    .bg-card button.justify-between,
+    .card button.justify-between {
+      width: auto !important;
+      min-width: 8rem !important;
+    }
+
+    /* Scale down headings slightly */
+    h1 { font-size: 1.5rem !important; }
+    h2 { font-size: 1.25rem !important; }
+    h3 { font-size: 1.1rem !important; }
+
+    /* Reduce gaps slightly */
+    .gap-4 { gap: 0.75rem !important; }
+    .gap-3 { gap: 0.5rem !important; }
+
+    /* Remove excessive heights */
+    .min-h-\[320px\] {
+      min-height: 200px !important;
+    }
+
+    .max-h-\[400px\] {
+      max-height: 300px !important;
+    }
+
+    /* Fix Featured IMG card - remove excessive spacing */
+    .bg-card:has(img) {
+      padding: 0.75rem !important;
+      min-height: auto !important;
+      max-height: none !important;
+    }
+
+    /* Resize preview images to be more compact */
+    .bg-card img {
+      max-width: 150px !important;
+      max-height: 110px !important;
+    }
+
+    /* Compact image containers - reduce vertical gaps */
+    .bg-card .flex.flex-col.items-center {
+      gap: 0.5rem !important;
+      margin-top: 0.25rem !important;
+      margin-bottom: 0.25rem !important;
+      padding-top: 0 !important;
+      padding-bottom: 0 !important;
+    }
+
+    /* Remove excessive margins from Featured IMG sections */
+    .bg-card .mt-3 {
+      margin-top: 0.5rem !important;
+    }
+
+    .bg-card .mb-2 {
+      margin-bottom: 0.5rem !important;
+    }
+  }
+
   /* Tablet Styles (768px and up) */
   @media (min-width: 768px) {
     .container {
@@ -119,11 +218,6 @@
       border-radius: 0.5rem;
       padding: 0.5rem !important;
       box-shadow: 0 1px 4px 0 rgba(0,0,0,0.12);
-    }
-    .main-layout-grid, .dashboard-grid, .editor-main-grid, .grid, .flex {
-      grid-template-columns: 1fr !important;
-      flex-direction: column !important;
-      gap: 0.25rem !important;
     }
     table {
       display: block;
