@@ -116,7 +116,7 @@ export const SidebarContent: React.FC<SidebarContentProps> = ({
             pageType={pageType}
             onInsertTemplate={onInsertComponent}
           />
-          <ImageConverter />
+          <ImageConverter companyId={companyId} />
         </div>
         {/* Scrollable Tags section - stays in view when scrolling */}
         <div className="flex-1 overflow-hidden">

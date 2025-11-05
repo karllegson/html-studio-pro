@@ -1,47 +1,113 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import CopyButton from '@/components/ui/CopyButton';
+import { useTaskContext } from '@/context/TaskContext';
+import { Copy } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
-interface ImageConverterProps {}
+interface ImageConverterProps {
+  companyId: string;
+}
 
-export const ImageConverter: React.FC<ImageConverterProps> = () => {
-  const [imageFileName, setImageFileName] = useState('');
-  const [imageUrl, setImageUrl] = useState('');
+export const ImageConverter: React.FC<ImageConverterProps> = ({ companyId }) => {
+  const [filename, setFilename] = useState('');
+  const { getCompanyById } = useTaskContext();
+  const { toast } = useToast();
+  const arrowRef = useRef<HTMLDivElement>(null);
+  const [lastLink, setLastLink] = useState('');
+  const [arrowActive, setArrowActive] = useState(false);
+  const [filenameWarning, setFilenameWarning] = useState('');
 
-  const convertImageFileName = () => {
-    if (!imageFileName) return;
+  const selectedCompany = getCompanyById(companyId);
+
+  const generateImageUrl = (filename: string) => {
+    if (!selectedCompany) return '';
     
-    const baseUrl = "https://cdn.yoursite.com/images/";
-    setImageUrl(`${baseUrl}${imageFileName}`);
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    
+    return `${selectedCompany.basePath}${year}/${month}/${selectedCompany.prefix}${filename}${selectedCompany.fileSuffix}`;
   };
 
+  const link = selectedCompany && filename ? generateImageUrl(filename) : '';
+
+  const handleCopy = async () => {
+    if (link) {
+      await navigator.clipboard.writeText(link);
+      toast({
+        title: "URL copied",
+        description: "The image URL has been copied to your clipboard.",
+      });
+    }
+  };
+
+  // Animation: bounce and green arrow only when link changes
+  React.useEffect(() => {
+    if (!arrowRef.current) return;
+    if (link && link !== lastLink) {
+      setArrowActive(true);
+      arrowRef.current.classList.remove('animate-bounce');
+      void arrowRef.current.offsetWidth;
+      arrowRef.current.classList.add('animate-bounce');
+      setLastLink(link);
+      const timeout = setTimeout(() => setArrowActive(false), 600);
+      return () => clearTimeout(timeout);
+    }
+  }, [link]);
+
   return (
-    <Card>
-      <CardContent className="pt-6">
-        <h3 className="text-lg font-medium mb-2">Image File Link Converter</h3>
-        <div className="space-y-2">
-          <Input
-            placeholder="Enter image filename"
-            value={imageFileName}
-            onChange={(e) => setImageFileName(e.target.value)}
-          />
-          <Button onClick={convertImageFileName} className="w-full">
-            Convert
-          </Button>
-          {imageUrl && (
-            <div className="mt-2">
-              <Label>Full Image URL:</Label>
-              <div className="flex gap-2">
-                <Input 
-                  value={imageUrl} 
-                  readOnly 
-                  className="font-mono text-xs mt-1"
-                />
-                <CopyButton value={imageUrl} className="flex-shrink-0 mt-1" />
-              </div>
+    <Card className="p-4 rounded-lg bg-card border border-border">
+      <CardContent className="p-0">
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-1 w-full">
+            <Label htmlFor="filename" className="w-full sm:w-32 text-xs sm:text-sm font-medium whitespace-nowrap truncate mb-2">Image Filename</Label>
+            <Input
+              id="filename"
+              value={filename}
+              onChange={(e) => {
+                const raw = e.target.value;
+                // Only allow a-z, A-Z, 0-9, dash, and period
+                let sanitized = raw.replace(/[^a-zA-Z0-9-.]/g, '');
+                // Replace multiple consecutive dashes with a single dash
+                sanitized = sanitized.replace(/-+/g, '-');
+                // Replace multiple consecutive periods with a single period
+                sanitized = sanitized.replace(/\.+/g, '.');
+                if (raw !== sanitized) {
+                  setFilenameWarning('Only letters, numbers, dash (-), and period (.) are allowed. No consecutive dashes or periods.');
+                } else {
+                  setFilenameWarning('');
+                }
+                setFilename(sanitized);
+              }}
+              placeholder="Enter filename"
+              className="bg-muted text-white/90 border border-border w-full"
+            />
+            {filenameWarning && (
+              <span className="text-xs text-red-400 mt-1">{filenameWarning}</span>
+            )}
+          </div>
+          <div
+            ref={arrowRef}
+            className={`flex justify-center text-2xl select-none transition-all duration-300 ${arrowActive ? 'text-green-400 animate-bounce' : 'text-muted-foreground'}`}
+          >
+            ↓
+          </div>
+          {selectedCompany && filename && (
+            <div className="flex items-center gap-2">
+              <Input
+                value={link}
+                readOnly
+                className="font-mono text-xs flex-1 bg-muted text-blue-400 border border-border"
+              />
+              <button
+                onClick={handleCopy}
+                className="p-2 bg-primary text-white rounded-md hover:bg-primary/90"
+                title="Copy URL"
+              >
+                <Copy className="h-4 w-4" />
+              </button>
             </div>
           )}
         </div>
