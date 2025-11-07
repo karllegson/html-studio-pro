@@ -38,6 +38,7 @@ const HtmlBuilder: React.FC = () => {
   const isMobile = useIsMobile();
   const editorRef = useRef<EditorSectionRef>(null);
   const editorContainerRef = useRef<HTMLDivElement>(null);
+  const imagesTabFileInputRef = useRef<HTMLInputElement>(null);
 
   const [htmlContent, setHtmlContent] = useState('');
   const [companyId, setCompanyId] = useState('');
@@ -872,7 +873,7 @@ const HtmlBuilder: React.FC = () => {
                     <button
                       type="button"
                       className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                      onClick={() => (document.querySelector('input[type="file"]') as HTMLInputElement)?.click()}
+                      onClick={() => imagesTabFileInputRef.current?.click()}
                       disabled={Object.keys(uploadingImages).length > 0}
                     >
                       {Object.keys(uploadingImages).length > 0 ? (
@@ -911,6 +912,7 @@ const HtmlBuilder: React.FC = () => {
                   
                   {/* Hidden file input */}
                   <input
+                    ref={imagesTabFileInputRef}
                     type="file"
                     multiple
                     accept="image/*"
@@ -928,28 +930,26 @@ const HtmlBuilder: React.FC = () => {
                       // Import uploadImage function
                       const { uploadImage } = await import('@/utils/imageUpload');
                       
-                      // Upload each file
-                      for (const file of files) {
+                      // Upload all files in parallel
+                      const uploadPromises = files.map(async (file) => {
                         try {
                           const path = `tasks/${currentTask.id}`;
                           const result = await uploadImage(file, path);
                           
                           if (result.success && result.url) {
-                            const newImage = {
+                            return {
                               url: result.url,
                               name: file.name,
                               size: file.size,
                               uploadedAt: new Date().toISOString(),
                             };
-                            
-                            // Update task with new image
-                            const updatedImages = [...(currentTask.images || []), newImage];
-                            await updateTask(currentTask.id, { images: updatedImages });
-                            
+                          } else {
                             toast({
-                              title: "Image uploaded!",
-                              description: `${file.name} has been uploaded successfully.`,
+                              title: "Upload failed",
+                              description: `Failed to upload ${file.name}`,
+                              variant: "destructive",
                             });
+                            return null;
                           }
                         } catch (error) {
                           console.error('Upload error:', error);
@@ -958,6 +958,7 @@ const HtmlBuilder: React.FC = () => {
                             description: `Failed to upload ${file.name}`,
                             variant: "destructive",
                           });
+                          return null;
                         } finally {
                           // Remove loading state for this file
                           setUploadingImages(prev => {
@@ -966,6 +967,21 @@ const HtmlBuilder: React.FC = () => {
                             return newState;
                           });
                         }
+                      });
+                      
+                      // Wait for all uploads to complete
+                      const uploadedImages = await Promise.all(uploadPromises);
+                      const successfulUploads = uploadedImages.filter((img): img is NonNullable<typeof img> => img !== null);
+                      
+                      // Update task with all new images at once
+                      if (successfulUploads.length > 0) {
+                        const updatedImages = [...(currentTask.images || []), ...successfulUploads];
+                        await updateTask(currentTask.id, { images: updatedImages });
+                        
+                        toast({
+                          title: "Uploads complete!",
+                          description: `${successfulUploads.length} image(s) uploaded successfully.`,
+                        });
                       }
                       
                       // Clear the input
