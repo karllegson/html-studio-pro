@@ -12,6 +12,7 @@ import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/NotFound";
 import Footer from '@/components/Footer';
 import AdminPage from './pages/Admin';
+import PreviewPage from './pages/PreviewPage';
 
 const queryClient = new QueryClient();
 
@@ -47,6 +48,7 @@ const App: React.FC = () => {
                 <Routes>
                   <Route path="/" element={<Dashboard />} />
                   <Route path="/builder/:taskId" element={<HtmlBuilder />} />
+                  <Route path="/builder/:taskId/preview" element={<PreviewPage />} />
                   <Route path="/task/:taskId/images" element={<HtmlBuilder />} />
                   <Route path="/admin" element={<AdminPage />} />
                   <Route path="*" element={<NotFound />} />
