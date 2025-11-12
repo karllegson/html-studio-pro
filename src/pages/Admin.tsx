@@ -25,7 +25,7 @@ const validateCompanyRules = (rules: { basePath: string; prefix: string; fileSuf
 export default function AdminPage() {
   const [activeTab, setActiveTab] = useState('companies');
   const [selectedCompany, setSelectedCompany] = useState<string | null>(null);
-  const [editCompany, setEditCompany] = useState<{ contactLink: string, basePath: string, prefix: string, fileSuffix: string, info: string } | null>(null);
+  const [editCompany, setEditCompany] = useState<{ contactLink: string, basePath: string, prefix: string, fileSuffix: string, info: string, logoUrl: string } | null>(null);
   const navigate = useNavigate();
 
   // Use real companies from context
@@ -38,7 +38,8 @@ export default function AdminPage() {
     contactLink: '',
     basePath: '',
     prefix: '',
-    fileSuffix: ''
+    fileSuffix: '',
+    logoUrl: ''
   });
 
   // Update edit fields when company changes
@@ -50,7 +51,8 @@ export default function AdminPage() {
         basePath: company.basePath,
         prefix: company.prefix,
         fileSuffix: company.fileSuffix,
-        info: company.info || ''
+        info: company.info || '',
+        logoUrl: company.logoUrl || ''
       } : null);
     } else {
       setEditCompany(null);
@@ -211,6 +213,13 @@ export default function AdminPage() {
                   />
                   <Input
                     type="text"
+                    placeholder="Logo URL (e.g., https://example.com/logo.png)"
+                    value={newCompany.logoUrl}
+                    onChange={e => handleAddCompanyChange('logoUrl', e.target.value)}
+                    className="bg-muted text-white/90 border border-border"
+                  />
+                  <Input
+                    type="text"
                     placeholder="Base Path (e.g., https://example.com/wp-content/uploads/)"
                     value={newCompany.basePath}
                     onChange={e => handleAddCompanyChange('basePath', e.target.value)}
@@ -250,6 +259,16 @@ export default function AdminPage() {
                     onChange={e => handleCompanyFieldChange('contactLink', e.target.value)}
                     className="bg-muted text-white/90 border border-border"
                   />
+                </div>
+                <div className="space-y-2">
+                  <Label className="block mb-1 font-medium text-white/80">Logo URL</Label>
+                  <Input
+                    placeholder="https://example.com/logo.png"
+                    value={editCompany.logoUrl}
+                    onChange={e => handleCompanyFieldChange('logoUrl', e.target.value)}
+                    className="bg-muted text-white/90 border border-border"
+                  />
+                  <p className="text-sm text-muted-foreground mt-1">URL to company logo for preview page</p>
                 </div>
                 <hr className="my-4 border-t border-gray-700" />
                 <div className="mb-2 text-base font-semibold text-primary">Image name to link converter Settings</div>

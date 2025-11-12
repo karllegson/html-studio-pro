@@ -147,9 +147,25 @@ body {
   grid-template-columns: 75% 25%;
 }
 
+/* Double grid - 2 equal columns for image cards */
+.entry-content .site-grid--2x1.double,
+.wp-content .site-grid--2x1.double {
+  display: grid !important; /* Ensure grid is applied */
+  grid-template-columns: repeat(2, 1fr) !important;
+  gap: 2rem !important; /* Horizontal and vertical gap */
+  row-gap: 2rem !important; /* Ensure vertical spacing */
+  column-gap: 2rem !important; /* Ensure horizontal spacing */
+  margin-bottom: 0 !important;
+}
+
 @media (max-width: 62rem) {
   .site-grid--2x1 {
     grid-template-columns: 1fr;
+  }
+  
+  .entry-content .site-grid--2x1.double,
+  .wp-content .site-grid--2x1.double {
+    grid-template-columns: 1fr !important;
   }
 }
 
@@ -158,7 +174,7 @@ h1, .h1 {
   font-size: var(--base-h1-size);
   font-family: var(--font-heading);
   font-weight: var(--default-heading-weight);
-  color: var(--primary);
+  color: #85623e;
   line-height: 1.6;
   margin: 2.5rem 0 1.5rem 0;
 }
@@ -167,31 +183,45 @@ h1:first-child, .h1:first-child {
   margin-top: 0;
 }
 
+/* Reduce bottom margin of h1 when followed by h2 */
+h1:has(+ h2) {
+  margin-bottom: 0.5rem !important; /* Moderate bottom margin when h2 follows */
+}
+
+.entry-content h1:has(+ h2),
+.wp-content h1:has(+ h2),
+main#content h1:has(+ h2) {
+  margin-bottom: 0.5rem !important;
+}
+
 h2, .h2 {
   font-size: var(--base-h2-size);
   font-family: var(--font-heading);
   font-weight: var(--default-heading-weight);
-  color: var(--primary);
+  color: #6f8db3;
   line-height: 1.6;
-  margin: 5rem 0 3.5rem 0;
+  margin: 2rem 0;
 }
 
 h2:first-child, .h2:first-child {
   margin-top: 0;
 }
 
-/* h2 that directly follows h1 */
-h1 + h2 {
+/* h2 that directly follows h1 - reduced margin */
+h1 + h2,
+.entry-content h1 + h2,
+.wp-content h1 + h2,
+main#content h1 + h2 {
   text-transform: capitalize;
-  color: var(--primary) !important;
-  margin-top: 1rem !important;
+  color: #6f8db3 !important;
+  margin-top: 0.5rem !important; /* Moderate spacing */
 }
 
 h3, .h3 {
   font-size: var(--base-h3-size);
   font-family: var(--font-heading);
   font-weight: var(--default-heading-weight);
-  color: var(--primary);
+  color: #2c5282;
   line-height: 1.6;
   margin: 1.75rem 0 1rem 0;
 }
@@ -204,7 +234,7 @@ h4, .h4 {
   font-size: var(--base-h4-size);
   font-family: var(--font-heading);
   font-weight: var(--default-heading-weight);
-  color: var(--primary);
+  color: #4a5568;
   line-height: 1.6;
   margin: 1.5rem 0 1rem 0;
 }
@@ -240,12 +270,12 @@ h6:first-child, .h6:first-child {
 }
 
 p {
-  margin: 0 0 1.5rem 0;
+  margin: 0 0 2rem 0;
   line-height: 1.8;
 }
 
 p + p {
-  margin-top: 1.5rem;
+  margin-top: 2rem;
 }
 
 /* Extra spacing when headings follow paragraphs */
@@ -255,12 +285,23 @@ p + h3,
 p + h4,
 p + h5,
 p + h6 {
-  margin-top: 3rem;
+  margin-top: 2rem;
 }
 
-/* Spacing between consecutive headings */
-h2 + h3 {
-  margin-top: 1rem;
+/* Spacing between consecutive headings - reduced h2 to h3 */
+h2 + h3,
+.entry-content h2 + h3,
+.wp-content h2 + h3,
+main#content h2 + h3 {
+  margin-top: 0.5rem !important; /* Reduced from 1rem */
+}
+
+/* Reduce bottom margin of h2 when followed by h3 */
+h2:has(+ h3),
+.entry-content h2:has(+ h3),
+.wp-content h2:has(+ h3),
+main#content h2:has(+ h3) {
+  margin-bottom: 0.5rem !important; /* Reduced bottom margin when h3 follows */
 }
 
 h3 + h4 {
@@ -285,20 +326,20 @@ a:hover {
   color: var(--primary-hover);
 }
 
-/* Underline links in content */
-.entry-content a,
-.wp-content a,
-p a,
-li a {
+/* Underline links in content - but NOT buttons */
+.entry-content a:not(.site-btn a):not(.site-btn > a):not(.cta-button):not(.button):not(.btn),
+.wp-content a:not(.site-btn a):not(.site-btn > a):not(.cta-button):not(.button):not(.btn),
+p a:not(.site-btn a):not(.site-btn > a):not(.cta-button):not(.button):not(.btn),
+li a:not(.site-btn a):not(.site-btn > a):not(.cta-button):not(.button):not(.btn) {
   text-decoration: underline;
   color: #2271b1;
   font-weight: 500;
 }
 
-.entry-content a:hover,
-.wp-content a:hover,
-p a:hover,
-li a:hover {
+.entry-content a:hover:not(.site-btn a):not(.site-btn > a):not(.cta-button):not(.button):not(.btn),
+.wp-content a:hover:not(.site-btn a):not(.site-btn > a):not(.cta-button):not(.button):not(.btn),
+p a:hover:not(.site-btn a):not(.site-btn > a):not(.cta-button):not(.button):not(.btn),
+li a:hover:not(.site-btn a):not(.site-btn > a):not(.cta-button):not(.button):not(.btn) {
   text-decoration: underline;
   color: #135e96;
 }
@@ -309,13 +350,56 @@ ul, ol {
   padding-left: 2rem;
 }
 
+/* Override padding for ul in content areas */
+.entry-content ul,
+.wp-content ul,
+main#content ul {
+  padding-left: 0 !important;
+  margin-left: 0 !important;
+}
+
 li {
   margin-bottom: 0.5rem;
+}
+
+/* Check marks for ul lists in preview */
+.entry-content ul li,
+.wp-content ul li,
+main#content ul li {
+  list-style: none !important;
+  position: relative !important;
+  padding-left: 1.75rem !important;
+}
+
+.entry-content ul li::before,
+.wp-content ul li::before,
+main#content ul li::before {
+  content: '✓' !important;
+  position: absolute !important;
+  left: 0 !important;
+  color: #775029 !important;
+  font-weight: 700 !important;
+  font-size: 1rem !important;
+}
+
+/* Keep ol (ordered lists) with numbers */
+.entry-content ol li,
+.wp-content ol li,
+main#content ol li {
+  list-style: decimal !important;
+  padding-left: 0.5rem !important;
 }
 
 hr {
   border: none;
   border-top: 1px solid var(--content-border-color);
+  margin: 2rem 0;
+}
+
+/* Extra spacing for hr in content area */
+.entry-content hr,
+.wp-content hr,
+main#content hr {
   margin: 2rem 0;
 }
 
@@ -610,6 +694,18 @@ main#content h6 {
   text-wrap: balance;
 }
 
+/* Ensure margins are applied in content area */
+.entry-content h2,
+main#content h2 {
+  margin: 2rem 0 !important;
+}
+
+.entry-content p,
+.wp-content p,
+main#content p {
+  margin: 0 0 2rem 0 !important;
+}
+
 main#content h1:not(h1.title), 
 main#content h2:not(h2.title), 
 main#content h3:not(h3.title), 
@@ -624,18 +720,23 @@ main#content h1 {
   text-transform: capitalize;
   font-weight: 700;
   font-size: 2.1rem;
-  color: var(--accent-110);
+  color: #85623e !important;
 }
 
 .entry-content h2:not(h1+h2),
 main#content h2:not(h1+h2) {
-  color: var(--primary);
+  color: #6f8db3 !important;
   font-weight: 500 !important;
 }
 
 .entry-content h3,
 main#content h3 {
-  color: var(--primary);
+  color: #2c5282 !important;
+}
+
+.entry-content h4,
+main#content h4 {
+  color: #4a5568 !important;
 }
 
 @media(max-width: 62rem) {
@@ -683,74 +784,594 @@ main#content img:not(.cta-outer img, .image-card img, .before-after-slider img, 
   object-fit: cover;
 }
 
-/* Horizontal Image Cards - WordPress Style */
-/* Horizontal Image Cards - 1:1 Copy from extpros.com */
-.image-card,
-.horizontal-card,
-.card-layout,
-.wp-content > div:has(img) {
-  display: flex;
-  align-items: stretch;
-  gap: 0;
-  margin-bottom: 3rem;
-  background: transparent;
-  padding: 0;
-  border-radius: var(--border-radius);
+/* Image Cards - Vertical Layout (1:1 Copy from Original) */
+/* Card container - vertical flex layout (default) */
+.entry-content .site-grid--2x1.double .image-card,
+.wp-content .site-grid--2x1.double .image-card,
+.entry-content .image-card.single:not(.horizontal):not(.left--image):not(.right--image),
+.wp-content .image-card.single:not(.horizontal):not(.left--image):not(.right--image),
+.entry-content .image-card:not(.horizontal):not(.left--image):not(.right--image),
+.wp-content .image-card:not(.horizontal):not(.left--image):not(.right--image) {
+  display: flex !important;
+  flex-direction: column !important;
+  background: #e8ebef !important; /* Darker gray-blue background - more visible */
+  border-radius: 1rem !important; /* Exact border radius */
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08) !important; /* Subtle shadow */
+  margin-bottom: 2rem !important; /* Vertical spacing between cards */
+  align-items: stretch; /* Stretch children to full width */
 }
 
-/* Auto-detect horizontal card layout: image + heading pattern */
-.entry-content > div img + h3,
-.entry-content > div img + h2,
-.wp-content > div img + h3,
-.wp-content > div img + h2 {
+/* Horizontal Image Cards - Image on Left */
+.entry-content .image-card.single.horizontal,
+.wp-content .image-card.single.horizontal,
+.entry-content .image-card.single.left--image,
+.wp-content .image-card.single.left--image,
+.entry-content .image-card.horizontal,
+.wp-content .image-card.horizontal {
+  display: flex !important;
+  flex-direction: row !important; /* Horizontal layout */
+  background: #e8ebef !important;
+  border-radius: 1rem !important;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08) !important;
+  margin-bottom: 2rem !important;
+  align-items: stretch !important;
+}
+
+/* Cards in grid - remove bottom margin (grid gap handles it) */
+.entry-content .site-grid--2x1.double .image-card:last-child,
+.entry-content .site-grid--2x1.double .image-card:nth-last-child(-n+2),
+.wp-content .site-grid--2x1.double .image-card:last-child,
+.wp-content .site-grid--2x1.double .image-card:nth-last-child(-n+2) {
+  margin-bottom: 0 !important; /* Last row doesn't need bottom margin */
+}
+
+/* Image wrapper - full width at top, constrained height (vertical cards) */
+.entry-content .site-grid--2x1.double .image-card .image-card--image,
+.wp-content .site-grid--2x1.double .image-card .image-card--image,
+.entry-content .image-card.single:not(.horizontal):not(.left--image):not(.right--image) .image-card--image,
+.wp-content .image-card.single:not(.horizontal):not(.left--image):not(.right--image) .image-card--image,
+.entry-content .image-card:not(.horizontal):not(.left--image):not(.right--image) .image-card--image,
+.wp-content .image-card:not(.horizontal):not(.left--image):not(.right--image) .image-card--image {
+  width: 100% !important;
+  height: 250px !important;
+  float: none !important;
+  margin: 0 !important;
+  display: block !important;
+  overflow: hidden;
+  border-radius: 1rem 1rem 0 0 !important; /* Rounded top corners only */
+}
+
+/* Image wrapper - fixed width on left (horizontal cards) */
+.entry-content .image-card.single.horizontal .image-card--image,
+.wp-content .image-card.single.horizontal .image-card--image,
+.entry-content .image-card.single.left--image .image-card--image,
+.wp-content .image-card.single.left--image .image-card--image,
+.entry-content .image-card.horizontal .image-card--image,
+.wp-content .image-card.horizontal .image-card--image {
+  width: 200px !important;
+  height: auto !important;
+  min-height: 100% !important;
+  flex-shrink: 0 !important;
+  float: none !important;
+  margin: 0 !important;
+  display: block !important;
+  overflow: hidden;
+  border-radius: 1rem 0 0 1rem !important; /* Rounded left corners only */
+}
+
+/* Image - full width, constrained height, rounded top corners (vertical cards) */
+.entry-content .site-grid--2x1.double .image-card .image-card--image img,
+.wp-content .site-grid--2x1.double .image-card .image-card--image img,
+.entry-content .image-card.single:not(.horizontal):not(.left--image):not(.right--image) .image-card--image img,
+.wp-content .image-card.single:not(.horizontal):not(.left--image):not(.right--image) .image-card--image img,
+.entry-content .image-card:not(.horizontal):not(.left--image):not(.right--image) .image-card--image img,
+.wp-content .image-card:not(.horizontal):not(.left--image):not(.right--image) .image-card--image img {
+  width: 100% !important;
+  height: 250px !important;
+  max-height: 250px !important;
+  display: block !important;
+  border-radius: 1rem 1rem 0 0 !important; /* Rounded top corners only */
+  object-fit: cover;
+  object-position: center;
+}
+
+/* Image - fixed width, full height (horizontal cards) */
+.entry-content .image-card.single.horizontal .image-card--image img,
+.wp-content .image-card.single.horizontal .image-card--image img,
+.entry-content .image-card.single.left--image .image-card--image img,
+.wp-content .image-card.single.left--image .image-card--image img,
+.entry-content .image-card.horizontal .image-card--image img,
+.wp-content .image-card.horizontal .image-card--image img {
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 100% !important;
+  display: block !important;
+  border-radius: 1rem 0 0 1rem !important; /* Rounded left corners only */
+  object-fit: cover;
+  object-position: center;
+}
+
+/* Content wrapper - EXACT copy from original (vertical cards) */
+.entry-content .site-grid--2x1.double .image-card .image-card--content,
+.wp-content .site-grid--2x1.double .image-card .image-card--content,
+.entry-content .image-card.single:not(.horizontal):not(.left--image):not(.right--image) .image-card--content,
+.wp-content .image-card.single:not(.horizontal):not(.left--image):not(.right--image) .image-card--content,
+.entry-content .image-card:not(.horizontal):not(.left--image):not(.right--image) .image-card--content,
+.wp-content .image-card:not(.horizontal):not(.left--image):not(.right--image) .image-card--content {
+  background: #e8ebef !important; /* Darker gray-blue background - more visible */
+  padding: 2rem !important; /* EXACT: 2rem only */
+  display: flex !important;
+  flex-direction: column !important;
+  flex-wrap: wrap !important;
+  justify-content: center !important; /* EXACT: center (overrides flex-start) */
+  align-items: flex-start !important;
+  border-radius: 0 0 1rem 1rem !important; /* Rounded bottom corners */
+}
+
+/* Content wrapper - horizontal cards (image on left) */
+.entry-content .image-card.single.horizontal .image-card--content,
+.wp-content .image-card.single.horizontal .image-card--content,
+.entry-content .image-card.single.left--image .image-card--content,
+.wp-content .image-card.single.left--image .image-card--content,
+.entry-content .image-card.horizontal .image-card--content,
+.wp-content .image-card.horizontal .image-card--content {
+  background: #e8ebef !important;
+  padding: 2rem !important;
+  display: flex !important;
+  flex-direction: column !important;
+  flex-wrap: wrap !important;
+  justify-content: center !important;
+  align-items: flex-start !important;
+  flex: 1 !important;
+  border-radius: 0 1rem 1rem 0 !important; /* Rounded right corners */
+}
+
+/* Also support .card-content for backwards compatibility (vertical cards) */
+.entry-content .site-grid--2x1.double .image-card .card-content,
+.wp-content .site-grid--2x1.double .image-card .card-content,
+.entry-content .image-card.single:not(.horizontal):not(.left--image):not(.right--image) .card-content,
+.wp-content .image-card.single:not(.horizontal):not(.left--image):not(.right--image) .card-content,
+.entry-content .image-card:not(.horizontal):not(.left--image):not(.right--image) .card-content,
+.wp-content .image-card:not(.horizontal):not(.left--image):not(.right--image) .card-content {
+  background: #e8ebef !important; /* Darker gray-blue background - more visible */
+  padding: 2rem !important; /* EXACT: 2rem only */
+  display: flex !important;
+  flex-direction: column !important;
+  flex-wrap: wrap !important;
+  justify-content: center !important;
+  align-items: flex-start !important;
+  border-radius: 0 0 1rem 1rem !important; /* Rounded bottom corners */
+}
+
+/* .card-content for horizontal cards */
+.entry-content .image-card.single.horizontal .card-content,
+.wp-content .image-card.single.horizontal .card-content,
+.entry-content .image-card.single.left--image .card-content,
+.wp-content .image-card.single.left--image .card-content,
+.entry-content .image-card.horizontal .card-content,
+.wp-content .image-card.horizontal .card-content {
+  background: #e8ebef !important;
+  padding: 2rem !important;
+  display: flex !important;
+  flex-direction: column !important;
+  flex-wrap: wrap !important;
+  justify-content: center !important;
+  align-items: flex-start !important;
+  flex: 1 !important;
+  border-radius: 0 1rem 1rem 0 !important; /* Rounded right corners */
+}
+
+/* If no .card-content wrapper, style h3, p directly */
+.entry-content .site-grid--2x1.double .image-card h3,
+.wp-content .site-grid--2x1.double .image-card h3,
+.entry-content .image-card h3,
+.wp-content .image-card h3,
+.entry-content .horizontal-card h3,
+.wp-content .horizontal-card h3 {
+  color: #6f8db3 !important; /* Blue-grey heading */
+  font-size: 1.5rem !important; /* Exact font size */
+  font-weight: 600 !important; /* Bold weight */
+  margin-top: 0 !important;
+  margin-bottom: 1rem !important; /* Exact spacing */
+  line-height: 1.3 !important;
+}
+
+.entry-content .site-grid--2x1.double .image-card .image-card--content h3,
+.wp-content .site-grid--2x1.double .image-card .image-card--content h3,
+.entry-content .image-card .image-card--content h3,
+.wp-content .image-card .image-card--content h3,
+.entry-content .site-grid--2x1.double .image-card .card-content h3,
+.wp-content .site-grid--2x1.double .image-card .card-content h3,
+.entry-content .image-card .card-content h3,
+.wp-content .image-card .card-content h3,
+.entry-content .horizontal-card .card-content h3,
+.wp-content .horizontal-card .card-content h3 {
+  color: #6f8db3 !important; /* Blue-grey heading */
+  font-size: 1.5rem !important; /* Exact font size */
+  font-weight: 600 !important; /* Bold weight */
+  margin-top: 0 !important;
+  margin-bottom: 1rem !important; /* Exact spacing */
+  line-height: 1.3 !important;
+}
+
+.entry-content .site-grid--2x1.double .image-card p,
+.wp-content .site-grid--2x1.double .image-card p,
+.entry-content .image-card p,
+.wp-content .image-card p,
+.entry-content .horizontal-card p,
+.wp-content .horizontal-card p {
+  color: #575556 !important; /* Dark grey text */
+  line-height: 1.75 !important; /* Exact line height */
+  margin-bottom: 1.25rem !important; /* Exact spacing */
+  font-size: 1rem !important;
+}
+
+.entry-content .site-grid--2x1.double .image-card .image-card--content p,
+.wp-content .site-grid--2x1.double .image-card .image-card--content p,
+.entry-content .image-card .image-card--content p,
+.wp-content .image-card .image-card--content p,
+.entry-content .site-grid--2x1.double .image-card .card-content p,
+.wp-content .site-grid--2x1.double .image-card .card-content p,
+.entry-content .image-card .card-content p,
+.wp-content .image-card .card-content p,
+.entry-content .horizontal-card .card-content p,
+.wp-content .horizontal-card .card-content p {
+  color: #575556 !important; /* Dark grey text */
+  line-height: 1.75 !important; /* Exact line height */
+  margin-bottom: 1.25rem !important; /* Exact spacing */
+  font-size: 1rem !important;
+}
+
+/* Button styles - EXACT copy from original */
+/* Target .site-btn a (the actual button structure) - MUST override general .site-btn styles */
+.entry-content .site-grid--2x1.double .image-card .site-btn a,
+.wp-content .site-grid--2x1.double .image-card .site-btn a,
+.entry-content .image-card .site-btn a,
+.wp-content .image-card .site-btn a,
+.entry-content .image-card .image-card--content .site-btn a,
+.wp-content .image-card .image-card--content .site-btn a,
+.entry-content .image-card .card-content .site-btn a,
+.wp-content .image-card .card-content .site-btn a,
+.entry-content .site-grid--2x1.double .image-card .site-btn > a,
+.wp-content .site-grid--2x1.double .image-card .site-btn > a,
+.entry-content .image-card .site-btn > a,
+.wp-content .image-card .site-btn > a,
+.entry-content .image-card .image-card--content .site-btn > a,
+.wp-content .image-card .image-card--content .site-btn > a,
+/* Also support direct a.button and a.btn */
+.entry-content .site-grid--2x1.double .image-card a.button,
+.entry-content .site-grid--2x1.double .image-card a.btn,
+.wp-content .site-grid--2x1.double .image-card a.button,
+.wp-content .site-grid--2x1.double .image-card a.btn,
+.entry-content .image-card a.button,
+.entry-content .image-card a.btn,
+.wp-content .image-card a.button,
+.wp-content .image-card a.btn,
+.entry-content .image-card .image-card--content a.button,
+.entry-content .image-card .image-card--content a.btn,
+.wp-content .image-card .image-card--content a.button,
+.wp-content .image-card .image-card--content a.btn,
+.entry-content .image-card .card-content a.button,
+.entry-content .image-card .card-content a.btn,
+.wp-content .image-card .card-content a.button,
+.wp-content .image-card .card-content a.btn,
+.entry-content .horizontal-card a.button,
+.entry-content .horizontal-card a.btn,
+.wp-content .horizontal-card a.button,
+.wp-content .horizontal-card a.btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 0.5rem !important;
+  padding: 0.75rem 1.5rem !important; /* Exact padding */
+  background: #775029 !important; /* Brown background - variety */
+  background-color: #775029 !important; /* Force background color */
+  background-image: none !important; /* Remove any background images */
+  color: #fff !important; /* WHITE text */
+  text-decoration: none !important;
+  border: 2px solid #775029 !important; /* Matching brown border */
+  border-radius: 2rem !important; /* Fully rounded */
+  font-family: var(--font-heading) !important;
+  font-weight: 600 !important; /* Bolder text */
+  font-size: 1rem !important;
+  transition: all 0.3s ease !important;
+  width: fit-content !important;
+  margin: 0 !important; /* Override general .site-btn margin */
+  text-transform: none !important; /* Override capitalize */
+  opacity: 1 !important; /* Ensure button is visible */
+  visibility: visible !important; /* Ensure button is visible */
+  box-shadow: 0 2px 8px rgba(119, 80, 41, 0.3) !important; /* Subtle shadow for depth */
+}
+
+/* Force background color on the button element itself */
+.entry-content .site-grid--2x1.double .image-card .site-btn,
+.wp-content .site-grid--2x1.double .image-card .site-btn,
+.entry-content .image-card .site-btn,
+.wp-content .image-card .site-btn {
+  background: transparent !important; /* Make wrapper transparent */
+  background-color: transparent !important;
+}
+
+/* CRITICAL: Force button text to be visible - override ALL link styles */
+.entry-content .site-grid--2x1.double .image-card .site-btn a,
+.entry-content .site-grid--2x1.double .image-card .site-btn > a,
+.wp-content .site-grid--2x1.double .image-card .site-btn a,
+.wp-content .site-grid--2x1.double .image-card .site-btn > a,
+.entry-content .image-card .site-btn a,
+.entry-content .image-card .site-btn > a,
+.wp-content .image-card .site-btn a,
+.wp-content .image-card .site-btn > a,
+.entry-content .image-card .image-card--content .site-btn a,
+.entry-content .image-card .image-card--content .site-btn > a,
+.wp-content .image-card .image-card--content .site-btn a,
+.wp-content .image-card .image-card--content .site-btn > a,
+.entry-content .image-card .card-content .site-btn a,
+.entry-content .image-card .card-content .site-btn > a,
+.wp-content .image-card .card-content .site-btn a,
+.wp-content .image-card .card-content .site-btn > a,
+.entry-content .site-grid--2x1.double .image-card a.button,
+.entry-content .site-grid--2x1.double .image-card a.btn,
+.wp-content .site-grid--2x1.double .image-card a.button,
+.wp-content .site-grid--2x1.double .image-card a.btn,
+.entry-content .image-card a.button,
+.entry-content .image-card a.btn,
+.wp-content .image-card a.button,
+.wp-content .image-card a.btn,
+.entry-content .image-card .image-card--content a.button,
+.entry-content .image-card .image-card--content a.btn,
+.wp-content .image-card .image-card--content a.button,
+.wp-content .image-card .image-card--content a.btn,
+.entry-content .image-card .card-content a.button,
+.entry-content .image-card .card-content a.btn,
+.wp-content .image-card .card-content a.button,
+.wp-content .image-card .card-content a.btn,
+.entry-content .horizontal-card a.button,
+.entry-content .horizontal-card a.btn,
+.wp-content .horizontal-card a.button,
+.wp-content .horizontal-card a.btn {
+  color: #fff !important; /* WHITE text */
+  background: #775029 !important; /* Brown background - variety */
+  background-color: #775029 !important; /* Force background color */
+  background-image: none !important; /* Remove any background images */
+  opacity: 1 !important;
+  visibility: visible !important;
+  box-shadow: 0 2px 8px rgba(119, 80, 41, 0.3) !important;
+}
+
+/* Push .site-btn to bottom */
+.entry-content .site-grid--2x1.double .image-card .image-card--content .site-btn,
+.wp-content .site-grid--2x1.double .image-card .image-card--content .site-btn,
+.entry-content .image-card .image-card--content .site-btn,
+.wp-content .image-card .image-card--content .site-btn {
+  margin-top: auto !important; /* Push button to bottom */
+}
+
+/* Button hover styles - more vibrant */
+.entry-content .site-grid--2x1.double .image-card .site-btn a:hover,
+.wp-content .site-grid--2x1.double .image-card .site-btn a:hover,
+.entry-content .image-card .site-btn a:hover,
+.wp-content .image-card .site-btn a:hover,
+.entry-content .image-card .image-card--content .site-btn a:hover,
+.wp-content .image-card .image-card--content .site-btn a:hover,
+.entry-content .image-card .card-content .site-btn a:hover,
+.wp-content .image-card .card-content .site-btn a:hover,
+.entry-content .site-grid--2x1.double .image-card a.button:hover,
+.entry-content .site-grid--2x1.double .image-card a.btn:hover,
+.wp-content .site-grid--2x1.double .image-card a.button:hover,
+.wp-content .site-grid--2x1.double .image-card a.btn:hover,
+.entry-content .image-card a.button:hover,
+.entry-content .image-card a.btn:hover,
+.wp-content .image-card a.button:hover,
+.wp-content .image-card a.btn:hover,
+.entry-content .image-card .image-card--content a.button:hover,
+.entry-content .image-card .image-card--content a.btn:hover,
+.wp-content .image-card .image-card--content a.button:hover,
+.wp-content .image-card .image-card--content a.btn:hover,
+.entry-content .image-card .card-content a.button:hover,
+.entry-content .image-card .card-content a.btn:hover,
+.wp-content .image-card .card-content a.button:hover,
+.wp-content .image-card .card-content a.btn:hover,
+.entry-content .horizontal-card a.button:hover,
+.entry-content .horizontal-card a.btn:hover,
+.wp-content .horizontal-card a.button:hover,
+.wp-content .horizontal-card a.btn:hover {
+  background: #85623e !important; /* Darker brown on hover */
+  background-color: #85623e !important; /* Force background color on hover */
+  color: #fff !important; /* WHITE text on hover */
+  border-color: #85623e !important;
+  box-shadow: 0 4px 12px rgba(119, 80, 41, 0.5) !important; /* Stronger shadow on hover */
+  transform: translateY(-2px) !important; /* Slight lift effect */
+}
+
+.entry-content .site-grid--2x1.double .image-card a.button::after,
+.entry-content .site-grid--2x1.double .image-card a.btn::after,
+.wp-content .site-grid--2x1.double .image-card a.button::after,
+.wp-content .site-grid--2x1.double .image-card a.btn::after,
+.entry-content .image-card a.button::after,
+.entry-content .image-card a.btn::after,
+.wp-content .image-card a.button::after,
+.wp-content .image-card a.btn::after,
+.entry-content .image-card .image-card--content a.button::after,
+.entry-content .image-card .image-card--content a.btn::after,
+.wp-content .image-card .image-card--content a.button::after,
+.wp-content .image-card .image-card--content a.btn::after,
+.entry-content .image-card .card-content a.button::after,
+.entry-content .image-card .card-content a.btn::after,
+.wp-content .image-card .card-content a.button::after,
+.wp-content .image-card .card-content a.btn::after,
+.entry-content .horizontal-card a.button::after,
+.entry-content .horizontal-card a.btn::after,
+.wp-content .horizontal-card a.button::after,
+.wp-content .horizontal-card a.btn::after {
+  content: '›';
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+/* WPBakery Page Builder row/column structure */
+.entry-content .vc_row,
+.entry-content .wpb_row,
+.wp-content .vc_row,
+.wp-content .wpb_row,
+.entry-content .wpb_row_inner,
+.entry-content .vc_row_inner,
+.wp-content .wpb_row_inner,
+.wp-content .vc_row_inner {
+  display: flex;
+  gap: 2rem;
+  margin-bottom: 3rem;
+  align-items: stretch;
+  flex-direction: row !important;
+}
+
+/* 2-Column Grid Cards - Horizontal Layout (Image Left, Text Right) */
+/* MUST target inside .entry-content and .wp-content where user HTML is rendered */
+.entry-content .vc_column_container,
+.entry-content .wpb_column,
+.wp-content .vc_column_container,
+.wp-content .wpb_column,
+.entry-content .vc_column_inner,
+.entry-content .wpb_column_inner,
+.wp-content .vc_column_inner,
+.wp-content .wpb_column_inner {
+  flex: 1;
+  background: transparent !important;
+  border-radius: 0 !important;
+  overflow: visible !important;
+}
+
+/* Clear floats inside columns */
+.entry-content .vc_column_container::after,
+.entry-content .wpb_column::after,
+.wp-content .vc_column_container::after,
+.wp-content .wpb_column::after,
+.entry-content .vc_column_inner::after,
+.entry-content .wpb_column_inner::after,
+.wp-content .vc_column_inner::after,
+.wp-content .wpb_column_inner::after {
+  content: "";
+  display: table;
+  clear: both;
+}
+
+/* Float first image to the left - works with any structure */
+.entry-content .vc_column_container img:first-of-type,
+.entry-content .wpb_column img:first-of-type,
+.wp-content .vc_column_container img:first-of-type,
+.wp-content .wpb_column img:first-of-type,
+.entry-content .vc_column_inner img:first-of-type,
+.entry-content .wpb_column_inner img:first-of-type,
+.wp-content .vc_column_inner img:first-of-type,
+.wp-content .wpb_column_inner img:first-of-type {
+  width: 200px !important;
+  height: auto !important;
+  border-radius: var(--border-radius) !important;
+  display: block !important;
+  float: left !important;
+  margin: 0 2rem 1rem 0 !important;
+  clear: left !important;
+}
+
+/* Float paragraphs/divs that contain images */
+.entry-content .vc_column_container > p img,
+.entry-content .wpb_column > p img,
+.wp-content .vc_column_container > p img,
+.wp-content .wpb_column > p img,
+.entry-content .vc_column_inner > p img,
+.entry-content .wpb_column_inner > p img,
+.wp-content .vc_column_inner > p img,
+.wp-content .wpb_column_inner > p img {
+  float: left !important;
+  margin: 0 2rem 1rem 0 !important;
+}
+
+.entry-content .vc_column_container > div img:first-of-type,
+.entry-content .wpb_column > div img:first-of-type,
+.wp-content .vc_column_container > div img:first-of-type,
+.wp-content .wpb_column > div img:first-of-type,
+.entry-content .vc_column_inner > div img:first-of-type,
+.entry-content .wpb_column_inner > div img:first-of-type,
+.wp-content .vc_column_inner > div img:first-of-type,
+.wp-content .wpb_column_inner > div img:first-of-type {
+  float: left !important;
+  margin: 0 2rem 1rem 0 !important;
+}
+
+/* Content wrapper - if content is in a div after image */
+.entry-content .vc_column_container > img:first-of-type ~ div,
+.entry-content .wpb_column > img:first-of-type ~ div,
+.wp-content .vc_column_container > img:first-of-type ~ div,
+.wp-content .wpb_column > img:first-of-type ~ div,
+.entry-content .vc_column_inner > img:first-of-type ~ div,
+.entry-content .wpb_column_inner > img:first-of-type ~ div,
+.wp-content .vc_column_inner > img:first-of-type ~ div,
+.wp-content .wpb_column_inner > img:first-of-type ~ div {
+  flex: 1 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  padding-left: 2rem !important;
+}
+
+/* Direct children after image (h3, p, a) */
+.entry-content .vc_column_container > img:first-of-type ~ h3,
+.entry-content .vc_column_container > img:first-of-type ~ p,
+.entry-content .vc_column_container > img:first-of-type ~ a,
+.entry-content .wpb_column > img:first-of-type ~ h3,
+.entry-content .wpb_column > img:first-of-type ~ p,
+.entry-content .wpb_column > img:first-of-type ~ a,
+.wp-content .vc_column_container > img:first-of-type ~ h3,
+.wp-content .vc_column_container > img:first-of-type ~ p,
+.wp-content .vc_column_container > img:first-of-type ~ a,
+.wp-content .wpb_column > img:first-of-type ~ h3,
+.wp-content .wpb_column > img:first-of-type ~ p,
+.wp-content .wpb_column > img:first-of-type ~ a {
+  padding-left: 2rem !important;
+}
+
+.entry-content .vc_column_container h3,
+.entry-content .wpb_column h3,
+.wp-content .vc_column_container h3,
+.wp-content .wpb_column h3,
+.entry-content .vc_column_inner h3,
+.entry-content .wpb_column_inner h3,
+.wp-content .vc_column_inner h3,
+.wp-content .wpb_column_inner h3 {
   color: #6f8db3 !important;
   font-size: 1.75rem;
   font-weight: 500;
   margin-top: 0;
-  margin-bottom: 1.25rem;
+  margin-bottom: 1rem;
 }
 
-.image-card img,
-.horizontal-card img {
-  width: 225px;
-  height: auto;
-  min-height: 100%;
-  object-fit: cover;
-  border-radius: var(--border-radius) 0 0 var(--border-radius);
-  flex-shrink: 0;
-}
-
-.image-card .card-content,
-.horizontal-card .card-content {
-  flex: 1;
-  background: #f1f4f7;
-  border-radius: 0 var(--border-radius) var(--border-radius) 0;
-  padding: 2.5rem;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-}
-
-.image-card .card-content h3,
-.horizontal-card .card-content h3 {
-  color: #6f8db3;
-  font-size: 1.75rem;
-  font-weight: 500;
-  margin-top: 0;
-  margin-bottom: 1.25rem;
-}
-
-.image-card .card-content p,
-.horizontal-card .card-content p {
+.entry-content .vc_column_container p,
+.entry-content .wpb_column p,
+.wp-content .vc_column_container p,
+.wp-content .wpb_column p,
+.entry-content .vc_column_inner p,
+.entry-content .wpb_column_inner p,
+.wp-content .vc_column_inner p,
+.wp-content .wpb_column_inner p {
   color: var(--text);
-  line-height: 1.8;
   margin-bottom: 1.5rem;
 }
 
-.image-card .card-content a.button,
-.image-card .card-content a.btn,
-.horizontal-card .card-content a.button,
-.horizontal-card .card-content a.btn {
+.entry-content .vc_column_container a.button,
+.entry-content .vc_column_container a.btn,
+.entry-content .wpb_column a.button,
+.entry-content .wpb_column a.btn,
+.wp-content .vc_column_container a.button,
+.wp-content .vc_column_container a.btn,
+.wp-content .wpb_column a.button,
+.wp-content .wpb_column a.btn,
+.entry-content .vc_column_inner a.button,
+.entry-content .vc_column_inner a.btn,
+.entry-content .wpb_column_inner a.button,
+.entry-content .wpb_column_inner a.btn,
+.wp-content .vc_column_inner a.button,
+.wp-content .vc_column_inner a.btn,
+.wp-content .wpb_column_inner a.button,
+.wp-content .wpb_column_inner a.btn {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
@@ -765,51 +1386,137 @@ main#content img:not(.cta-outer img, .image-card img, .before-after-slider img, 
   font-size: 1rem;
   transition: all 0.3s ease;
   width: fit-content;
+  margin-top: auto;
 }
 
-.image-card .card-content a.button:hover,
-.image-card .card-content a.btn:hover,
-.horizontal-card .card-content a.button:hover,
-.horizontal-card .card-content a.btn:hover {
+.entry-content .vc_column_container a.button:hover,
+.entry-content .vc_column_container a.btn:hover,
+.entry-content .wpb_column a.button:hover,
+.entry-content .wpb_column a.btn:hover,
+.wp-content .vc_column_container a.button:hover,
+.wp-content .vc_column_container a.btn:hover,
+.wp-content .wpb_column a.button:hover,
+.wp-content .wpb_column a.btn:hover,
+.entry-content .vc_column_inner a.button:hover,
+.entry-content .vc_column_inner a.btn:hover,
+.entry-content .wpb_column_inner a.button:hover,
+.entry-content .wpb_column_inner a.btn:hover,
+.wp-content .vc_column_inner a.button:hover,
+.wp-content .vc_column_inner a.btn:hover,
+.wp-content .wpb_column_inner a.button:hover,
+.wp-content .wpb_column_inner a.btn:hover {
   background: #775029;
   color: #fff;
 }
 
-.image-card .card-content a.button::after,
-.image-card .card-content a.btn::after,
-.horizontal-card .card-content a.button::after,
-.horizontal-card .card-content a.btn::after {
+.entry-content .vc_column_container a.button::after,
+.entry-content .vc_column_container a.btn::after,
+.entry-content .wpb_column a.button::after,
+.entry-content .wpb_column a.btn::after,
+.wp-content .vc_column_container a.button::after,
+.wp-content .vc_column_container a.btn::after,
+.wp-content .wpb_column a.button::after,
+.wp-content .wpb_column a.btn::after,
+.entry-content .vc_column_inner a.button::after,
+.entry-content .vc_column_inner a.btn::after,
+.entry-content .wpb_column_inner a.button::after,
+.entry-content .wpb_column_inner a.btn::after,
+.wp-content .vc_column_inner a.button::after,
+.wp-content .vc_column_inner a.btn::after,
+.wp-content .wpb_column_inner a.button::after,
+.wp-content .wpb_column_inner a.btn::after {
   content: '›';
   font-size: 1.5rem;
   line-height: 1;
 }
 
-/* WPBakery Page Builder row/column structure */
-.vc_row,
-.wpb_row {
-  display: flex;
-  gap: 2rem;
-  margin-bottom: 3rem;
-  align-items: center;
-}
-
-.vc_column_container,
-.wpb_column {
-  flex: 1;
-}
-
-.vc_column_container img {
-  width: 100%;
-  border-radius: var(--border-radius);
+@media (min-width: 62.01rem) {
+  .entry-content .vc_column_container,
+  .entry-content .wpb_column,
+  .wp-content .vc_column_container,
+  .wp-content .wpb_column,
+  .entry-content .vc_column_inner,
+  .entry-content .wpb_column_inner,
+  .wp-content .vc_column_inner,
+  .wp-content .wpb_column_inner {
+    flex-direction: row !important;
+  }
 }
 
 @media (max-width: 62rem) {
+  /* Horizontal cards stack vertically on mobile */
+  .entry-content .image-card.single.horizontal,
+  .wp-content .image-card.single.horizontal,
+  .entry-content .image-card.single.left--image,
+  .wp-content .image-card.single.left--image,
+  .entry-content .image-card.horizontal,
+  .wp-content .image-card.horizontal {
+    flex-direction: column !important;
+  }
+  
+  /* Horizontal card images become full width on mobile */
+  .entry-content .image-card.single.horizontal .image-card--image,
+  .wp-content .image-card.single.horizontal .image-card--image,
+  .entry-content .image-card.single.left--image .image-card--image,
+  .wp-content .image-card.single.left--image .image-card--image,
+  .entry-content .image-card.horizontal .image-card--image,
+  .wp-content .image-card.horizontal .image-card--image {
+    width: 100% !important;
+    height: 250px !important;
+    border-radius: 1rem 1rem 0 0 !important;
+  }
+  
+  .entry-content .image-card.single.horizontal .image-card--image img,
+  .wp-content .image-card.single.horizontal .image-card--image img,
+  .entry-content .image-card.single.left--image .image-card--image img,
+  .wp-content .image-card.single.left--image .image-card--image img,
+  .entry-content .image-card.horizontal .image-card--image img,
+  .wp-content .image-card.horizontal .image-card--image img {
+    height: 250px !important;
+    border-radius: 1rem 1rem 0 0 !important;
+  }
+  
+  /* Horizontal card content becomes full width on mobile */
+  .entry-content .image-card.single.horizontal .image-card--content,
+  .wp-content .image-card.single.horizontal .image-card--content,
+  .entry-content .image-card.single.left--image .image-card--content,
+  .wp-content .image-card.single.left--image .image-card--content,
+  .entry-content .image-card.horizontal .image-card--content,
+  .wp-content .image-card.horizontal .image-card--content {
+    border-radius: 0 0 1rem 1rem !important;
+  }
+  
   .image-card,
   .horizontal-card,
   .card-layout,
   .vc_row,
   .wpb_row {
     flex-direction: column;
+  }
+  
+  .entry-content .vc_column_container,
+  .entry-content .wpb_column,
+  .wp-content .vc_column_container,
+  .wp-content .wpb_column,
+  .entry-content .vc_column_inner,
+  .entry-content .wpb_column_inner,
+  .wp-content .vc_column_inner,
+  .wp-content .wpb_column_inner {
+    flex-direction: column !important;
+  }
+  
+  .entry-content .vc_column_container img,
+  .entry-content .wpb_column img,
+  .wp-content .vc_column_container img,
+  .wp-content .wpb_column img,
+  .entry-content .vc_column_inner img,
+  .entry-content .wpb_column_inner img,
+  .wp-content .vc_column_inner img,
+  .wp-content .wpb_column_inner img {
+    width: 100% !important;
+    max-width: 100% !important;
+    float: none !important;
+    margin: 0 0 1rem 0 !important;
   }
   
   .image-card img,
@@ -824,6 +1531,195 @@ main#content img:not(.cta-outer img, .image-card img, .before-after-slider img, 
     border-radius: 0 0 var(--border-radius) var(--border-radius);
     padding: 2rem;
   }
+}
+
+/* Icon CTA Box - 1:1 Copy from Original */
+.entry-content .icon-cta-box,
+.wp-content .icon-cta-box {
+  position: relative;
+  background: #e8ebef !important; /* Light gray background inside icon box */
+  border-radius: 1rem !important;
+  padding: 1.5rem !important;
+  padding-left: 3.5rem !important; /* Extra left padding for smaller icon */
+  padding-top: 2rem !important; /* Extra top padding for icon */
+  margin-bottom: 1.5rem !important;
+  margin-left: 1.5rem !important; /* Space for overlapping icon */
+  margin-top: 1.5rem !important; /* Space for overlapping icon */
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08) !important;
+  overflow: visible !important; /* Don't clip the icon */
+}
+
+/* Icon - Smaller light blue circle with dark blue border */
+.entry-content .icon-cta-box .icon-cta-box--icon,
+.wp-content .icon-cta-box .icon-cta-box--icon,
+.entry-content .icon-cta-box i.icon-cta-box--icon,
+.wp-content .icon-cta-box i.icon-cta-box--icon {
+  position: absolute !important;
+  left: -1rem !important; /* Overlapping top-left corner */
+  top: -1rem !important; /* Overlapping top */
+  width: 3rem !important;
+  height: 3rem !important;
+  min-width: 3rem !important;
+  min-height: 3rem !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: #6f8db3 !important; /* Blue-grey circle */
+  border: 2px solid #fff !important; /* White border */
+  border-radius: 50% !important; /* Perfect circle */
+  color: #fff !important; /* White icon/number */
+  font-size: 1.25rem !important; /* Smaller font */
+  font-weight: 700 !important; /* Bold for numbers */
+  font-style: normal !important;
+  z-index: 2 !important;
+  line-height: 1 !important;
+  text-align: center !important;
+  overflow: visible !important;
+}
+
+/* Ensure text content inside icon is visible - show text nodes */
+.entry-content .icon-cta-box .icon-cta-box--icon,
+.wp-content .icon-cta-box .icon-cta-box--icon,
+.entry-content .icon-cta-box i.icon-cta-box--icon,
+.wp-content .icon-cta-box i.icon-cta-box--icon {
+  visibility: visible !important;
+  opacity: 1 !important;
+  white-space: nowrap !important; /* Prevent wrapping */
+}
+
+/* Extract number from class name if no text content (fallback for fa-1, fa-2, etc.) */
+.entry-content .icon-cta-box .icon-cta-box--icon.fa-1::before,
+.wp-content .icon-cta-box .icon-cta-box--icon.fa-1::before,
+.entry-content .icon-cta-box i.icon-cta-box--icon.fa-1::before,
+.wp-content .icon-cta-box i.icon-cta-box--icon.fa-1::before {
+  content: '1' !important;
+  font-family: inherit !important;
+  font-weight: 700 !important;
+}
+
+.entry-content .icon-cta-box .icon-cta-box--icon.fa-2::before,
+.wp-content .icon-cta-box .icon-cta-box--icon.fa-2::before,
+.entry-content .icon-cta-box i.icon-cta-box--icon.fa-2::before,
+.wp-content .icon-cta-box i.icon-cta-box--icon.fa-2::before {
+  content: '2' !important;
+  font-family: inherit !important;
+  font-weight: 700 !important;
+}
+
+.entry-content .icon-cta-box .icon-cta-box--icon.fa-3::before,
+.wp-content .icon-cta-box .icon-cta-box--icon.fa-3::before,
+.entry-content .icon-cta-box i.icon-cta-box--icon.fa-3::before,
+.wp-content .icon-cta-box i.icon-cta-box--icon.fa-3::before {
+  content: '3' !important;
+  font-family: inherit !important;
+  font-weight: 700 !important;
+}
+
+/* Ensure FontAwesome icons display properly in the circle */
+.entry-content .icon-cta-box .icon-cta-box--icon::before,
+.wp-content .icon-cta-box .icon-cta-box--icon::before,
+.entry-content .icon-cta-box i.icon-cta-box--icon::before,
+.wp-content .icon-cta-box i.icon-cta-box--icon::before {
+  display: inline-block !important;
+  font-family: 'Font Awesome 6 Pro', 'Font Awesome 6 Free', 'Font Awesome 5 Pro', 'Font Awesome 5 Free', 'Font Awesome' !important;
+  font-weight: 400 !important;
+  font-style: normal !important;
+  line-height: 1 !important;
+}
+
+/* For FA solid icons */
+.entry-content .icon-cta-box .icon-cta-box--icon.fa-solid::before,
+.wp-content .icon-cta-box .icon-cta-box--icon.fa-solid::before,
+.entry-content .icon-cta-box i.icon-cta-box--icon.fa-solid::before,
+.wp-content .icon-cta-box i.icon-cta-box--icon.fa-solid::before {
+  font-weight: 900 !important;
+}
+
+/* Ensure text content (numbers) is visible */
+.entry-content .icon-cta-box .icon-cta-box--icon,
+.wp-content .icon-cta-box .icon-cta-box--icon,
+.entry-content .icon-cta-box i.icon-cta-box--icon,
+.wp-content .icon-cta-box i.icon-cta-box--icon {
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+/* Make sure the icon content is displayed */
+.entry-content .icon-cta-box .icon-cta-box--icon *,
+.wp-content .icon-cta-box .icon-cta-box--icon *,
+.entry-content .icon-cta-box i.icon-cta-box--icon *,
+.wp-content .icon-cta-box i.icon-cta-box--icon * {
+  display: inline-block !important;
+  visibility: visible !important;
+}
+
+/* Title - Dark blue, bold, smaller, aligned left */
+.entry-content .icon-cta-box h3.title,
+.wp-content .icon-cta-box h3.title,
+.entry-content .icon-cta-box h3,
+.wp-content .icon-cta-box h3 {
+  color: #38475a !important; /* Dark blue */
+  font-size: 1.25rem !important; /* Smaller */
+  font-weight: 700 !important;
+  margin-top: 0 !important;
+  margin-bottom: 0.75rem !important; /* Tighter spacing */
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  line-height: 1.3 !important;
+  text-align: left !important; /* Align title to left */
+  width: 100% !important;
+}
+
+/* Description text - Dark gray, smaller */
+.entry-content .icon-cta-box p,
+.wp-content .icon-cta-box p {
+  color: #575556 !important; /* Dark gray */
+  line-height: 1.6 !important; /* Tighter line height */
+  margin-bottom: 1rem !important; /* Tighter spacing */
+  font-size: 0.95rem !important; /* Slightly smaller */
+}
+
+/* Button - Light brown with dark brown border, smaller */
+.entry-content .icon-cta-box .site-btn a,
+.wp-content .icon-cta-box .site-btn a,
+.entry-content .icon-cta-box .site-btn > a,
+.wp-content .icon-cta-box .site-btn > a {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 0.5rem !important;
+  padding: 0.6rem 1.25rem !important; /* Smaller padding */
+  background: #2c5282 !important; /* Dark blue background - variety */
+  color: #fff !important; /* White text */
+  text-decoration: none !important;
+  border: 2px solid #2c5282 !important; /* Dark blue border */
+  border-radius: 2rem !important;
+  font-family: var(--font-heading) !important;
+  font-weight: 500 !important;
+  font-size: 0.95rem !important; /* Smaller font */
+  transition: all 0.3s ease !important;
+  width: fit-content !important;
+  margin: 0 !important;
+  text-transform: none !important;
+}
+
+.entry-content .icon-cta-box .site-btn a:hover,
+.wp-content .icon-cta-box .site-btn a:hover,
+.entry-content .icon-cta-box .site-btn > a:hover,
+.wp-content .icon-cta-box .site-btn > a:hover {
+  background: #1a3d5f !important; /* Darker blue on hover */
+  color: #fff !important;
+  border-color: #1a3d5f !important;
+}
+
+.entry-content .icon-cta-box .site-btn a::after,
+.wp-content .icon-cta-box .site-btn a::after,
+.entry-content .icon-cta-box .site-btn > a::after,
+.wp-content .icon-cta-box .site-btn > a::after {
+  content: '>' !important; /* Right-pointing angle bracket */
+  font-size: 1rem !important; /* Smaller */
+  line-height: 1 !important;
+  margin-left: 0.25rem !important;
+  color: #fff !important; /* White arrow */
 }
 
 /* Iframes */
@@ -863,7 +1759,7 @@ div.wp-caption img {
 .quick-links {
   background: #f1f4f7;
   border-radius: 1rem;
-  margin: 3rem 0;
+  margin: 2rem 0 !important; /* Reduced vertical margin */
   overflow: hidden;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   border: 1px solid #e2e8f0;
@@ -874,11 +1770,11 @@ div.wp-caption img {
 .quick-links .title {
   background: #6f8db3;
   font-family: var(--font-heading);
-  font-size: 1.5rem;
+  font-size: 1.25rem !important; /* Smaller title */
   font-weight: 600;
   color: #fff;
   margin: 0;
-  padding: 1.25rem;
+  padding: 0.75rem 1rem !important; /* Reduced padding */
   text-align: center;
   text-transform: none;
 }
@@ -888,19 +1784,20 @@ div.wp-caption img {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 0;
-  padding: 2rem 2.5rem;
+  padding: 1.25rem 1.5rem !important; /* Reduced padding */
 }
 
 #quick-links .links a,
 .quick-links .links a {
   display: block;
-  padding: 0.75rem 1rem;
+  padding: 0.5rem 0.75rem !important; /* Smaller padding */
   background: transparent;
   color: #6f8db3;
   text-decoration: none !important;
   text-align: center;
   font-family: var(--font-heading);
   font-weight: 400;
+  font-size: 0.95rem !important; /* Slightly smaller font */
   transition: color 0.3s ease;
   border: none;
   box-shadow: none;
@@ -912,6 +1809,129 @@ div.wp-caption img {
   color: #775029;
   transform: none;
   box-shadow: none;
+}
+
+/* FAQ Accordion Section */
+.entry-content .faq-accordion,
+.wp-content .faq-accordion,
+main#content .faq-accordion {
+  margin: 2rem 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0.75rem !important;
+}
+
+.entry-content .faq-item,
+.wp-content .faq-item,
+main#content .faq-item {
+  border-radius: 0.75rem !important;
+  overflow: hidden !important;
+  transition: all 0.3s ease !important;
+}
+
+.entry-content .faq-item.open,
+.wp-content .faq-item.open,
+main#content .faq-item.open {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+}
+
+.entry-content .faq-header,
+.wp-content .faq-header,
+main#content .faq-header {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 1rem 1.5rem !important;
+  cursor: pointer !important;
+  transition: all 0.3s ease !important;
+  background: #e8ebef !important; /* Light gray for closed items */
+  border-radius: 0.75rem !important;
+}
+
+.entry-content .faq-item.open .faq-header,
+.wp-content .faq-item.open .faq-header,
+main#content .faq-item.open .faq-header {
+  background: #6f8db3 !important; /* Blue for open items */
+  border-radius: 0.75rem 0.75rem 0 0 !important;
+}
+
+.entry-content .faq-question,
+.wp-content .faq-question,
+main#content .faq-question {
+  margin: 0 !important;
+  font-size: 1rem !important;
+  font-weight: 600 !important;
+  color: #38475a !important; /* Dark gray text for closed items */
+  font-family: var(--font-heading) !important;
+  line-height: 1.5 !important;
+  flex: 1 !important;
+  text-align: left !important;
+}
+
+.entry-content .faq-item.open .faq-question,
+.wp-content .faq-item.open .faq-question,
+main#content .faq-item.open .faq-question {
+  color: #fff !important; /* White text for open items */
+}
+
+.entry-content .faq-icon,
+.wp-content .faq-icon,
+main#content .faq-icon {
+  font-size: 1.5rem !important;
+  font-weight: 300 !important;
+  color: #38475a !important; /* Dark gray icon for closed items */
+  line-height: 1 !important;
+  margin-left: 1rem !important;
+  flex-shrink: 0 !important;
+  width: 1.5rem !important;
+  height: 1.5rem !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.entry-content .faq-item.open .faq-icon,
+.wp-content .faq-item.open .faq-icon,
+main#content .faq-item.open .faq-icon {
+  color: #fff !important; /* White icon for open items */
+  font-size: 1.75rem !important;
+}
+
+.entry-content .faq-content,
+.wp-content .faq-content,
+main#content .faq-content {
+  padding: 1.25rem 1.5rem !important;
+  background: #fff !important;
+  border-radius: 0 0 0.75rem 0.75rem !important;
+  display: none !important;
+}
+
+.entry-content .faq-item.open .faq-content,
+.wp-content .faq-item.open .faq-content,
+main#content .faq-item.open .faq-content {
+  display: block !important;
+}
+
+.entry-content .faq-content p,
+.wp-content .faq-content p,
+main#content .faq-content p {
+  margin: 0 !important;
+  color: #797778 !important;
+  line-height: 1.6 !important;
+  font-size: 0.95rem !important;
+}
+
+.entry-content .faq-content a,
+.wp-content .faq-content a,
+main#content .faq-content a {
+  color: #6f8db3 !important;
+  text-decoration: underline !important;
+}
+
+.entry-content .faq-content a:hover,
+.wp-content .faq-content a:hover,
+main#content .faq-content a:hover {
+  color: #775029 !important;
 }
 
 /* Legacy support for old class names */
@@ -955,23 +1975,100 @@ div.wp-caption img {
 
 .site-btn a,
 .site-btn > a {
-  display: inline-block;
+  display: inline-block !important;
   padding: 0.75rem 1.5rem;
-  background: var(--primary);
-  color: #fff;
-  text-decoration: none;
+  background: #775029 !important; /* Brown background - variety */
+  background-color: #775029 !important; /* Force background color */
+  background-image: none !important; /* Remove any background images */
+  color: #fff !important; /* WHITE text */
+  text-decoration: none !important;
   border-radius: var(--btn-border-radius);
   font-family: var(--font-heading);
   font-weight: 500;
   transition: background 0.3s;
-  border: 2px solid var(--primary);
+  border: 2px solid #775029 !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+/* Ensure buttons are visible - override any link color rules */
+/* NOTE: Image card buttons have their own styles defined earlier with higher specificity */
+.entry-content .site-btn a,
+.entry-content .site-btn > a,
+.wp-content .site-btn a,
+.wp-content .site-btn > a,
+main#content .site-btn a,
+main#content .site-btn > a {
+  color: #fff !important; /* WHITE text */
+  opacity: 1 !important;
+  visibility: visible !important;
+  background: #775029 !important; /* Brown background - variety */
+  background-color: #775029 !important;
+}
+
+/* CRITICAL: Image card buttons MUST override general button styles - placed AFTER general rule */
+.entry-content .image-card .site-btn a,
+.entry-content .image-card .site-btn > a,
+.wp-content .image-card .site-btn a,
+.wp-content .image-card .site-btn > a,
+.entry-content .site-grid--2x1.double .image-card .site-btn a,
+.entry-content .site-grid--2x1.double .image-card .site-btn > a,
+.wp-content .site-grid--2x1.double .image-card .site-btn a,
+.wp-content .site-grid--2x1.double .image-card .site-btn > a {
+  background: #775029 !important; /* Brown background for image card buttons - variety */
+  background-color: #775029 !important;
+  background-image: none !important;
+  color: #fff !important; /* WHITE text */
+  border-color: #775029 !important;
+}
+
+/* Ensure ALL buttons are visible - catch any missed cases */
+.entry-content a.button,
+.entry-content a.btn,
+.wp-content a.button,
+.wp-content a.btn,
+main#content a.button,
+main#content a.btn,
+.entry-content .button,
+.entry-content .btn,
+.wp-content .button,
+.wp-content .btn,
+main#content .button,
+main#content .btn {
+  opacity: 1 !important;
+  visibility: visible !important;
+  display: inline-block !important;
+}
+
+/* Read more buttons specifically - target by href or class */
+.entry-content a[href*="read-more"],
+.entry-content a[href*="readmore"],
+.wp-content a[href*="read-more"],
+.wp-content a[href*="readmore"],
+main#content a[href*="read-more"],
+main#content a[href*="readmore"],
+.entry-content a.read-more,
+.entry-content a.readmore,
+.wp-content a.read-more,
+.wp-content a.readmore,
+main#content a.read-more,
+main#content a.readmore {
+  color: #fff !important;
+  background: var(--primary) !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  display: inline-block !important;
+  padding: 0.75rem 1.5rem !important;
+  border-radius: var(--btn-border-radius) !important;
+  text-decoration: none !important;
+  border: 2px solid var(--primary) !important;
 }
 
 .site-btn a:hover,
 .site-btn > a:hover {
-  background: var(--primary-hover);
-  border-color: var(--primary-hover);
-  color: #fff;
+  background: #85623e !important; /* Brown on hover - variety */
+  border-color: #85623e !important;
+  color: #fff !important;
 }
 
 .site-btn.btn-outline a {
@@ -1034,6 +2131,108 @@ div.wp-caption img {
   .links {
     grid-template-columns: 1fr;
   }
+}
+
+/* Reviews Container - Simple and Clean */
+.entry-content .reviews-container,
+.wp-content .reviews-container,
+main#content .reviews-container {
+  display: grid !important;
+  grid-template-columns: repeat(3, 1fr) !important;
+  gap: 1.5rem !important;
+  margin: 2rem 0 !important;
+}
+
+@media (max-width: 62rem) {
+  .entry-content .reviews-container,
+  .wp-content .reviews-container,
+  main#content .reviews-container {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* Review Card Styles - Simple and Neat */
+.entry-content .review-card,
+.wp-content .review-card,
+main#content .review-card {
+  background: #e8ebef !important; /* Light gray-blue background */
+  border-radius: 1rem !important;
+  padding: 1.5rem !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.entry-content .review-header,
+.wp-content .review-header,
+main#content .review-header {
+  display: flex !important;
+  align-items: baseline !important;
+  gap: 0.75rem !important;
+  margin-bottom: 0.5rem !important;
+}
+
+.entry-content .review-name,
+.wp-content .review-name,
+main#content .review-name {
+  font-weight: 600 !important;
+  color: #38475a !important;
+  font-size: 1rem !important;
+  margin: 0 !important;
+}
+
+.entry-content .review-date,
+.wp-content .review-date,
+main#content .review-date {
+  font-size: 0.9rem !important;
+  color: #797778 !important;
+  margin: 0 !important;
+}
+
+.entry-content .review-stars,
+.wp-content .review-stars,
+main#content .review-stars {
+  color: #FFA500 !important;
+  font-size: 1.1rem !important;
+  margin-bottom: 0.75rem !important;
+  letter-spacing: 0.1rem !important;
+}
+
+.entry-content .review-title,
+.wp-content .review-title,
+main#content .review-title {
+  color: #85623e !important; /* Brown color - variety */
+  font-weight: 700 !important;
+  font-size: 1.1rem !important;
+  margin: 0 0 0.75rem 0 !important;
+  line-height: 1.3 !important;
+}
+
+.entry-content .review-text,
+.wp-content .review-text,
+main#content .review-text {
+  color: #797778 !important;
+  line-height: 1.6 !important;
+  font-size: 0.95rem !important;
+  margin: 0 0 1rem 0 !important;
+  flex: 1 !important;
+}
+
+.entry-content .review-read-more,
+.wp-content .review-read-more,
+main#content .review-read-more {
+  color: #85623e !important; /* Brown color - variety */
+  text-decoration: none !important;
+  font-weight: 500 !important;
+  font-size: 0.95rem !important;
+  margin-top: auto !important;
+}
+
+.entry-content .review-read-more:hover,
+.wp-content .review-read-more:hover,
+main#content .review-read-more:hover {
+  color: #775029 !important; /* Darker brown on hover */
+  text-decoration: underline !important;
 }
 
 @media(max-width:36rem) {
@@ -1143,6 +2342,14 @@ aside#sidebar {
   text-transform: none;
 }
 
+/* Ensure checklist widget title is white */
+.widget-checklist .widget-header h3,
+.widget-checklist .widget-header h3 *,
+.widget-checklist h3,
+#sidebar .widget-checklist .widget-header h3 {
+  color: #fff !important;
+}
+
 .widget-body {
   background-color: var(--ultralight);
   padding: 1.25rem;
@@ -1235,6 +2442,207 @@ aside#sidebar {
   border: 1px solid #e9e9e9;
   max-width: 100%;
   overflow: hidden;
+}
+
+/* Checklist Widget */
+.widget-checklist {
+  border-radius: var(--border-radius);
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  border: 1px solid var(--primary-80);
+  margin-bottom: 2rem;
+}
+
+.checklist-body {
+  background-color: var(--ultralight);
+  padding: 1.25rem;
+}
+
+.checklist-section {
+  margin-bottom: 1.5rem;
+}
+
+.checklist-section:last-child {
+  margin-bottom: 0;
+}
+
+.checklist-section-title {
+  font-family: var(--font-heading);
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--primary-50);
+  margin: 0 0 0.75rem 0;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid var(--primary-160);
+}
+
+.checklist-item {
+  display: flex;
+  align-items: center;
+  padding: 0.5rem 0;
+  font-size: 0.9rem;
+  gap: 0.5rem;
+}
+
+.checklist-checkbox {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.25rem;
+  height: 1.25rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text);
+  flex-shrink: 0;
+}
+
+.checklist-checkbox.checked {
+  color: #28a745 !important; /* Green for checkmarks */
+}
+
+.checklist-checkbox.unchecked {
+  color: #dc3545;
+}
+
+.checklist-label {
+  color: var(--secondary);
+  font-weight: 500;
+  flex: 1;
+}
+
+.checklist-value {
+  color: var(--text);
+  font-weight: 400;
+}
+
+.checklist-value.checklist-complete {
+  color: #775029;
+  font-weight: 600;
+}
+
+.checklist-value.checklist-incomplete {
+  color: #dc3545;
+  font-weight: 500;
+}
+
+.checklist-summary {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 2px solid var(--primary-160);
+}
+
+.checklist-progress {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem;
+  background: #fff;
+  border-radius: 0.5rem;
+  border: 1px solid var(--primary-160);
+}
+
+.checklist-progress-label {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  color: var(--primary-50);
+  font-size: 0.95rem;
+}
+
+.checklist-progress-value {
+  font-family: var(--font-heading);
+  font-weight: 800;
+  color: var(--primary);
+  font-size: 1.1rem;
+}
+
+/* HTML Validation Errors */
+.checklist-validation-errors {
+  margin-top: 0.75rem;
+  padding: 0.75rem;
+  background: rgba(220, 53, 69, 0.1);
+  border-radius: 0.5rem;
+  border: 1px solid rgba(220, 53, 69, 0.3);
+}
+
+/* HTML Validation Success */
+.checklist-validation-success {
+  margin-top: 0.75rem;
+  padding: 0.75rem;
+  background: rgba(40, 167, 69, 0.1);
+  border-radius: 0.5rem;
+  border: 1px solid rgba(40, 167, 69, 0.3);
+}
+
+.checklist-success-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: #28a745;
+}
+
+.checklist-success-icon {
+  font-size: 1rem;
+  flex-shrink: 0;
+  font-weight: 700;
+}
+
+.checklist-success-text {
+  flex: 1;
+  line-height: 1.4;
+  color: #28a745;
+  font-weight: 500;
+}
+
+.checklist-error-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.5rem 0;
+  font-size: 0.85rem;
+  color: #dc3545;
+}
+
+.checklist-error-item:has(.checklist-error-button) {
+  align-items: center;
+}
+
+.checklist-error-item:not(:last-child) {
+  border-bottom: 1px solid rgba(220, 53, 69, 0.2);
+  padding-bottom: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.checklist-error-icon {
+  font-size: 1rem;
+  flex-shrink: 0;
+  margin-top: 0.1rem;
+}
+
+.checklist-error-text {
+  flex: 1;
+  line-height: 1.4;
+  color: #dc3545;
+  font-weight: 500;
+}
+
+.checklist-error-button {
+  padding: 0.35rem 0.75rem !important;
+  background: #6f8db3 !important;
+  color: #fff !important;
+  border: none !important;
+  border-radius: 0.5rem !important;
+  font-size: 0.8rem !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  transition: background 0.2s !important;
+  font-family: var(--font-heading) !important;
+  white-space: nowrap !important;
+  flex-shrink: 0 !important;
+}
+
+.checklist-error-button:hover {
+  background: #5a7ba0 !important;
 }
 
 .widget-reviews h3 {

@@ -491,6 +491,117 @@ const HtmlBuilder: React.FC = () => {
     }
   }, [taskId, tasksLoading, tasks, setCurrentTask, navigate, isImagesOnlyMode]);
 
+  // Handle error position from query parameter
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    const errorPos = searchParams.get('errorPos');
+    
+    if (errorPos && htmlContent && editorRef.current) {
+      const position = parseInt(errorPos, 10);
+      if (!isNaN(position) && position >= 0 && position <= htmlContent.length) {
+        // Wait a bit for editor to be ready
+        setTimeout(async () => {
+          const view = editorRef.current?.getView();
+          if (view) {
+            try {
+              // Import CodeMirror modules
+              const { EditorSelection } = await import('@codemirror/state');
+              const { EditorView } = await import('@codemirror/view');
+              
+              // Ensure position is within document bounds
+              const docLength = view.state.doc.length;
+              const safePosition = Math.min(Math.max(0, position), docLength - 1);
+              
+              console.log('Navigating to error position:', safePosition, 'of', docLength);
+              
+              // Get the line containing the error position
+              // Use lineAt with a position that's guaranteed to be within a line
+              let line;
+              try {
+                line = view.state.doc.lineAt(safePosition);
+              } catch (e) {
+                // If position is at the very end, get the last line
+                const lastLine = view.state.doc.line(view.state.doc.lines);
+                line = lastLine;
+              }
+              
+              const lineStart = line.from;
+              const lineEnd = line.to;
+              const lineText = view.state.doc.sliceString(lineStart, lineEnd);
+              const positionInLine = safePosition - lineStart;
+              
+              console.log('Line info:', { lineStart, lineEnd, positionInLine, lineText: lineText.substring(0, 50) });
+              
+              // The position from validation is at the start of the tag (the '<' character)
+              // Find the end of the tag by looking for '>'
+              let tagStart = safePosition;
+              let tagEnd = safePosition;
+              
+              // Verify we're at a '<' or find it nearby
+              if (positionInLine >= 0 && positionInLine < lineText.length) {
+                if (lineText[positionInLine] === '<') {
+                  tagStart = safePosition;
+                } else {
+                  // Look backwards for '<'
+                  for (let i = Math.min(positionInLine, lineText.length - 1); i >= 0; i--) {
+                    if (lineText[i] === '<') {
+                      tagStart = lineStart + i;
+                      break;
+                    }
+                  }
+                }
+                
+                // Look forwards for '>' to find the end of the tag
+                const searchStart = tagStart - lineStart;
+                for (let i = searchStart; i < lineText.length; i++) {
+                  if (lineText[i] === '>') {
+                    tagEnd = lineStart + i + 1; // Include the '>'
+                    break;
+                  }
+                }
+              }
+              
+              // If we didn't find a complete tag, select a reasonable range
+              if (tagEnd <= tagStart) {
+                tagEnd = Math.min(lineEnd, tagStart + 30);
+              }
+              
+              console.log('Tag bounds:', { tagStart, tagEnd, scrollPos: tagStart });
+              
+              // Select the tag (or a range around the position)
+              const selectStart = Math.max(lineStart, tagStart);
+              const selectEnd = Math.min(lineEnd, tagEnd);
+              
+              // Select and scroll to the error location
+              const highlightTransaction = view.state.update({
+                selection: EditorSelection.range(selectStart, selectEnd),
+                effects: EditorView.scrollIntoView(tagStart, { y: 'center' })
+              });
+              view.dispatch(highlightTransaction);
+              
+              // Focus the editor
+              view.focus();
+              
+              // Remove the query parameter after handling
+              const newSearch = new URLSearchParams(location.search);
+              newSearch.delete('errorPos');
+              navigate(`${location.pathname}${newSearch.toString() ? '?' + newSearch.toString() : ''}`, { replace: true });
+              
+              toast({
+                title: "Error location highlighted",
+                description: "The error location has been highlighted in the editor.",
+                duration: 3000
+              });
+            } catch (error) {
+              console.error('Error scrolling to position:', error);
+              console.error('Position:', position, 'HTML length:', htmlContent.length);
+            }
+          }
+        }, 800); // Increased timeout to ensure editor is fully ready
+      }
+    }
+  }, [location.search, htmlContent, navigate, location.pathname, toast]);
+
   // Save all changes (used for HTML editor and manual saves)
   const saveChanges = async () => {
     if (currentTask?.id) {

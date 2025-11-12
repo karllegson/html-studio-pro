@@ -16,6 +16,8 @@ export interface Company {
   fileSuffix: string;
   /** Optional company info for display */
   info?: string;
+  /** Optional logo URL for the company */
+  logoUrl?: string;
 }
 
 /**
