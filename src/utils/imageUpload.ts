@@ -10,7 +10,7 @@ const MAX_FILE_SIZE = 50 * 1024 * 1024;
 /**
  * Allowed image MIME types
  */
-const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/tiff', 'image/tif'];
 
 /**
  * Result of an image upload operation
@@ -28,7 +28,7 @@ interface UploadResult {
  */
 const validateFile = (file: File): string | undefined => {
   if (!ALLOWED_TYPES.includes(file.type)) {
-    return 'Invalid file type. Only JPEG, PNG, GIF, and WebP images are allowed.';
+    return 'Invalid file type. Only JPEG, PNG, GIF, WebP, and TIFF images are allowed.';
   }
   if (file.size > MAX_FILE_SIZE) {
     return 'File is too large. Maximum size is 50MB.';
