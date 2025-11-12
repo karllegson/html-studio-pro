@@ -465,6 +465,9 @@ main#content hr {
   font-family: var(--font-heading);
   font-weight: 600;
   font-size: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .site-header-top-row li,
@@ -2842,9 +2845,32 @@ footer hr {
   display: none;
 }
 
+/* Map Container */
+.entry-content .map-container,
+.wp-content .map-container,
+main#content .map-container {
+  margin: 2rem 0 !important;
+  width: 100%;
+}
+
+.entry-content .map-container iframe,
+.wp-content .map-container iframe,
+main#content .map-container iframe {
+  width: 100% !important;
+  height: 450px !important;
+  border: none !important;
+  border-radius: var(--border-radius) !important;
+}
+
 @media (max-width: 62rem) {
   #header nav {
     display: none;
+  }
+  
+  .entry-content .map-container iframe,
+  .wp-content .map-container iframe,
+  main#content .map-container iframe {
+    height: 300px !important;
   }
 }
 

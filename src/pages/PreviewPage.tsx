@@ -763,6 +763,17 @@ export default function PreviewPage() {
                 className="wp-content"
                 dangerouslySetInnerHTML={{ __html: processHtmlContent(task.htmlContent) }}
               />
+              
+              {/* Map Section - After FAQ */}
+              {task.mapsEmbedCode && (
+                <>
+                  <hr />
+                  <div
+                    className="map-container"
+                    dangerouslySetInnerHTML={{ __html: task.mapsEmbedCode }}
+                  />
+                </>
+              )}
             </article>
 
             {/* Sidebar */}
@@ -945,40 +956,6 @@ export default function PreviewPage() {
         </div>
       </main>
 
-      {/* Footer */}
-      <footer>
-        <div className="site-container">
-          <div className="site-grid footer-grid">
-            <div className="footer-column">
-              <h5>Our Services</h5>
-              <ul>
-                <li><a href="#">Roofing</a></li>
-                <li><a href="#">Siding</a></li>
-                <li><a href="#">Windows</a></li>
-                <li><a href="#">Baths</a></li>
-              </ul>
-            </div>
-            <div className="footer-column">
-              <h5>Why Us</h5>
-              <ul>
-                <li><a href="#">Our Team</a></li>
-                <li><a href="#">Reviews</a></li>
-                <li><a href="#">FAQ</a></li>
-              </ul>
-            </div>
-            <div className="footer-column">
-              <h5>Contact</h5>
-              <p>
-                <a href="tel:262-123-4567">(262) 123-4567</a>
-              </p>
-            </div>
-          </div>
-          <hr />
-          <p className="footer-copyright">
-            © 2025 Exterior Pros & Baths. All rights reserved.
-          </p>
-        </div>
-      </footer>
     </div>
   );
 }
