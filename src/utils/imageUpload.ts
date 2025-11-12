@@ -3,9 +3,9 @@ import { ref, uploadBytes, getDownloadURL, deleteObject, uploadBytesResumable } 
 import { TaskImage } from '@/types';
 
 /**
- * Maximum file size in bytes (65MB)
+ * Maximum file size in bytes (70MB)
  */
-const MAX_FILE_SIZE = 65 * 1024 * 1024;
+const MAX_FILE_SIZE = 70 * 1024 * 1024;
 
 /**
  * Allowed image MIME types
@@ -31,7 +31,7 @@ const validateFile = (file: File): string | undefined => {
     return 'Invalid file type. Only JPEG, PNG, GIF, WebP, and TIFF images are allowed.';
   }
   if (file.size > MAX_FILE_SIZE) {
-    return 'File is too large. Maximum size is 65MB.';
+    return 'File is too large. Maximum size is 70MB.';
   }
   return undefined;
 };
