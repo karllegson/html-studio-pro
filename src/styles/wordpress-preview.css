@@ -2874,3 +2874,496 @@ main#content .map-container iframe {
   }
 }
 
+/* Highlight Box - Clean Text Block Design with Grey Background */
+.entry-content .highlight-box,
+.wp-content .highlight-box,
+main#content .highlight-box {
+  background: #f5f5f5 !important;
+  border-radius: 0.5rem !important;
+  padding: 2.5rem 2rem !important;
+  margin: 2.5rem 0 !important;
+  border: 1px solid #e0e0e0 !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08) !important;
+  font-family: var(--font-text) !important;
+  line-height: 1.8 !important;
+  max-width: 100% !important;
+}
+
+/* Main title in highlight box - Left-aligned and bold */
+.entry-content .highlight-box > h1:first-child,
+.entry-content .highlight-box > h2:first-child,
+.entry-content .highlight-box > h3:first-child,
+.entry-content .highlight-box > .title:first-child,
+.wp-content .highlight-box > h1:first-child,
+.wp-content .highlight-box > h2:first-child,
+.wp-content .highlight-box > h3:first-child,
+.wp-content .highlight-box > .title:first-child,
+main#content .highlight-box > h1:first-child,
+main#content .highlight-box > h2:first-child,
+main#content .highlight-box > h3:first-child,
+main#content .highlight-box > .title:first-child {
+  font-family: var(--font-heading) !important;
+  font-weight: 700 !important;
+  font-size: 2rem !important;
+  color: #000 !important;
+  text-align: left !important;
+  margin: 0 0 1.5rem 0 !important;
+  line-height: 1.4 !important;
+  text-transform: none !important;
+}
+
+/* All headings in highlight box */
+.entry-content .highlight-box h1,
+.entry-content .highlight-box h2,
+.entry-content .highlight-box h3,
+.entry-content .highlight-box h4,
+.entry-content .highlight-box h5,
+.entry-content .highlight-box h6,
+.entry-content .highlight-box .title,
+.wp-content .highlight-box h1,
+.wp-content .highlight-box h2,
+.wp-content .highlight-box h3,
+.wp-content .highlight-box h4,
+.wp-content .highlight-box h5,
+.wp-content .highlight-box h6,
+.wp-content .highlight-box .title,
+main#content .highlight-box h1,
+main#content .highlight-box h2,
+main#content .highlight-box h3,
+main#content .highlight-box h4,
+main#content .highlight-box h5,
+main#content .highlight-box h6,
+main#content .highlight-box .title {
+  font-family: var(--font-heading) !important;
+  font-weight: 600 !important;
+  color: #000 !important;
+  margin: 0 0 1rem 0 !important;
+  line-height: 1.5 !important;
+  text-transform: none !important;
+  text-align: left !important;
+}
+
+.entry-content .highlight-box h1,
+.wp-content .highlight-box h1,
+main#content .highlight-box h1 {
+  font-size: 2rem !important;
+}
+
+.entry-content .highlight-box h2,
+.wp-content .highlight-box h2,
+main#content .highlight-box h2 {
+  font-size: 1.75rem !important;
+}
+
+.entry-content .highlight-box h3,
+.entry-content .highlight-box .title,
+.wp-content .highlight-box h3,
+.wp-content .highlight-box .title,
+main#content .highlight-box h3,
+main#content .highlight-box .title {
+  font-size: 1.5rem !important;
+}
+
+.entry-content .highlight-box h4,
+.wp-content .highlight-box h4,
+main#content .highlight-box h4 {
+  font-size: 1.25rem !important;
+}
+
+/* Paragraphs in highlight box */
+.entry-content .highlight-box p,
+.wp-content .highlight-box p,
+main#content .highlight-box p {
+  color: #2b2a33 !important;
+  font-size: 1.05rem !important;
+  line-height: 1.8 !important;
+  margin: 0 0 1.5rem 0 !important;
+  font-weight: 400 !important;
+  text-align: left !important;
+}
+
+.entry-content .highlight-box p:last-child,
+.wp-content .highlight-box p:last-child,
+main#content .highlight-box p:last-child {
+  margin-bottom: 0 !important;
+}
+
+/* Links in highlight box - Light blue color with underline */
+.entry-content .highlight-box a,
+.wp-content .highlight-box a,
+main#content .highlight-box a {
+  color: #2271b1 !important;
+  text-decoration: underline !important;
+  font-weight: 500 !important;
+  transition: color 0.25s ease !important;
+  cursor: pointer !important;
+}
+
+.entry-content .highlight-box a:hover,
+.wp-content .highlight-box a:hover,
+main#content .highlight-box a:hover {
+  color: #135e96 !important;
+  text-decoration: underline !important;
+}
+
+/* Links that are headings/subheadings */
+.entry-content .highlight-box h1 a,
+.entry-content .highlight-box h2 a,
+.entry-content .highlight-box h3 a,
+.entry-content .highlight-box h4 a,
+.entry-content .highlight-box h5 a,
+.entry-content .highlight-box h6 a,
+.entry-content .highlight-box .title a,
+.wp-content .highlight-box h1 a,
+.wp-content .highlight-box h2 a,
+.wp-content .highlight-box h3 a,
+.wp-content .highlight-box h4 a,
+.wp-content .highlight-box h5 a,
+.wp-content .highlight-box h6 a,
+.wp-content .highlight-box .title a,
+main#content .highlight-box h1 a,
+main#content .highlight-box h2 a,
+main#content .highlight-box h3 a,
+main#content .highlight-box h4 a,
+main#content .highlight-box h5 a,
+main#content .highlight-box h6 a,
+main#content .highlight-box .title a {
+  color: #2271b1 !important;
+  text-decoration: underline !important;
+  font-weight: 600 !important;
+}
+
+.entry-content .highlight-box h1 a:hover,
+.entry-content .highlight-box h2 a:hover,
+.entry-content .highlight-box h3 a:hover,
+.entry-content .highlight-box h4 a:hover,
+.entry-content .highlight-box h5 a:hover,
+.entry-content .highlight-box h6 a:hover,
+.entry-content .highlight-box .title a:hover,
+.wp-content .highlight-box h1 a:hover,
+.wp-content .highlight-box h2 a:hover,
+.wp-content .highlight-box h3 a:hover,
+.wp-content .highlight-box h4 a:hover,
+.wp-content .highlight-box h5 a:hover,
+.wp-content .highlight-box h6 a:hover,
+.wp-content .highlight-box .title a:hover,
+main#content .highlight-box h1 a:hover,
+main#content .highlight-box h2 a:hover,
+main#content .highlight-box h3 a:hover,
+main#content .highlight-box h4 a:hover,
+main#content .highlight-box h5 a:hover,
+main#content .highlight-box h6 a:hover,
+main#content .highlight-box .title a:hover {
+  color: #135e96 !important;
+}
+
+/* Ensure links in paragraphs are styled correctly */
+.entry-content .highlight-box p a,
+.wp-content .highlight-box p a,
+main#content .highlight-box p a {
+  color: #2271b1 !important;
+  text-decoration: underline !important;
+  font-weight: 500 !important;
+}
+
+.entry-content .highlight-box p a:hover,
+.wp-content .highlight-box p a:hover,
+main#content .highlight-box p a:hover {
+  color: #135e96 !important;
+}
+
+/* Bold text in highlight box */
+.entry-content .highlight-box strong,
+.entry-content .highlight-box b,
+.wp-content .highlight-box strong,
+.wp-content .highlight-box b,
+main#content .highlight-box strong,
+main#content .highlight-box b {
+  font-weight: 600 !important;
+  color: #000 !important;
+}
+
+/* Remove any background or border that might interfere */
+.entry-content .highlight-box *,
+.wp-content .highlight-box *,
+main#content .highlight-box * {
+  max-width: 100% !important;
+}
+
+/* Ensure no button styles interfere with links */
+.entry-content .highlight-box a:not(.site-btn a):not(.button):not(.btn),
+.wp-content .highlight-box a:not(.site-btn a):not(.button):not(.btn),
+main#content .highlight-box a:not(.site-btn a):not(.button):not(.btn) {
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+  display: inline !important;
+}
+
+/* ==========================================================================
+  Site Tabs - Tabbed Content Component
+  ========================================================================== */
+
+/* Tab Container */
+.entry-content .site-tabs,
+.wp-content .site-tabs,
+main#content .site-tabs {
+  margin: 2.5rem 0 !important;
+  font-family: var(--font-text) !important;
+}
+
+/* Tabs List - Horizontal container for tabs */
+.entry-content .site-tabs .tabs,
+.wp-content .site-tabs .tabs,
+main#content .site-tabs .tabs {
+  display: flex !important;
+  gap: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  list-style: none !important;
+  border: none !important;
+  background: transparent !important;
+}
+
+/* Individual Tab Button */
+.entry-content .site-tabs .tabs .tab,
+.wp-content .site-tabs .tabs .tab,
+main#content .site-tabs .tabs .tab {
+  padding: 1rem 1.5rem !important;
+  font-family: var(--font-heading) !important;
+  font-weight: 600 !important;
+  font-size: 1rem !important;
+  cursor: pointer !important;
+  border: none !important;
+  background: #f0f8ff !important; /* Very light blue/white for unselected */
+  color: #2b2a33 !important; /* Dark gray/black text for unselected */
+  border-radius: 0.5rem 0.5rem 0 0 !important; /* Rounded top corners */
+  margin-right: 0.25rem !important;
+  transition: all 0.3s ease !important;
+  position: relative !important;
+  z-index: 1 !important;
+  text-align: center !important;
+  white-space: nowrap !important;
+}
+
+/* Selected/Active Tab */
+.entry-content .site-tabs .tabs .tab[tabindex="0"],
+.entry-content .site-tabs .tabs .tab.active,
+.wp-content .site-tabs .tabs .tab[tabindex="0"],
+.wp-content .site-tabs .tabs .tab.active,
+main#content .site-tabs .tabs .tab[tabindex="0"],
+main#content .site-tabs .tabs .tab.active {
+  background: #4a90e2 !important; /* Solid blue for selected */
+  color: #fff !important; /* White text */
+  z-index: 2 !important;
+  border-bottom: 2px solid #fff !important; /* Connect with content box */
+}
+
+/* Tab Hover State */
+.entry-content .site-tabs .tabs .tab:hover:not([tabindex="0"]):not(.active),
+.wp-content .site-tabs .tabs .tab:hover:not([tabindex="0"]):not(.active),
+main#content .site-tabs .tabs .tab:hover:not([tabindex="0"]):not(.active) {
+  background: #e6f2ff !important; /* Slightly darker light blue on hover */
+  color: #2b2a33 !important;
+}
+
+/* Tab Contents Container */
+.entry-content .site-tabs .tab-contents,
+.wp-content .site-tabs .tab-contents,
+main#content .site-tabs .tab-contents {
+  background: #fff !important;
+  border: 2px solid #b3d9ff !important; /* Light blue border */
+  border-top: 2px solid #4a90e2 !important; /* Match selected tab background (solid blue) */
+  border-radius: 0 0.5rem 0.5rem 0.5rem !important; /* Rounded bottom and top-right corners */
+  padding: 2rem !important;
+  margin-top: -2px !important; /* Connect with selected tab */
+  position: relative !important;
+  z-index: 0 !important;
+  min-height: 200px !important;
+}
+
+/* Individual Tab Content Panel */
+.entry-content .site-tabs .tab-contents .content,
+.wp-content .site-tabs .tab-contents .content,
+main#content .site-tabs .tab-contents .content {
+  display: none !important;
+}
+
+/* Show active tab content - use class-based approach */
+.entry-content .site-tabs .tab-contents .content.active,
+.entry-content .site-tabs .tab-contents .content:first-child:not(.hidden),
+.wp-content .site-tabs .tab-contents .content.active,
+.wp-content .site-tabs .tab-contents .content:first-child:not(.hidden),
+main#content .site-tabs .tab-contents .content.active,
+main#content .site-tabs .tab-contents .content:first-child:not(.hidden) {
+  display: block !important;
+}
+
+/* Content Heading */
+.entry-content .site-tabs .tab-contents .content h1,
+.entry-content .site-tabs .tab-contents .content h2,
+.entry-content .site-tabs .tab-contents .content h3,
+.entry-content .site-tabs .tab-contents .content h4,
+.entry-content .site-tabs .tab-contents .content h5,
+.entry-content .site-tabs .tab-contents .content h6,
+.wp-content .site-tabs .tab-contents .content h1,
+.wp-content .site-tabs .tab-contents .content h2,
+.wp-content .site-tabs .tab-contents .content h3,
+.wp-content .site-tabs .tab-contents .content h4,
+.wp-content .site-tabs .tab-contents .content h5,
+.wp-content .site-tabs .tab-contents .content h6,
+main#content .site-tabs .tab-contents .content h1,
+main#content .site-tabs .tab-contents .content h2,
+main#content .site-tabs .tab-contents .content h3,
+main#content .site-tabs .tab-contents .content h4,
+main#content .site-tabs .tab-contents .content h5,
+main#content .site-tabs .tab-contents .content h6 {
+  font-family: var(--font-heading) !important;
+  font-weight: 700 !important;
+  color: #2b2a33 !important;
+  margin: 0 0 1rem 0 !important;
+  font-size: 1.5rem !important;
+  line-height: 1.4 !important;
+}
+
+.entry-content .site-tabs .tab-contents .content h4,
+.wp-content .site-tabs .tab-contents .content h4,
+main#content .site-tabs .tab-contents .content h4 {
+  font-size: 1.5rem !important;
+}
+
+/* Content Paragraphs */
+.entry-content .site-tabs .tab-contents .content p,
+.wp-content .site-tabs .tab-contents .content p,
+main#content .site-tabs .tab-contents .content p {
+  color: #2b2a33 !important;
+  font-size: 1.05rem !important;
+  line-height: 1.8 !important;
+  margin: 0 0 1.25rem 0 !important;
+  font-weight: 400 !important;
+}
+
+.entry-content .site-tabs .tab-contents .content p:last-of-type:not(:has(+ ul)):not(:has(+ .button)):not(:has(+ a.button)),
+.wp-content .site-tabs .tab-contents .content p:last-of-type:not(:has(+ ul)):not(:has(+ .button)):not(:has(+ a.button)),
+main#content .site-tabs .tab-contents .content p:last-of-type:not(:has(+ ul)):not(:has(+ .button)):not(:has(+ a.button)) {
+  margin-bottom: 1.5rem !important;
+}
+
+/* Checkmark List in Tab Content */
+.entry-content .site-tabs .tab-contents .content ul,
+.wp-content .site-tabs .tab-contents .content ul,
+main#content .site-tabs .tab-contents .content ul {
+  list-style: none !important;
+  padding: 0 !important;
+  margin: 0 0 1.5rem 0 !important;
+}
+
+.entry-content .site-tabs .tab-contents .content ul li,
+.wp-content .site-tabs .tab-contents .content ul li,
+main#content .site-tabs .tab-contents .content ul li {
+  position: relative !important;
+  padding-left: 1.75rem !important;
+  margin-bottom: 0.75rem !important;
+  color: #2b2a33 !important;
+  font-size: 1.05rem !important;
+  line-height: 1.6 !important;
+}
+
+.entry-content .site-tabs .tab-contents .content ul li::before,
+.wp-content .site-tabs .tab-contents .content ul li::before,
+main#content .site-tabs .tab-contents .content ul li::before {
+  content: '✓' !important;
+  position: absolute !important;
+  left: 0 !important;
+  color: #000 !important;
+  font-weight: 700 !important;
+  font-size: 1rem !important;
+}
+
+/* Images in Tab Content */
+.entry-content .site-tabs .tab-contents .content img,
+.wp-content .site-tabs .tab-contents .content img,
+main#content .site-tabs .tab-contents .content img {
+  width: 100% !important;
+  max-width: 100% !important;
+  height: auto !important;
+  border-radius: 0.5rem !important;
+  margin: 0 0 1.5rem 0 !important;
+  display: block !important;
+}
+
+/* Button/CTA in Tab Content */
+.entry-content .site-tabs .tab-contents .content .button,
+.entry-content .site-tabs .tab-contents .content a.button,
+.wp-content .site-tabs .tab-contents .content .button,
+.wp-content .site-tabs .tab-contents .content a.button,
+main#content .site-tabs .tab-contents .content .button,
+main#content .site-tabs .tab-contents .content a.button {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 0.5rem !important;
+  padding: 0.75rem 1.5rem !important;
+  background: #8b6f47 !important; /* Dark brown/bronze background */
+  color: #fff !important;
+  text-decoration: none !important;
+  border: none !important;
+  border-radius: 0.375rem !important;
+  font-family: var(--font-heading) !important;
+  font-weight: 600 !important;
+  font-size: 1rem !important;
+  transition: all 0.3s ease !important;
+  margin-top: 1rem !important;
+  cursor: pointer !important;
+}
+
+.entry-content .site-tabs .tab-contents .content .button:hover,
+.entry-content .site-tabs .tab-contents .content a.button:hover,
+.wp-content .site-tabs .tab-contents .content .button:hover,
+.wp-content .site-tabs .tab-contents .content a.button:hover,
+main#content .site-tabs .tab-contents .content .button:hover,
+main#content .site-tabs .tab-contents .content a.button:hover {
+  background: #775029 !important; /* Darker brown on hover */
+  color: #fff !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 2px 8px rgba(139, 111, 71, 0.3) !important;
+}
+
+/* Arrow icon after button text */
+.entry-content .site-tabs .tab-contents .content .button::after,
+.entry-content .site-tabs .tab-contents .content a.button::after,
+.wp-content .site-tabs .tab-contents .content .button::after,
+.wp-content .site-tabs .tab-contents .content a.button::after,
+main#content .site-tabs .tab-contents .content .button::after,
+main#content .site-tabs .tab-contents .content a.button::after {
+  content: '→' !important;
+  font-size: 1.1rem !important;
+  line-height: 1 !important;
+  color: #fff !important;
+}
+
+/* Responsive Design */
+@media (max-width: 62rem) {
+  .entry-content .site-tabs .tabs,
+  .wp-content .site-tabs .tabs,
+  main#content .site-tabs .tabs {
+    flex-wrap: wrap !important;
+  }
+  
+  .entry-content .site-tabs .tabs .tab,
+  .wp-content .site-tabs .tabs .tab,
+  main#content .site-tabs .tabs .tab {
+    flex: 1 1 auto !important;
+    min-width: 120px !important;
+    border-radius: 0.5rem 0.5rem 0 0 !important;
+    margin-bottom: 0.25rem !important;
+  }
+  
+  .entry-content .site-tabs .tab-contents,
+  .wp-content .site-tabs .tab-contents,
+  main#content .site-tabs .tab-contents {
+    border-radius: 0.5rem !important;
+    margin-top: 0 !important;
+  }
+}
+

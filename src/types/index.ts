@@ -99,6 +99,12 @@ export interface Task {
   selectedFaqTag?: string;
   /** Checked fields for completion tracking */
   checkedFields?: { [key: string]: boolean };
+  /** HTML code version history (max 4 versions) */
+  htmlVersionHistory?: Array<{
+    content: string;
+    timestamp: string;
+    isCurrent: boolean;
+  }>;
 }
 
 /**

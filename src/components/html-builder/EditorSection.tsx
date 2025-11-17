@@ -1,15 +1,22 @@
 import React, { useRef, useImperativeHandle, forwardRef, useState, useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Copy, Save, Maximize2, Minimize2, Plus, Minus, ArrowDown, Monitor, Eye, EyeOff } from 'lucide-react';
+import { Copy, Save, Maximize2, Minimize2, Plus, Minus, ArrowDown, Monitor, Eye, EyeOff, History } from 'lucide-react';
 import CopyButton from '@/components/ui/CopyButton';
 import CodeMirror from '@uiw/react-codemirror';
 import { html } from '@codemirror/lang-html';
 import { oneDark } from '@codemirror/theme-one-dark';
 import { EditorView } from '@codemirror/view';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 export interface EditorSectionRef {
   getView: () => EditorView | undefined;
+}
+
+interface Version {
+  content: string;
+  timestamp: Date;
+  isCurrent: boolean;
 }
 
 interface EditorSectionProps {
@@ -24,6 +31,9 @@ interface EditorSectionProps {
   setSidebarVisible?: (visible: boolean) => void;
   onHighlight?: () => void;
   highlightDisabled?: boolean;
+  versionHistory?: Version[];
+  onVersionSelect?: (index: number) => void;
+  viewingVersionIndex?: number | null;
 }
 
 // Custom theme for professional dark theme with better code visibility
@@ -55,11 +65,15 @@ export const EditorSection = forwardRef<EditorSectionRef, EditorSectionProps>(({
   setSidebarVisible,
   onHighlight,
   highlightDisabled,
+  versionHistory = [],
+  onVersionSelect,
+  viewingVersionIndex = null,
 }, ref) => {
   const editorDivRef = useRef<HTMLDivElement>(null);
   const editorViewRef = useRef<EditorView | undefined>(undefined);
   const [isExtended, setIsExtended] = useState(false);
   const [fontSize, setFontSize] = useState(16);
+  const [versionHistoryOpen, setVersionHistoryOpen] = useState(false);
   
   useImperativeHandle(ref, () => ({
     getView: () => editorViewRef.current
@@ -138,7 +152,7 @@ export const EditorSection = forwardRef<EditorSectionRef, EditorSectionProps>(({
   );
 
   const renderToolbar = () => (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-2 w-full">
       {/* Group 1: Expand/Sidebar Toggle */}
       <div className="flex items-center gap-2 mr-4">
         <Button 
@@ -183,17 +197,17 @@ export const EditorSection = forwardRef<EditorSectionRef, EditorSectionProps>(({
       <div className="flex items-center gap-2 mr-4">
         <CopyButton value={htmlContent} />
         <Button 
-          variant="outline" 
+          variant="default" 
           size="sm"
           onClick={onSave}
-          className="flex items-center gap-1"
+          className="flex items-center gap-1 bg-green-600 hover:bg-green-700 text-white"
         >
           <Save size={14} />
           Save
         </Button>
       </div>
       {/* Group 4: Scroll/Focus */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 mr-auto">
         <Button
           variant="ghost" 
           size="sm"
@@ -221,6 +235,18 @@ export const EditorSection = forwardRef<EditorSectionRef, EditorSectionProps>(({
           </Tooltip>
         </TooltipProvider>
       </div>
+      {/* Group 5: Version History - Far Right */}
+      <div className="flex items-center gap-2 ml-auto">
+        <Button 
+          variant="outline" 
+          size="sm"
+          onClick={() => setVersionHistoryOpen(true)}
+          className="flex items-center gap-1"
+        >
+          <History size={14} />
+          Version History
+        </Button>
+      </div>
     </div>
   );
 
@@ -240,6 +266,20 @@ export const EditorSection = forwardRef<EditorSectionRef, EditorSectionProps>(({
     </div>
   );
 
+  const formatTimestamp = (date: Date) => {
+    return new Intl.DateTimeFormat('en-US', {
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    }).format(date);
+  };
+
+  // Get all versions including current (if not in history yet)
+  const allVersions = versionHistory.length > 0 
+    ? versionHistory 
+    : [{ content: htmlContent, timestamp: new Date(), isCurrent: true }];
+
   return (
     <div className={`w-full${editorOnlyMode ? ' h-screen overflow-auto bg-background' : ''}`}>
       {isExtended ? (
@@ -249,6 +289,71 @@ export const EditorSection = forwardRef<EditorSectionRef, EditorSectionProps>(({
       ) : (
         editorContainer
       )}
+      
+      {/* Version History Dialog - HTML Code Only */}
+      <Dialog open={versionHistoryOpen} onOpenChange={setVersionHistoryOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh]">
+          <DialogHeader>
+            <DialogTitle>HTML Code Version History</DialogTitle>
+          </DialogHeader>
+          <div className="mt-4">
+            <p className="text-sm text-muted-foreground mb-4">
+              View and restore previous versions of your HTML code. Click a version to preview it in the editor.
+            </p>
+            <div className="space-y-2 max-h-[60vh] overflow-y-auto">
+              {allVersions.map((version, index) => {
+                const isCurrent = index === allVersions.length - 1;
+                const isViewing = viewingVersionIndex === index || (isCurrent && viewingVersionIndex === null);
+                
+                return (
+                  <div
+                    key={index}
+                    onClick={() => {
+                      if (onVersionSelect) {
+                        onVersionSelect(index);
+                      }
+                    }}
+                    className={`p-4 border rounded-lg cursor-pointer transition-all ${
+                      isViewing 
+                        ? 'border-primary bg-primary/10' 
+                        : 'border-border hover:border-primary/50 hover:bg-secondary/50'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        {isCurrent && (
+                          <span className="px-2 py-1 text-xs font-semibold bg-primary text-primary-foreground rounded">
+                            CURRENT
+                          </span>
+                        )}
+                        {isViewing && !isCurrent && (
+                          <span className="px-2 py-1 text-xs font-semibold bg-blue-600 text-white rounded">
+                            VIEWING
+                          </span>
+                        )}
+                        <span className="text-sm font-medium">
+                          Version {allVersions.length - index}
+                        </span>
+                      </div>
+                      <span className="text-xs text-muted-foreground">
+                        {formatTimestamp(version.timestamp)}
+                      </span>
+                    </div>
+                    <div className="mt-2 text-xs text-muted-foreground">
+                      {version.content.length} characters
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            {allVersions.length === 0 && (
+              <div className="text-center py-8 text-muted-foreground">
+                No version history available. Save your HTML code to create versions.
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 });

@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTaskContext } from '../context/TaskContext';
 import { Company, TaskImage } from '../types';
+import { db } from '../firebase/config';
+import { doc, getDoc } from 'firebase/firestore';
 import '../styles/wordpress-preview.css';
 
 /**
@@ -16,6 +18,7 @@ export default function PreviewPage() {
   const { tasks, getCompanyById, companies } = useTaskContext();
   const [task, setTask] = useState<any>(null);
   const [company, setCompany] = useState<Company | null>(null);
+  const [companyFaqTags, setCompanyFaqTags] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -58,9 +61,28 @@ export default function PreviewPage() {
         console.log('Company logoUrl:', foundCompany?.logoUrl);
         console.log('Company name:', foundCompany?.name);
         setCompany(foundCompany || null);
+        
+        // Fetch company FAQ tags
+        if (foundCompany) {
+          const tagsRef = doc(db, 'companyTags', foundTask.companyId);
+          getDoc(tagsRef).then((snap) => {
+            if (snap.exists()) {
+              const tags = snap.data();
+              setCompanyFaqTags(tags.faqTags || []);
+            } else {
+              setCompanyFaqTags([]);
+            }
+          }).catch((error) => {
+            console.error('Error fetching company tags:', error);
+            setCompanyFaqTags([]);
+          });
+        } else {
+          setCompanyFaqTags([]);
+        }
       } else {
         console.log('Task has no companyId');
         setCompany(null);
+        setCompanyFaqTags([]);
       }
       
       setLoading(false);
@@ -113,6 +135,106 @@ export default function PreviewPage() {
     document.addEventListener('click', handleFaqClick);
     return () => {
       document.removeEventListener('click', handleFaqClick);
+    };
+  }, [task]);
+
+  // Handle Site Tabs interactions
+  useEffect(() => {
+    // Initialize tabs - set first tab and content as active
+    const initializeTabs = () => {
+      const allSiteTabs = document.querySelectorAll('.site-tabs');
+      allSiteTabs.forEach((siteTabs) => {
+        const tabs = siteTabs.querySelectorAll('.tab');
+        const contents = siteTabs.querySelectorAll('.tab-contents .content');
+        
+        if (tabs.length === 0 || contents.length === 0) return;
+        
+        // Find the active tab (has tabindex="0" or .active class)
+        let activeIndex = -1;
+        tabs.forEach((tab, index) => {
+          if (tab.hasAttribute('tabindex') || tab.classList.contains('active')) {
+            activeIndex = index;
+          }
+        });
+        
+        // If no active tab found, default to first
+        if (activeIndex === -1) {
+          activeIndex = 0;
+        }
+        
+        // Update all tabs
+        tabs.forEach((t, index) => {
+          if (index === activeIndex) {
+            t.setAttribute('tabindex', '0');
+            t.classList.add('active');
+          } else {
+            t.removeAttribute('tabindex');
+            t.classList.remove('active');
+          }
+        });
+        
+        // Update all content panels
+        contents.forEach((content, index) => {
+          const contentEl = content as HTMLElement;
+          if (index === activeIndex) {
+            contentEl.classList.add('active');
+            contentEl.style.setProperty('display', 'block', 'important');
+          } else {
+            contentEl.classList.remove('active');
+            contentEl.style.setProperty('display', 'none', 'important');
+          }
+        });
+      });
+    };
+    
+    // Initialize on mount and when task changes - use setTimeout to ensure DOM is ready
+    const timeoutId = setTimeout(() => {
+      initializeTabs();
+    }, 100);
+    
+    const handleTabClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      const tab = target.closest('.tab');
+      if (!tab) return;
+
+      const siteTabs = tab.closest('.site-tabs');
+      if (!siteTabs) return;
+
+      const tabs = siteTabs.querySelectorAll('.tab');
+      const contents = siteTabs.querySelectorAll('.tab-contents .content');
+      
+      // Get the index of the clicked tab
+      const tabIndex = Array.from(tabs).indexOf(tab);
+      if (tabIndex === -1) return;
+
+      // Update all tabs
+      tabs.forEach((t, index) => {
+        if (index === tabIndex) {
+          t.setAttribute('tabindex', '0');
+          t.classList.add('active');
+        } else {
+          t.removeAttribute('tabindex');
+          t.classList.remove('active');
+        }
+      });
+
+      // Update all content panels
+      contents.forEach((content, index) => {
+        const contentEl = content as HTMLElement;
+        if (index === tabIndex) {
+          contentEl.classList.add('active');
+          contentEl.style.setProperty('display', 'block', 'important');
+        } else {
+          contentEl.classList.remove('active');
+          contentEl.style.setProperty('display', 'none', 'important');
+        }
+      });
+    };
+
+    document.addEventListener('click', handleTabClick);
+    return () => {
+      clearTimeout(timeoutId);
+      document.removeEventListener('click', handleTabClick);
     };
   }, [task]);
 
@@ -625,6 +747,156 @@ export default function PreviewPage() {
     `;
   };
 
+  // Check if FAQ category in HTML matches company FAQ tags
+  const checkFaqCategory = (htmlContent: string, faqTags: string[]): { matches: boolean; foundCategory: string | null } => {
+    if (!htmlContent || !faqTags || faqTags.length === 0) {
+      return { matches: false, foundCategory: null };
+    }
+
+    // Find FAQ shortcode in HTML
+    const faqMatch = htmlContent.match(/\[faqs\s+category=["']([^"']+)["']\]/i);
+    if (!faqMatch) {
+      // Check for [faqs] without category
+      const faqNoCategory = htmlContent.match(/\[faqs\]/i);
+      if (faqNoCategory) {
+        return { matches: false, foundCategory: '' };
+      }
+      return { matches: false, foundCategory: null };
+    }
+
+    const foundCategory = faqMatch[1].trim();
+    
+    // Check if the category matches any of the company's FAQ tags
+    const matches = faqTags.some(tag => tag.toLowerCase() === foundCategory.toLowerCase());
+
+    return { matches, foundCategory };
+  };
+
+  // Check for empty hrefs in buttons and anchor tags
+  const checkEmptyHrefs = (htmlContent: string): { hasEmptyHref: boolean; firstEmptyHrefPosition: number | null } => {
+    if (!htmlContent) {
+      return { hasEmptyHref: false, firstEmptyHrefPosition: null };
+    }
+
+    // Pattern to match <a> tags with empty or missing href
+    // Matches: href="", href='', href=, or no href attribute at all
+    const anchorPattern = /<a[^>]*>/gi;
+    const buttonPattern = /<button[^>]*>/gi;
+    
+    let firstEmptyPosition: number | null = null;
+
+    // Check all anchor tags
+    let match;
+    while ((match = anchorPattern.exec(htmlContent)) !== null) {
+      const tagContent = match[0];
+      const tagIndex = match.index;
+      
+      // Check for empty href: href="", href='', href=, or no href
+      const hasEmptyHref = 
+        /href\s*=\s*["']\s*["']/i.test(tagContent) || // href="" or href=''
+        /href\s*=\s*["']\s*#\s*["']/i.test(tagContent) || // href="#" (also considered empty)
+        !/href\s*=/i.test(tagContent); // No href attribute at all
+      
+      if (hasEmptyHref) {
+        if (firstEmptyPosition === null || tagIndex < firstEmptyPosition) {
+          firstEmptyPosition = tagIndex;
+        }
+      }
+    }
+
+    // Check all button tags (buttons can have onclick but should have href if they're links)
+    // Reset regex
+    buttonPattern.lastIndex = 0;
+    while ((match = buttonPattern.exec(htmlContent)) !== null) {
+      const tagContent = match[0];
+      const tagIndex = match.index;
+      
+      // Check if button has onclick but no href (might be intentional, but check anyway)
+      // For now, we'll focus on <a> tags as buttons with href are less common
+      // But we can check for buttons that look like they should be links
+      const looksLikeLink = /class\s*=\s*["'][^"']*btn[^"']*["']/i.test(tagContent) || 
+                           /class\s*=\s*["'][^"']*button[^"']*["']/i.test(tagContent);
+      
+      if (looksLikeLink) {
+        const hasEmptyHref = 
+          /href\s*=\s*["']\s*["']/i.test(tagContent) ||
+          /href\s*=\s*["']\s*#\s*["']/i.test(tagContent) ||
+          (!/href\s*=/i.test(tagContent) && !/onclick\s*=/i.test(tagContent));
+        
+        if (hasEmptyHref) {
+          if (firstEmptyPosition === null || tagIndex < firstEmptyPosition) {
+            firstEmptyPosition = tagIndex;
+          }
+        }
+      }
+    }
+
+    return {
+      hasEmptyHref: firstEmptyPosition !== null,
+      firstEmptyHrefPosition: firstEmptyPosition
+    };
+  };
+
+  // Check if quicklinks contact us link matches company contact link
+  const checkQuickLinksContactUs = (htmlContent: string, companyContactLink: string | undefined): { matches: boolean; foundLink: string | null } => {
+    if (!htmlContent || !companyContactLink) {
+      return { matches: false, foundLink: null };
+    }
+
+    // Find quicklinks section - handle both id and class
+    const quickLinksMatch = htmlContent.match(/<div[^>]*(?:id=["']quick-links["']|class=["'][^"']*quick-links[^"']*["'])[^>]*>([\s\S]*?)<\/div>\s*<!--End Quick Links-->/i);
+    if (!quickLinksMatch) {
+      return { matches: false, foundLink: null };
+    }
+
+    const quickLinksContent = quickLinksMatch[1];
+    
+    // Normalize company contact link for comparison
+    const normalizedCompanyLink = companyContactLink.replace(/\/$/, '').toLowerCase().trim();
+    
+    // Find all links in quicklinks section
+    const allLinks = quickLinksContent.matchAll(/<a[^>]*href=["']([^"']+)["'][^>]*>([^<]*)<\/a>/gi);
+    
+    let foundLink: string | null = null;
+    let matches = false;
+    let contactLinkFound = false;
+
+    // First pass: Look for links with "contact" in text or href
+    for (const match of allLinks) {
+      const href = match[1];
+      const linkText = match[2]?.toLowerCase() || '';
+      const normalizedHref = href.replace(/\/$/, '').toLowerCase().trim();
+      
+      // Check if this looks like a contact us link
+      const isContactLink = linkText.includes('contact') || 
+                           href.toLowerCase().includes('contact') ||
+                           normalizedHref === normalizedCompanyLink;
+      
+      if (isContactLink) {
+        contactLinkFound = true;
+        foundLink = href;
+        matches = normalizedHref === normalizedCompanyLink;
+        break; // Use the first contact link found
+      }
+    }
+
+    // If no contact link found by text, check if any link matches the company link exactly
+    if (!contactLinkFound) {
+      const allLinksAgain = quickLinksContent.matchAll(/<a[^>]*href=["']([^"']+)["'][^>]*>/gi);
+      for (const match of allLinksAgain) {
+        const href = match[1];
+        const normalizedHref = href.replace(/\/$/, '').toLowerCase().trim();
+        if (normalizedHref === normalizedCompanyLink) {
+          foundLink = href;
+          matches = true;
+          break;
+        }
+      }
+    }
+
+    return { matches, foundLink };
+  };
+
   // Extract initials from company name
   const getCompanyInitials = (name: string): string => {
     if (!name) return 'EP';
@@ -822,6 +1094,82 @@ export default function PreviewPage() {
                       <span className="checklist-label">Photos:</span>
                       <span className="checklist-value">{task.images?.length || 0} uploaded</span>
                     </div>
+                    {(() => {
+                      const contactCheck = checkQuickLinksContactUs(task.htmlContent || '', company?.contactLink);
+                      return (
+                        <div className="checklist-item">
+                          <span className="checklist-label">Contact Us Link Button:</span>
+                          <span className={`checklist-value ${contactCheck.matches ? 'checklist-complete' : 'checklist-incomplete'}`}>
+                            {contactCheck.matches 
+                              ? '✓ Matches Company Link' 
+                              : '✗ Contact link not match'}
+                          </span>
+                        </div>
+                      );
+                    })()}
+                    {(() => {
+                      const faqCheck = checkFaqCategory(task.htmlContent || '', companyFaqTags);
+                      return (
+                        <div className="checklist-item">
+                          <span className="checklist-label">FAQ Category:</span>
+                          <span className={`checklist-value ${faqCheck.matches ? 'checklist-complete' : 'checklist-incomplete'}`}>
+                            {faqCheck.matches 
+                              ? '✓ Matches Company FAQ Tag' 
+                              : faqCheck.foundCategory !== null
+                                ? '✗ FAQ category not match'
+                                : '✗ FAQ shortcode not found'}
+                          </span>
+                        </div>
+                      );
+                    })()}
+                    {(() => {
+                      const emptyHrefCheck = checkEmptyHrefs(task.htmlContent || '');
+                      return (
+                        <div className="checklist-item">
+                          <span className="checklist-label">Links & Buttons:</span>
+                          {emptyHrefCheck.hasEmptyHref ? (
+                            <button
+                              onClick={() => {
+                                if (taskId && emptyHrefCheck.firstEmptyHrefPosition !== null) {
+                                  navigate(`/builder/${taskId}?errorPos=${emptyHrefCheck.firstEmptyHrefPosition}`);
+                                }
+                              }}
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '0.5rem',
+                                padding: '0.5rem 1rem',
+                                background: '#fee',
+                                border: '1px solid #dc3545',
+                                borderRadius: '0.5rem',
+                                cursor: 'pointer',
+                                color: '#dc3545',
+                                fontFamily: 'inherit',
+                                fontSize: '0.875rem',
+                                fontWeight: 500,
+                                transition: 'all 0.2s ease',
+                                textDecoration: 'none'
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.background = '#fcc';
+                                e.currentTarget.style.borderColor = '#c82333';
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.background = '#fee';
+                                e.currentTarget.style.borderColor = '#dc3545';
+                              }}
+                            >
+                              <span style={{ color: '#dc3545', fontWeight: 600 }}>✗</span>
+                              <span>Empty href found (click to view)</span>
+                            </button>
+                          ) : (
+                            <span className="checklist-value checklist-complete">
+                              ✓ All links have hrefs
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })()}
                   </div>
 
                   {/* Text Fields Section */}
@@ -866,7 +1214,7 @@ export default function PreviewPage() {
                     {task.type !== 'Blog' && (
                       <div className="checklist-item">
                         <span className={`checklist-checkbox ${task.instructionsToLink ? 'checked' : 'unchecked'}`}>
-                          {task.instructionsToLink ? '✓' : '✗'}
+                          {task.instructionsToLink ? '✓' : <span style={{ color: 'gray' }}>✗</span>}
                         </span>
                         <span className="checklist-label">Instructions to Link</span>
                       </div>

@@ -100,6 +100,17 @@ const HtmlBuilder: React.FC = () => {
   const [editorOnlyMode, setEditorOnlyMode] = useState(false);
   const [sidebarVisible, setSidebarVisible] = useState(true);
 
+  // Version history state (max 4 versions including current)
+  interface Version {
+    content: string;
+    timestamp: Date;
+    isCurrent: boolean;
+  }
+  const [versionHistory, setVersionHistory] = useState<Version[]>([]);
+  const [viewingVersionIndex, setViewingVersionIndex] = useState<number | null>(null);
+  const [versionHistoryOpen, setVersionHistoryOpen] = useState(false);
+  const [currentHtmlContent, setCurrentHtmlContent] = useState(''); // Store the actual current content
+
   const isTinyMobile = typeof window !== 'undefined' && window.innerWidth < 400;
 
   // Auto-hide sidebar on medium screens (480-1024px) for better responsive layout
@@ -296,46 +307,52 @@ const HtmlBuilder: React.FC = () => {
     };
   }, []);
 
-  // Direct update handlers for each field
+  // Direct update handlers for each field (with leading space trimming)
   const handleFeaturedTitleChange = (value: string) => {
-    setFeaturedTitle(value);
+    const trimmedValue = value.trimStart(); // Remove leading spaces only
+    setFeaturedTitle(trimmedValue);
     if (currentTask) {
-      updateTask(currentTask.id, { featuredTitle: value });
+      updateTask(currentTask.id, { featuredTitle: trimmedValue });
     }
   };
 
   const handleFeaturedAltChange = (value: string) => {
-    setFeaturedAlt(value);
+    const trimmedValue = value.trimStart(); // Remove leading spaces only
+    setFeaturedAlt(trimmedValue);
     if (currentTask) {
-      updateTask(currentTask.id, { featuredAlt: value });
+      updateTask(currentTask.id, { featuredAlt: trimmedValue });
     }
   };
 
   const handleWidgetTitleChange = (value: string) => {
-    setWidgetTitle(value);
+    const trimmedValue = value.trimStart(); // Remove leading spaces only
+    setWidgetTitle(trimmedValue);
     if (currentTask) {
-      updateTask(currentTask.id, { widgetTitle: value });
+      updateTask(currentTask.id, { widgetTitle: trimmedValue });
     }
   };
 
   const handleMetaTitleChange = (value: string) => {
-    setMetaTitle(value);
+    const trimmedValue = value.trimStart(); // Remove leading spaces only
+    setMetaTitle(trimmedValue);
     if (currentTask) {
-      updateTask(currentTask.id, { metaTitle: value });
+      updateTask(currentTask.id, { metaTitle: trimmedValue });
     }
   };
 
   const handleMetaUrlChange = (value: string) => {
-    setMetaUrl(value);
+    const trimmedValue = value.trimStart(); // Remove leading spaces only
+    setMetaUrl(trimmedValue);
     if (currentTask) {
-      updateTask(currentTask.id, { metaUrl: value });
+      updateTask(currentTask.id, { metaUrl: trimmedValue });
     }
   };
 
   const handleMetaDescriptionChange = (value: string) => {
-    setMetaDescription(value);
+    const trimmedValue = value.trimStart(); // Remove leading spaces only
+    setMetaDescription(trimmedValue);
     if (currentTask) {
-      updateTask(currentTask.id, { metaDescription: value });
+      updateTask(currentTask.id, { metaDescription: trimmedValue });
     }
   };
 
@@ -406,7 +423,11 @@ const HtmlBuilder: React.FC = () => {
         handleMetaDescriptionChange(value);
         break;
       case 'instructionsToLink':
-        setInstructionsToLink(value);
+        const trimmedInstructions = value.trimStart(); // Remove leading spaces only
+        setInstructionsToLink(trimmedInstructions);
+        if (currentTask) {
+          updateTask(currentTask.id, { instructionsToLink: trimmedInstructions });
+        }
         break;
       case 'mapsLocation':
         handleMapsLocationChange(value);
@@ -602,11 +623,99 @@ const HtmlBuilder: React.FC = () => {
     }
   }, [location.search, htmlContent, navigate, location.pathname, toast]);
 
+  // Save HTML code version to history (max 4 versions) and persist to Firestore
+  const saveVersionToHistory = useCallback(async (htmlCode: string, taskId: string) => {
+    return new Promise<void>((resolve) => {
+      // Update local state first, then save to Firestore
+      setVersionHistory(prev => {
+        // Check if this is the same as the last version (avoid duplicates)
+        if (prev.length > 0 && prev[prev.length - 1].content === htmlCode) {
+          resolve(); // Don't add duplicate
+          return prev;
+        }
+        
+        // Mark all previous versions as not current
+        const updated = prev.map(v => ({ ...v, isCurrent: false }));
+        
+        // Add new HTML code version as current
+        const newVersion: Version = {
+          content: htmlCode, // Only HTML code
+          timestamp: new Date(),
+          isCurrent: true
+        };
+        
+        // Keep only the last 3 versions (plus the new one = 4 total)
+        const limited = [...updated.slice(-3), newVersion];
+        
+        // Convert to Firestore format (Date to ISO string) and save to database
+        const firestoreHistory = limited.map(v => ({
+          content: v.content,
+          timestamp: v.timestamp.toISOString(),
+          isCurrent: v.isCurrent
+        }));
+
+        // Save to Firestore
+        updateTask(taskId, { htmlVersionHistory: firestoreHistory }).then(() => {
+          resolve();
+        }).catch(error => {
+          console.error('Failed to save version history to database:', error);
+          resolve(); // Resolve anyway - version history is not critical
+        });
+        
+        return limited;
+      });
+    }).then(() => {
+      // Update current HTML content and reset viewing index when saving new version
+      setCurrentHtmlContent(htmlCode);
+      setViewingVersionIndex(null);
+    });
+  }, [updateTask]);
+
+  // Handle version selection
+  const handleVersionSelect = useCallback((index: number) => {
+    if (index === versionHistory.length - 1) {
+      // Clicking on current version - restore to actual current content
+      setHtmlContent(currentHtmlContent);
+      setViewingVersionIndex(null);
+    } else {
+      // Viewing a previous version
+      setHtmlContent(versionHistory[index].content);
+      setViewingVersionIndex(index);
+    }
+  }, [versionHistory, currentHtmlContent]);
+
+  // Initialize current content and load version history from Firestore when task loads
+  useEffect(() => {
+    if (currentTask?.htmlContent) {
+      setCurrentHtmlContent(currentTask.htmlContent);
+      
+      // Load version history from Firestore if available
+      if (currentTask.htmlVersionHistory && currentTask.htmlVersionHistory.length > 0) {
+        const loadedHistory: Version[] = currentTask.htmlVersionHistory.map(v => ({
+          content: v.content,
+          timestamp: new Date(v.timestamp),
+          isCurrent: v.isCurrent
+        }));
+        setVersionHistory(loadedHistory);
+      } else {
+        // Initialize with current version if no history exists
+        setVersionHistory([{
+          content: currentTask.htmlContent,
+          timestamp: new Date(currentTask.updatedAt || Date.now()),
+          isCurrent: true
+        }]);
+      }
+    }
+  }, [currentTask?.htmlContent, currentTask?.updatedAt, currentTask?.htmlVersionHistory]);
+
   // Save all changes (used for HTML editor and manual saves)
   const saveChanges = async () => {
     if (currentTask?.id) {
       setSaving(true);
       try {
+        // Save current HTML CODE to version history in Firestore before saving (ONLY HTML CODE)
+        await saveVersionToHistory(htmlContent, currentTask.id);
+        
         const updates = {
           htmlContent,
           companyId,
@@ -1392,6 +1501,11 @@ const HtmlBuilder: React.FC = () => {
                           value={featuredTitle}
                           onChange={e => handleFeaturedTitleChange(e.target.value)}
                           onBlur={e => handleFeaturedTitleChange(e.target.value)}
+                          onPaste={e => {
+                            e.preventDefault();
+                            const pastedText = e.clipboardData.getData('text');
+                            handleFeaturedTitleChange(pastedText.trimStart());
+                          }}
                           className="flex-1"
                           placeholder="Enter title"
                         />
@@ -1404,6 +1518,11 @@ const HtmlBuilder: React.FC = () => {
                           value={featuredAlt}
                           onChange={e => handleFeaturedAltChange(e.target.value)}
                           onBlur={e => handleFeaturedAltChange(e.target.value)}
+                          onPaste={e => {
+                            e.preventDefault();
+                            const pastedText = e.clipboardData.getData('text');
+                            handleFeaturedAltChange(pastedText.trimStart());
+                          }}
                           className="flex-1"
                           placeholder="Enter alt text"
                         />
@@ -1437,6 +1556,11 @@ const HtmlBuilder: React.FC = () => {
                             value={item.value}
                             onChange={e => item.handler(e.target.value)}
                             onBlur={e => item.handler(e.target.value)}
+                            onPaste={e => {
+                              e.preventDefault();
+                              const pastedText = e.clipboardData.getData('text');
+                              item.handler(pastedText.trimStart());
+                            }}
                             className="w-full px-3 py-2 text-xs sm:text-sm rounded-md border"
                             placeholder={item.label}
                           />
@@ -1528,17 +1652,20 @@ const HtmlBuilder: React.FC = () => {
                         size="lg"
                         className="bg-blue-600 hover:bg-blue-700 text-white font-semibold text-lg px-6 py-3 shadow-lg hover:shadow-xl transition-all duration-200 border border-blue-500 rounded-xl"
                         style={{ fontWeight: 600, letterSpacing: '0.01em' }}
-                        onClick={() => {
-                          // Open preview in new tab
+                        onClick={async () => {
+                          // Save changes first
+                          await saveChanges();
+                          // Open preview in new tab after save completes
                           const previewUrl = `/builder/${taskId}/preview`;
                           window.open(previewUrl, '_blank');
                         }}
+                        disabled={saving}
                       >
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 inline-block" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                         </svg>
-                        Preview Site
+                        {saving ? 'Saving...' : 'Preview Site'}
                       </Button>
                       <Button
                         size="lg"
@@ -1569,6 +1696,9 @@ const HtmlBuilder: React.FC = () => {
                     onSave={saveChanges}
                     lastSavedAt={currentTask?.updatedAt ? new Date(currentTask.updatedAt) : null}
                     onToggleEditorOnlyMode={() => setEditorOnlyMode(v => !v)}
+                    versionHistory={versionHistory}
+                    onVersionSelect={handleVersionSelect}
+                    viewingVersionIndex={viewingVersionIndex}
                     editorOnlyMode={editorOnlyMode}
                     sidebarVisible={sidebarVisible}
                     setSidebarVisible={setSidebarVisible}
@@ -1700,6 +1830,11 @@ const HtmlBuilder: React.FC = () => {
                         value={instructionsToLink}
                         onChange={e => handleTextChange('instructionsToLink', e.target.value)}
                         onBlur={e => handleTextChange('instructionsToLink', e.target.value)}
+                        onPaste={e => {
+                          e.preventDefault();
+                          const pastedText = e.clipboardData.getData('text');
+                          handleTextChange('instructionsToLink', pastedText.trimStart());
+                        }}
                         placeholder={pageType === 'Blog' ? "Don't forget to select at least 2 categories for Blog Post! Schedule to post two days after the last blog post." : pageType === 'Landing Page' ? "Don't forget to go to \"Sorting\", and put in right group in alphabetical order if needed" : "Link this new sub page to a relevant keyword on the parent Landing page."}
                       />
                     </div>

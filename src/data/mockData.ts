@@ -267,8 +267,14 @@ export const htmlComponents: Record<string, string> = {
   "CTA Button": `[cta-btn]`,
   "FAQs": `[faqs category=""]`,
   "Highlight": `<div class="highlight-box"> <!-- Start Highlight Box -->
-  <h3 class="title">Title</h3>
-  <p>Body</p>
+  <h2>Who Does What Now?</h2>
+  <p>Brooklet's Wet-Area Remodeling Experts: Jacuzzi Bath Remodel of Middle GA delivers specialized wet-area bathroom remodeling for Brooklet and the <a href="#">Middle Georgia Area</a>, combining faith-driven values with a commitment to quality.</p>
+  <p>Why Choose Jacuzzi Bath Remodel of Middle GA? Expect a <a href="#">family-owned, faith-based business</a> guided by biblical principles, offering transparent, reliable, and customer-focused service from start to finish.</p>
+  <p><a href="#"><strong>Shower Remodeling:</strong></a> Transform your outdated shower with premium, mold-resistant, and antimicrobial materials – installed by certified Jacuzzi experts in as little as 1-2 days.</p>
+  <p><a href="#"><strong>Bathtub Remodeling:</strong></a> Upgrade your bathroom with a new bathtub or a <a href="#">tub-to-shower conversion</a>, using durable, nonporous Jacuzzi products designed for beauty and easy maintenance.</p>
+  <p><a href="#"><strong>Quick, Hassle-Free Installations:</strong></a> Most projects are completed in just 1-2 days, minimizing disruption and maximizing comfort for Brooklet homeowners.</p>
+  <p>Local Showroom Experience: Visit our <a href="#">Dublin, GA showroom</a> to see and feel Jacuzzi products before you decide, ensuring you get the perfect fit for your home.</p>
+  <p>Customer Satisfaction Guaranteed: With over <a href="#">200 five-star reviews</a>, Jacuzzi Bath Remodel of Middle GA is trusted for personalized service, lasting results, and a straightforward remodeling experience.</p>
 </div> <!-- End Highlight Box -->`,
   "Horizontal Image Card": `<div class="image-card single horizontal"> <!-- Start Image Card -->
   <div class="image-card--image">
@@ -370,41 +376,34 @@ export const htmlComponents: Record<string, string> = {
   "Staff": `<div class='staff'>Staff Placeholder</div>`,
   "Tabbed Content": `<div class="site-tabs">
   <div class="tabs" role="tablist">
-    <div class="tab" tabindex="0" role="tab">Tab 1 Title</div>
-    <div class="tab" role="tab">Tab 2 Title</div>
-    <div class="tab" role="tab">Tab 3 Title</div>
-    <div class="tab" role="tab">Tab 4 Title</div>
+    <div class="tab active" tabindex="0" role="tab">Tub-to-Shower Conversion</div>
+    <div class="tab" role="tab">Bathroom Accessibility</div>
     <!-- Add/remove tabs as needed -->
   </div>
 
   <div class="tab-contents">
     <div class="content" role="tabpanel">
-      <img src="" alt="Alt text for Tab 1 image">
-      <h4>Tab 1 Heading</h4>
-      <p>Tab 1 description paragraph 1.</p>
-      <p>Tab 1 description paragraph 2 (optional).</p>
-      <a href="" class="button">Tab 1 Button Text</a>
+      <h4>Tub-to-Shower Conversion</h4>
+      <p>Transform your old bathtub into a spacious, modern shower with a premium tub-to-shower conversion. It's Perfect for homeowners seeking better accessibility and a fresh look. Our solutions offer:</p>
+      <ul>
+        <li>Improved safety and convenience</li>
+        <li>Custom designs to fit your space</li>
+        <li>Fast, professional installation</li>
+      </ul>
+      <p>Upgrade your bathroom's function and style in as little as 1-2 days.</p>
+      <a href="#" class="button">Learn About Tub-To-Shower Conversions</a>
     </div>
 
     <div class="content" role="tabpanel">
-      <img src="" alt="Alt text for Tab 2 image">
-      <h4>Tab 2 Heading</h4>
-      <p>Tab 2 description paragraph.</p>
-      <a href="" class="button">Tab 2 Button Text</a>
-    </div>
-
-    <div class="content" role="tabpanel">
-      <img src="" alt="Alt text for Tab 3 image">
-      <h4>Tab 3 Heading</h4>
-      <p>Tab 3 description paragraph.</p>
-      <a href="" class="button">Tab 3 Button Text</a>
-    </div>
-
-    <div class="content" role="tabpanel">
-      <img src="" alt="Alt text for Tab 4 image">
-      <h4>Tab 4 Heading</h4>
-      <p>Tab 4 description paragraph.</p>
-      <a href="" class="button">Tab 4 Button Text</a>
+      <h4>Bathroom Accessibility</h4>
+      <p>Create a safe and accessible bathroom environment with our accessibility solutions designed for comfort and independence.</p>
+      <ul>
+        <li>ADA-compliant features</li>
+        <li>Walk-in tubs and showers</li>
+        <li>Grab bars and safety features</li>
+      </ul>
+      <p>Make your bathroom accessible and safe for all family members.</p>
+      <a href="#" class="button">Explore Accessibility Options</a>
     </div>
 
     <!-- Add/remove .content blocks for more/fewer tabs -->
