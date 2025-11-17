@@ -1,6 +1,6 @@
 import React, { useRef, useImperativeHandle, forwardRef, useState, useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Copy, Save, Maximize2, Minimize2, Plus, Minus, ArrowDown, Monitor, Eye, EyeOff, History } from 'lucide-react';
+import { Copy, Save, Maximize2, Minimize2, Plus, Minus, ArrowDown, Monitor, Eye, EyeOff, History, Sparkles, Archive } from 'lucide-react';
 import CopyButton from '@/components/ui/CopyButton';
 import CodeMirror from '@uiw/react-codemirror';
 import { html } from '@codemirror/lang-html';
@@ -300,9 +300,11 @@ export const EditorSection = forwardRef<EditorSectionRef, EditorSectionProps>(({
             <p className="text-sm text-muted-foreground mb-4">
               View and restore previous versions of your HTML code. Click a version to preview it in the editor.
             </p>
-            <div className="space-y-2 max-h-[60vh] overflow-y-auto">
+            <div className="space-y-3 max-h-[60vh] overflow-y-auto">
               {allVersions.map((version, index) => {
                 const isCurrent = index === allVersions.length - 1;
+                const isOldest = index === 0;
+                const isNewest = isCurrent;
                 const isViewing = viewingVersionIndex === index || (isCurrent && viewingVersionIndex === null);
                 
                 return (
@@ -313,34 +315,49 @@ export const EditorSection = forwardRef<EditorSectionRef, EditorSectionProps>(({
                         onVersionSelect(index);
                       }
                     }}
-                    className={`p-4 border rounded-lg cursor-pointer transition-all ${
+                    className={`group relative p-4 rounded-lg cursor-pointer transition-all border-2 ${
                       isViewing 
-                        ? 'border-primary bg-primary/10' 
-                        : 'border-border hover:border-primary/50 hover:bg-secondary/50'
+                        ? 'border-primary bg-primary/5 shadow-sm' 
+                        : 'border-border bg-card hover:border-primary/30 hover:bg-accent/50 hover:shadow-sm'
                     }`}
                   >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        {isCurrent && (
-                          <span className="px-2 py-1 text-xs font-semibold bg-primary text-primary-foreground rounded">
-                            CURRENT
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="text-sm font-semibold text-foreground">
+                            Version {allVersions.length - index}
                           </span>
-                        )}
-                        {isViewing && !isCurrent && (
-                          <span className="px-2 py-1 text-xs font-semibold bg-blue-600 text-white rounded">
-                            VIEWING
-                          </span>
-                        )}
-                        <span className="text-sm font-medium">
-                          Version {allVersions.length - index}
-                        </span>
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            {isNewest && (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-medium bg-green-500/10 text-green-600 dark:text-green-400 rounded-md border border-green-500/20">
+                                <Sparkles className="w-2.5 h-2.5" />
+                                Newest
+                              </span>
+                            )}
+                            {isCurrent && (
+                              <span className="px-2 py-0.5 text-[10px] font-medium bg-primary/10 text-primary rounded-md border border-primary/20">
+                                Current
+                              </span>
+                            )}
+                            {isOldest && !isNewest && (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-medium bg-amber-500/10 text-amber-600 dark:text-amber-400 rounded-md border border-amber-500/20">
+                                <Archive className="w-2.5 h-2.5" />
+                                Oldest
+                              </span>
+                            )}
+                            {isViewing && !isCurrent && (
+                              <span className="px-2 py-0.5 text-[10px] font-medium bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-md border border-blue-500/20">
+                                Viewing
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                          <span>{version.content.length.toLocaleString()} characters</span>
+                          <span>•</span>
+                          <span>{formatTimestamp(version.timestamp)}</span>
+                        </div>
                       </div>
-                      <span className="text-xs text-muted-foreground">
-                        {formatTimestamp(version.timestamp)}
-                      </span>
-                    </div>
-                    <div className="mt-2 text-xs text-muted-foreground">
-                      {version.content.length} characters
                     </div>
                   </div>
                 );

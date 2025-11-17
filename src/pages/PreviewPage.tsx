@@ -1094,7 +1094,7 @@ export default function PreviewPage() {
                       <span className="checklist-label">Photos:</span>
                       <span className="checklist-value">{task.images?.length || 0} uploaded</span>
                     </div>
-                    {(() => {
+                    {task.type !== 'Blog' && (() => {
                       const contactCheck = checkQuickLinksContactUs(task.htmlContent || '', company?.contactLink);
                       return (
                         <div className="checklist-item">
