@@ -1390,14 +1390,14 @@ const HtmlBuilder: React.FC = () => {
                                     #{imageNumber}
                                   </span>
                                 )}
-                                <span className="text-base font-medium text-foreground truncate">
-                                  {image.name}
-                                </span>
                                 {isFeaturedImage && (
                                   <span className="text-xs font-semibold text-green-600 bg-green-100 px-2 py-0.5 rounded">
                                     Featured Image
                                   </span>
                                 )}
+                                <span className="text-base font-medium text-foreground truncate">
+                                  {image.name}
+                                </span>
                                 <span className="text-sm text-muted-foreground">
                                   ({(image.size / 1024).toFixed(1)} KB)
                                 </span>
