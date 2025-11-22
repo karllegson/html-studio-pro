@@ -145,18 +145,38 @@ export function matchImageMetadata(
     }
   });
   
-  // Step 3: Handle remaining parsed metadata (no HTML src) - match by order
-  for (let i = 1; i < parsedInfo.length; i++) { // Start from 1 (skip featured)
+  // Step 3: Handle remaining parsed metadata (no HTML src or additional images) - match by order
+  for (let i = 1; i < parsedInfo.length; i++) { // Start from 1 (skip featured at index 0)
     if (usedParsedIndices.has(i)) continue;
     
     const metadata = parsedInfo[i];
     
-    // Find next unused image
+    // Try filename matching first
     let matchedImageIndex = -1;
+    
     for (let j = 0; j < images.length; j++) {
-      if (!usedImageIndices.has(j)) {
+      if (usedImageIndices.has(j)) continue;
+      
+      const normalizedImageName = normalizeString(images[j].name);
+      const normalizedFileName = metadata.fileName 
+        ? normalizeString(metadata.fileName)
+        : '';
+      
+      if (normalizedFileName && normalizedImageName.includes(normalizedFileName)) {
         matchedImageIndex = j;
+        console.log(`Matched parsed image ${i} by filename to uploaded image ${j}`);
         break;
+      }
+    }
+    
+    // If no filename match, use sequential order
+    if (matchedImageIndex === -1) {
+      for (let j = 0; j < images.length; j++) {
+        if (!usedImageIndices.has(j)) {
+          matchedImageIndex = j;
+          console.log(`Matched parsed image ${i} by order to uploaded image ${j}`);
+          break;
+        }
       }
     }
     
@@ -171,6 +191,8 @@ export function matchImageMetadata(
       usedParsedIndices.add(i);
     }
   }
+  
+  console.log('Final mappings:', mappings);
   
   return mappings;
 }
