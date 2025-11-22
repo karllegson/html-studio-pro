@@ -73,13 +73,7 @@ interface TaskProviderProps {
 
 const AUTHORIZED_EMAILS = ["dklegson@gmail.com", "dklegson1@gmail.com"]; // Add your emails here
 
-const DEFAULT_COMPANY = {
-  name: 'ocboston',
-  contactLink: 'https://ocboston.com/contact/',
-  basePath: 'https://ocboston.com/wp-content/uploads/',
-  prefix: 'ocboston_Landing-Page_',
-  fileSuffix: '-image.webp'
-};
+// Removed DEFAULT_COMPANY - no longer auto-creating companies
 
 // Tag management for company tags
 export interface CompanyTags {
@@ -132,17 +126,7 @@ export const TaskProvider: React.FC<TaskProviderProps> = ({ children, user }) =>
     try {
       const querySnapshot = await getDocs(collection(db, 'companies'));
       const companiesList = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Company));
-      
-      // Only create default company if there are no companies at all
-      if (companiesList.length === 0) {
-        // Add default company if no companies exist
-        await addDoc(collection(db, 'companies'), DEFAULT_COMPANY);
-        // Fetch companies again to include the new default company
-        const updatedSnapshot = await getDocs(collection(db, 'companies'));
-        setCompanies(updatedSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Company)));
-      } else {
-        setCompanies(companiesList);
-      }
+      setCompanies(companiesList);
     } catch (error) {
       console.error('Error fetching companies:', error);
       throw error;

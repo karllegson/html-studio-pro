@@ -27,7 +27,20 @@ export const CompanyTemplateList: React.FC<CompanyTemplateSectionProps> = ({
   const availableTemplates = !pageType 
     ? []
     : pageType === TaskType.BLOG 
-      ? getBlogTemplatesFromAllCompanies()
+      ? (() => {
+          // Check if the current company has its own blog templates
+          const companyBlogTemplates = companyTemplates.filter(
+            template => template.pageType === TaskType.BLOG && template.isActive
+          );
+          
+          // If company has blog templates, show only those
+          // Otherwise, show generic/universal blog templates from all companies
+          if (companyBlogTemplates.length > 0) {
+            return companyBlogTemplates;
+          } else {
+            return getBlogTemplatesFromAllCompanies();
+          }
+        })()
       : companyTemplates.filter(template => 
           template.pageType === pageType && template.isActive
         );

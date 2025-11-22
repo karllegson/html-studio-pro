@@ -100,6 +100,54 @@ const HtmlBuilder: React.FC = () => {
   const [editorOnlyMode, setEditorOnlyMode] = useState(false);
   const [sidebarVisible, setSidebarVisible] = useState(true);
 
+  // Copy button click tracking (local state only)
+  const [copyClickOrder, setCopyClickOrder] = useState<{ [buttonId: string]: number }>({});
+  const [copyClickCounter, setCopyClickCounter] = useState(0);
+
+  const handleCopyClick = (buttonId: string) => {
+    if (!copyClickOrder[buttonId]) {
+      setCopyClickOrder(prev => ({
+        ...prev,
+        [buttonId]: copyClickCounter + 1
+      }));
+      setCopyClickCounter(prev => prev + 1);
+    }
+  };
+
+  const handleResetClick = (buttonId: string) => {
+    // Remove this button from the tracking
+    setCopyClickOrder(prev => {
+      const newOrder = { ...prev };
+      delete newOrder[buttonId];
+      return newOrder;
+    });
+  };
+
+  // Auto-check section checkboxes when all copy buttons in that section are clicked
+  useEffect(() => {
+    // Define sections and their required copy buttons
+    const sectionMappings = {
+      featuredImg: ['featuredTitle', 'featuredAlt'],
+      widgetTitle: ['widgetTitle', 'metaTitle', 'metaUrl', 'metaDescription'],
+      maps: ['mapsEmbedCode'],
+      photos: ['downloadAll']
+    };
+
+    // Check each section
+    Object.entries(sectionMappings).forEach(([checkboxKey, requiredButtons]) => {
+      const allButtonsClicked = requiredButtons.every(buttonId => copyClickOrder[buttonId]);
+      
+      // If all buttons in section are clicked and checkbox is not checked, check it
+      if (allButtonsClicked && !checkedFields[checkboxKey]) {
+        handleCheckmarkChange(checkboxKey, true);
+      }
+      // If any button is un-clicked and checkbox is checked, uncheck it
+      else if (!allButtonsClicked && checkedFields[checkboxKey]) {
+        handleCheckmarkChange(checkboxKey, false);
+      }
+    });
+  }, [copyClickOrder]); // Run whenever copy button state changes
+
   // Version history state (max 4 versions including current)
   interface Version {
     content: string;
@@ -357,9 +405,10 @@ const HtmlBuilder: React.FC = () => {
   };
 
   const handleMapsLocationChange = (value: string) => {
-    setMapsLocation(value);
+    const trimmedValue = value.trimStart(); // Remove leading spaces only
+    setMapsLocation(trimmedValue);
     if (currentTask) {
-      updateTask(currentTask.id, { mapsLocation: value });
+      updateTask(currentTask.id, { mapsLocation: trimmedValue });
     }
   };
 
@@ -771,8 +820,18 @@ const HtmlBuilder: React.FC = () => {
     if (pageType && !htmlContent.trim()) {
       let availableTemplates = [];
       if (pageType === TaskType.BLOG) {
-        // For blog posts, get templates from all companies
-        availableTemplates = getBlogTemplatesFromAllCompanies();
+        // For blog posts, check if company has its own templates first
+        const companyTemplates = getTemplatesByCompany(value);
+        const companyBlogTemplates = companyTemplates.filter(template => 
+          template.pageType === TaskType.BLOG && template.isActive
+        );
+        
+        // If company has blog templates, use those. Otherwise, use generic templates
+        if (companyBlogTemplates.length > 0) {
+          availableTemplates = companyBlogTemplates;
+        } else {
+          availableTemplates = getBlogTemplatesFromAllCompanies();
+        }
       } else {
         // For other page types, get templates from the selected company
         const companyTemplates = getTemplatesByCompany(value);
@@ -1089,42 +1148,54 @@ const HtmlBuilder: React.FC = () => {
                 </div>
                 
                 <div className="space-y-4">
-                  <div className="flex gap-2">
+                  <div className="flex gap-4">
                     <button
                       type="button"
-                      className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                      className="px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2 font-medium transition-all shadow-md hover:shadow-lg whitespace-nowrap"
                       onClick={() => imagesTabFileInputRef.current?.click()}
                       disabled={Object.keys(uploadingImages).length > 0}
                     >
                       {Object.keys(uploadingImages).length > 0 ? (
                         <>
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                          Uploading...
+                          <Loader2 className="h-4 w-4 animate-spin flex-shrink-0" />
+                          <span>Uploading...</span>
                         </>
                       ) : (
                         <>
-                          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <svg className="h-4 w-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                           </svg>
-                          Upload Photos
+                          <span>Upload Photos</span>
                         </>
                       )}
                     </button>
                     <button
                       type="button"
-                      className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                      onClick={handleDownloadAll}
+                      className={`px-6 py-2.5 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2 font-medium transition-all shadow-md hover:shadow-lg whitespace-nowrap ${
+                        copyClickOrder['downloadAll'] 
+                          ? 'bg-purple-600 hover:bg-purple-700 text-white' 
+                          : 'bg-green-600 hover:bg-green-700 text-white'
+                      }`}
+                      onClick={() => {
+                        if (copyClickOrder['downloadAll']) {
+                          handleResetClick('downloadAll');
+                        } else {
+                          handleDownloadAll();
+                          handleCopyClick('downloadAll');
+                        }
+                      }}
                       disabled={!images.length || downloading}
+                      title={copyClickOrder['downloadAll'] ? 'Click to reset' : 'Download all images'}
                     >
                       {downloading ? (
                         <>
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                          Downloading...
+                          <Loader2 className="h-4 w-4 animate-spin flex-shrink-0" />
+                          <span>Downloading...</span>
                         </>
                       ) : (
                         <>
-                          <Copy className="h-4 w-4" />
-                          Download All
+                          <Copy className="h-4 w-4 flex-shrink-0" />
+                          <span>Download All</span>
                         </>
                       )}
                     </button>
@@ -1211,7 +1282,7 @@ const HtmlBuilder: React.FC = () => {
                   />
                   
                   {/* Magic Image List with URLs */}
-                  <div className="space-y-3 max-h-96 overflow-auto">
+                  <div className="space-y-3">
                     {/* Show uploading images */}
                     {Object.keys(uploadingImages).map((fileName) => (
                       <div key={`uploading-${fileName}`} className="flex items-center gap-4 p-3 bg-muted rounded-lg border border-blue-500">
@@ -1262,23 +1333,25 @@ const HtmlBuilder: React.FC = () => {
                         const fullUrl = generateImageUrl(filename);
                         
                         return (
-                          <div key={index} className="flex items-center gap-4 p-3 bg-muted rounded-lg border">
+                          <div key={index} className="flex items-center gap-6 p-5 bg-muted rounded-lg border hover:border-blue-500 transition-colors">
                             {/* Image Thumbnail */}
                             <div className="flex-shrink-0">
                               <img
                                 src={image.url}
                                 alt={image.name}
-                                className="w-16 h-16 object-cover rounded border"
+                                className="w-48 h-48 md:w-56 md:h-56 lg:w-64 lg:h-64 object-cover rounded-lg border-2 border-gray-300 cursor-pointer hover:opacity-90 hover:scale-105 transition-all shadow-md"
+                                onClick={() => window.open(image.url, '_blank')}
+                                title="Click to view full size"
                               />
                             </div>
                             
                             {/* Image Info and URL */}
                             <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2 mb-1">
-                                <span className="text-sm font-medium text-foreground truncate">
+                              <div className="flex items-center gap-2 mb-2">
+                                <span className="text-base font-medium text-foreground truncate">
                                   {image.name}
                                 </span>
-                                <span className="text-xs text-muted-foreground">
+                                <span className="text-sm text-muted-foreground">
                                   ({(image.size / 1024).toFixed(1)} KB)
                                 </span>
                               </div>
@@ -1296,6 +1369,9 @@ const HtmlBuilder: React.FC = () => {
                                 <CopyButton 
                                   value={fullUrl} 
                                   className="flex-shrink-0"
+                                  clickOrder={copyClickOrder[`fullUrl-${index}`] || null}
+                                  onCopyClick={() => handleCopyClick(`fullUrl-${index}`)}
+                                  onResetClick={() => handleResetClick(`fullUrl-${index}`)}
                                 />
                               </div>
                             </div>
@@ -1424,7 +1500,12 @@ const HtmlBuilder: React.FC = () => {
                                 className="font-mono text-xs flex-1 pl-3 rounded-md bg-card ml-2"
                                 placeholder="Paste Contact Us link"
                               />
-                              <CopyButton value={contactLink} />
+                              <CopyButton 
+                                value={contactLink}
+                                clickOrder={copyClickOrder['contactLink'] || null}
+                                onCopyClick={() => handleCopyClick('contactLink')}
+                                onResetClick={() => handleResetClick('contactLink')}
+                              />
                             </div>
                           </div>
                           {/* Image file name to link converter */}
@@ -1509,7 +1590,12 @@ const HtmlBuilder: React.FC = () => {
                           className="flex-1"
                           placeholder="Enter title"
                         />
-                        <CopyButton value={featuredTitle} />
+                        <CopyButton 
+                          value={featuredTitle}
+                          clickOrder={copyClickOrder['featuredTitle'] || null}
+                          onCopyClick={() => handleCopyClick('featuredTitle')}
+                          onResetClick={() => handleResetClick('featuredTitle')}
+                        />
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="w-12">ALT:</span>
@@ -1526,7 +1612,12 @@ const HtmlBuilder: React.FC = () => {
                           className="flex-1"
                           placeholder="Enter alt text"
                         />
-                        <CopyButton value={featuredAlt} />
+                        <CopyButton 
+                          value={featuredAlt}
+                          clickOrder={copyClickOrder['featuredAlt'] || null}
+                          onCopyClick={() => handleCopyClick('featuredAlt')}
+                          onResetClick={() => handleResetClick('featuredAlt')}
+                        />
                       </div>
                     </div>
                     {/* Featured Image Checkbox */}
@@ -1564,7 +1655,12 @@ const HtmlBuilder: React.FC = () => {
                             className="w-full px-3 py-2 text-xs sm:text-sm rounded-md border"
                             placeholder={item.label}
                           />
-                          <CopyButton value={item.value} />
+                          <CopyButton 
+                            value={item.value}
+                            clickOrder={copyClickOrder[item.key] || null}
+                            onCopyClick={() => handleCopyClick(item.key)}
+                            onResetClick={() => handleResetClick(item.key)}
+                          />
                         </div>
                       </div>
                     ))}
@@ -1608,9 +1704,21 @@ const HtmlBuilder: React.FC = () => {
                         </button>
                         <button
                           type="button"
-                          className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                          onClick={handleDownloadAll}
+                          className={`px-4 py-2 rounded disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-colors ${
+                            copyClickOrder['downloadAll'] 
+                              ? 'bg-purple-600 hover:bg-purple-700 text-white' 
+                              : 'bg-green-600 hover:bg-green-700 text-white'
+                          }`}
+                          onClick={() => {
+                            if (copyClickOrder['downloadAll']) {
+                              handleResetClick('downloadAll');
+                            } else {
+                              handleDownloadAll();
+                              handleCopyClick('downloadAll');
+                            }
+                          }}
                           disabled={!images.length || downloading}
+                          title={copyClickOrder['downloadAll'] ? 'Click to reset' : 'Download all images'}
                         >
                           {downloading ? (
                             <>
@@ -1738,7 +1846,12 @@ const HtmlBuilder: React.FC = () => {
                                 : <SelectItem value="no-tags" disabled>No tags</SelectItem>}
                             </SelectContent>
                           </Select>
-                          <CopyButton value={reviewsTag} />
+                          <CopyButton 
+                            value={reviewsTag}
+                            clickOrder={copyClickOrder['reviewsTag'] || null}
+                            onCopyClick={() => handleCopyClick('reviewsTag')}
+                            onResetClick={() => handleResetClick('reviewsTag')}
+                          />
                         </div>
                         <div className="flex items-center gap-2">
                           <span className="w-32">FAQ</span>
@@ -1754,7 +1867,12 @@ const HtmlBuilder: React.FC = () => {
                                 : <SelectItem value="no-tags" disabled>No tags</SelectItem>}
                             </SelectContent>
                           </Select>
-                          <CopyButton value={faqTag} />
+                          <CopyButton 
+                            value={faqTag}
+                            clickOrder={copyClickOrder['faqTag'] || null}
+                            onCopyClick={() => handleCopyClick('faqTag')}
+                            onResetClick={() => handleResetClick('faqTag')}
+                          />
                         </div>
                       </div>
                       {/* More info section */}
@@ -1779,7 +1897,7 @@ const HtmlBuilder: React.FC = () => {
                           className="ml-2 scale-110 shadow-lg hover:shadow-xl transition-all duration-200 drop-shadow-[0_0_15px_rgba(34,197,94,0.7)] hover:drop-shadow-[0_0_25px_rgba(34,197,94,0.9)]"
                         />
                       </div>
-                      <label className="text-sm mb-1">Enter a City, ST:</label>
+                      <label className="text-sm font-medium mb-1 block">Enter a City, ST:</label>
                       <Input
                         type="text"
                         value={mapsLocation}
@@ -1811,7 +1929,12 @@ const HtmlBuilder: React.FC = () => {
                           placeholder="Paste your iframe code here..."
                           className="flex-1"
                         />
-                        <CopyButton value={mapsEmbedCode} />
+                        <CopyButton 
+                          value={mapsEmbedCode}
+                          clickOrder={copyClickOrder['mapsEmbedCode'] || null}
+                          onCopyClick={() => handleCopyClick('mapsEmbedCode')}
+                          onResetClick={() => handleResetClick('mapsEmbedCode')}
+                        />
                       </div>
                     </div>
                     {/* Bottom-left cell: Instructions to Link */}
