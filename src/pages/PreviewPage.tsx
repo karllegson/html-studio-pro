@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useTaskContext } from '../context/TaskContext';
 import { Company, TaskImage } from '../types';
 import { db } from '../firebase/config';
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, onSnapshot } from 'firebase/firestore';
 import '../styles/wordpress-preview.css';
 
 /**
@@ -100,53 +100,52 @@ export default function PreviewPage() {
       return;
     }
 
-    // Wait for companies to load
-    if (companies.length === 0) {
-      return;
-    }
-
-    // Find the task by ID
-    const foundTask = tasks.find(t => t.id === taskId);
-
-    if (foundTask) {
-      setTask(foundTask);
-      
-      // Get the company for this task
-      if (foundTask.companyId) {
-        const foundCompany = getCompanyById(foundTask.companyId);
-        console.log('Found company:', foundCompany);
-        console.log('Company logoUrl:', foundCompany?.logoUrl);
-        console.log('Company name:', foundCompany?.name);
-        setCompany(foundCompany || null);
+    // Set up real-time listener for task changes
+    const taskRef = doc(db, 'tasks', taskId);
+    const unsubscribe = onSnapshot(taskRef, (snapshot) => {
+      if (snapshot.exists()) {
+        const taskData = { id: snapshot.id, ...snapshot.data() };
+        setTask(taskData);
         
-        // Fetch company FAQ tags
-        if (foundCompany) {
-          const tagsRef = doc(db, 'companyTags', foundTask.companyId);
-          getDoc(tagsRef).then((snap) => {
-            if (snap.exists()) {
-              const tags = snap.data();
-              setCompanyFaqTags(tags.faqTags || []);
-            } else {
+        // Get the company for this task
+        if (taskData.companyId) {
+          const foundCompany = getCompanyById(taskData.companyId);
+          setCompany(foundCompany || null);
+          
+          // Fetch company FAQ tags
+          if (foundCompany) {
+            const tagsRef = doc(db, 'companyTags', taskData.companyId);
+            getDoc(tagsRef).then((snap) => {
+              if (snap.exists()) {
+                const tags = snap.data();
+                setCompanyFaqTags(tags.faqTags || []);
+              } else {
+                setCompanyFaqTags([]);
+              }
+            }).catch((error) => {
+              console.error('Error fetching company tags:', error);
               setCompanyFaqTags([]);
-            }
-          }).catch((error) => {
-            console.error('Error fetching company tags:', error);
+            });
+          } else {
             setCompanyFaqTags([]);
-          });
+          }
         } else {
+          setCompany(null);
           setCompanyFaqTags([]);
         }
+        
+        setLoading(false);
       } else {
-        console.log('Task has no companyId');
-        setCompany(null);
-        setCompanyFaqTags([]);
+        setLoading(false);
       }
-      
+    }, (error) => {
+      console.error('Error listening to task:', error);
       setLoading(false);
-    } else {
-      setLoading(false);
-    }
-  }, [taskId, tasks, companies, navigate, getCompanyById]);
+    });
+
+    // Cleanup listener on unmount
+    return () => unsubscribe();
+  }, [taskId, navigate, getCompanyById]);
 
   // Handle FAQ accordion interactions
   useEffect(() => {
