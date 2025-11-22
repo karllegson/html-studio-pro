@@ -56,6 +56,10 @@ export interface TaskImage {
   size: number;
   /** ISO timestamp of when the image was uploaded */
   uploadedAt: string;
+  /** Alt text for the image (from Google Doc import) */
+  alt?: string;
+  /** Title attribute for the image (from Google Doc import) */
+  title?: string;
 }
 
 /**

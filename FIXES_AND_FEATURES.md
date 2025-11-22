@@ -4,6 +4,73 @@ This document tracks all bugs fixed and new features added to HTML Studio Pro.
 
 ---
 
+## ✨ New Features
+
+### **Google Doc Image Info Import** _(Added: Nov 22, 2025)_
+
+**Feature:**  
+Users can now import image metadata (alt text, titles, filenames) directly from their Google Doc content by pasting it into a modal. The system intelligently parses the content and automatically applies the metadata to uploaded photos.
+
+**How It Works:**
+1. User clicks "Import Image Info from Google Doc" button below the Google Doc Link field
+2. A modal opens with a large textarea
+3. User pastes the raw Google Doc content (including image blocks)
+4. Click "Parse Content" to extract image metadata
+5. Preview shows all found images with their metadata
+6. Click "Apply to Images" to automatically:
+   - Auto-select the first image as the featured image
+   - Match remaining images by filename and HTML src numbers
+   - Apply alt text and titles to all matched photos
+
+**Google Doc Format:**
+```
+IMAGE URL
+great-exterior-remodeling-contractors-spofford-nh-jancewicz-and-son.jpg
+
+IMAGE FILE NAME
+great-exterior-remodeling-contractors-spofford-nh-jancewicz-and-son
+
+IMAGE (SEARCH) TITLE
+Great Exterior Remodeling Contractors In Spofford, NH | Jancewicz & Son
+
+IMAGE ALT TEXT
+A new black front door with sidelights installed on a New Hampshire house.
+```
+
+**Smart Matching Logic:**
+- **Featured Image**: First parsed image (Image 1) is auto-selected as featured image
+- **HTML Integration**: Second parsed image (Image 2) matches HTML `src="1"`, third matches `src="2"`, etc.
+- **Filename Matching**: System tries to match parsed filenames with actual uploaded photo filenames
+- **Order Fallback**: If filename match fails, uses sequential order
+- **Two-Source Confirmation**: Uses both HTML editor src numbers AND Google Doc order for accurate matching
+
+**Example Workflow:**
+```
+Google Doc Content:          HTML Editor:             Result:
+Image 1 (Featured)    →      [not in HTML]      →    Auto-selected as featured
+Image 2               →      <img src="1">      →    Applied to photo-1.jpg
+Image 3               →      <img src="2">      →    Applied to photo-2.jpg
+Image 4               →      <img src="3">      →    Applied to photo-3.jpg
+```
+
+**Benefits:**
+- Saves time by bulk-importing image metadata instead of manual entry
+- Reduces errors by matching filenames automatically
+- Integrates with existing HTML src numbering system
+- Auto-selects featured image for faster workflow
+
+**Files Created:**
+- `src/utils/googleDocParser.ts` - Parses Google Doc content to extract image metadata
+- `src/utils/imageMatching.ts` - Smart matching algorithm for images
+- `src/components/html-builder/GoogleDocImportModal.tsx` - Modal UI component
+
+**Files Modified:**
+- `src/types/index.ts` - Added `alt` and `title` fields to `TaskImage` interface
+- `src/components/html-builder/CompanySection.tsx` - Added import button below Google Doc Link
+- `src/pages/HtmlBuilder.tsx` - Added handler function and modal integration
+
+---
+
 ## 🐛 Bug Fixes
 
 ### **Image URL Copy Buttons - All Turning Purple Bug** _(Fixed: Nov 22, 2025)_

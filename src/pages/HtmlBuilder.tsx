@@ -23,6 +23,9 @@ import { CompanyTemplateList } from '@/components/html-builder/CompanyTemplateSe
 import { subscribeToCompanyTags, CompanyTags } from '@/utils/companyTags';
 import { LinkDialog } from '@/components/html-builder/LinkDialog';
 import { sortImagesByHtmlOrder } from '@/utils/imageSorting';
+import { GoogleDocImportModal } from '@/components/html-builder/GoogleDocImportModal';
+import { ParsedImageInfo } from '@/utils/googleDocParser';
+import { matchImageMetadata } from '@/utils/imageMatching';
 
 // Auto-save disabled for debugging jitter issue
 
@@ -96,6 +99,7 @@ const HtmlBuilder: React.FC = () => {
   const [tagsLoading, setTagsLoading] = useState(false);
 
   const [linkDialogOpen, setLinkDialogOpen] = useState(false);
+  const [googleDocImportOpen, setGoogleDocImportOpen] = useState(false);
 
   const [sidebarWidth, setSidebarWidth] = useState(260);
   const [editorOnlyMode, setEditorOnlyMode] = useState(false);
@@ -437,6 +441,70 @@ const HtmlBuilder: React.FC = () => {
     setGoogleDocLink(value);
     if (currentTask) {
       updateTask(currentTask.id, { googleDocLink: value });
+    }
+  };
+
+  // Handle importing image info from Google Doc
+  const handleApplyImageMetadata = (parsedImages: ParsedImageInfo[]) => {
+    if (!currentTask || parsedImages.length === 0) return;
+
+    try {
+      // Match parsed metadata with uploaded images
+      const mappings = matchImageMetadata(images, parsedImages, htmlContent);
+
+      // Apply metadata to images
+      const updatedImages = [...images];
+      
+      mappings.forEach(mapping => {
+        const { imageIndex, metadata, matchType } = mapping;
+        
+        if (imageIndex >= 0 && imageIndex < updatedImages.length) {
+          updatedImages[imageIndex] = {
+            ...updatedImages[imageIndex],
+            alt: metadata.altText || updatedImages[imageIndex].alt,
+            title: metadata.searchTitle || updatedImages[imageIndex].title
+          };
+
+          // If this is the featured image, auto-select it
+          if (matchType === 'featured') {
+            setFeaturedImg(updatedImages[imageIndex].url);
+            // Also set featured image alt and title
+            if (metadata.altText) {
+              setFeaturedAlt(metadata.altText);
+            }
+            if (metadata.searchTitle) {
+              setFeaturedTitle(metadata.searchTitle);
+            }
+          }
+        }
+      });
+
+      // Update images state
+      setImages(updatedImages);
+
+      // Save to Firestore
+      if (currentTask) {
+        updateTask(currentTask.id, { 
+          images: updatedImages,
+          featuredImg: mappings.find(m => m.matchType === 'featured')?.imageIndex !== undefined
+            ? updatedImages[mappings.find(m => m.matchType === 'featured')!.imageIndex].url
+            : featuredImg,
+          featuredAlt: parsedImages[0]?.altText || featuredAlt,
+          featuredTitle: parsedImages[0]?.searchTitle || featuredTitle
+        });
+      }
+
+      toast({
+        title: 'Image metadata applied',
+        description: `Successfully applied metadata to ${mappings.length} image(s)`,
+      });
+    } catch (error) {
+      console.error('Error applying image metadata:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to apply image metadata',
+        variant: 'destructive'
+      });
     }
   };
 
@@ -1524,6 +1592,7 @@ const HtmlBuilder: React.FC = () => {
                       onPageTypeChange={handlePageTypeChange}
                       onTeamworkLinkChange={handleTeamworkLinkChange}
                       onGoogleDocLinkChange={handleGoogleDocLinkChange}
+                      onImportImageInfo={() => setGoogleDocImportOpen(true)}
                     />
                   </div>
                   <div className="flex flex-col h-full min-h-[320px]">
@@ -2103,6 +2172,11 @@ const HtmlBuilder: React.FC = () => {
           onOpenChange={setLinkDialogOpen}
           onConfirm={handleLinkConfirm}
           selectedText={selectedText}
+        />
+        <GoogleDocImportModal
+          open={googleDocImportOpen}
+          onOpenChange={setGoogleDocImportOpen}
+          onApply={handleApplyImageMetadata}
         />
         
         {/* Task Completion Popup */}

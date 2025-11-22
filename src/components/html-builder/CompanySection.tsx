@@ -23,6 +23,7 @@ interface CompanySectionProps {
   onPageTypeChange: (value: string) => void;
   onTeamworkLinkChange: (value: string) => void;
   onGoogleDocLinkChange: (value: string) => void;
+  onImportImageInfo?: () => void;
 }
 
 export const CompanySection: React.FC<CompanySectionProps> = ({
@@ -34,6 +35,7 @@ export const CompanySection: React.FC<CompanySectionProps> = ({
   onPageTypeChange,
   onTeamworkLinkChange,
   onGoogleDocLinkChange,
+  onImportImageInfo,
 }) => {
   const { companies } = useTaskContext();
 
@@ -111,6 +113,19 @@ export const CompanySection: React.FC<CompanySectionProps> = ({
             <CopyButton value={googleDocLink} />
           </div>
         </div>
+        
+        {onImportImageInfo && (
+          <div className="mt-3">
+            <Button
+              onClick={onImportImageInfo}
+              variant="outline"
+              className="w-full"
+              size="sm"
+            >
+              Import Image Info from Google Doc
+            </Button>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

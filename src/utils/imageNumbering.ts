@@ -53,3 +53,4 @@ export function extractImageNumbers(htmlContent: string): number[] {
   return numbers;
 }
 
+
