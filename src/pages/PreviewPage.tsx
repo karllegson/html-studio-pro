@@ -828,6 +828,22 @@ export default function PreviewPage() {
     return { matches, foundCategory };
   };
 
+  // Check if image src attributes contain numbers instead of URLs
+  const checkImageSrcNumbers = (htmlContent: string): { hasNumberedSrc: boolean; numberedSrcCount: number } => {
+    if (!htmlContent) {
+      return { hasNumberedSrc: false, numberedSrcCount: 0 };
+    }
+
+    // Pattern to match <img> tags with src that are just numbers
+    const imgTagRegex = /<img[^>]*src=["'](\d+)["'][^>]*>/gi;
+    const matches = htmlContent.match(imgTagRegex);
+    
+    return {
+      hasNumberedSrc: matches !== null && matches.length > 0,
+      numberedSrcCount: matches ? matches.length : 0
+    };
+  };
+
   // Check for empty hrefs in buttons and anchor tags
   const checkEmptyHrefs = (htmlContent: string): { hasEmptyHref: boolean; firstEmptyHrefPosition: number | null } => {
     if (!htmlContent) {
@@ -1254,6 +1270,23 @@ export default function PreviewPage() {
                           ) : (
                             <span className="checklist-value checklist-complete">
                               ✓ All links have hrefs
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })()}
+                    {(() => {
+                      const imageSrcCheck = checkImageSrcNumbers(task.htmlContent || '');
+                      return (
+                        <div className="checklist-item">
+                          <span className="checklist-label">Image URLs:</span>
+                          {imageSrcCheck.hasNumberedSrc ? (
+                            <span className="checklist-value checklist-incomplete">
+                              ✗ {imageSrcCheck.numberedSrcCount} image(s) with numbered src (click "Import Image Hrefs")
+                            </span>
+                          ) : (
+                            <span className="checklist-value checklist-complete">
+                              ✓ All images have URLs
                             </span>
                           )}
                         </div>
