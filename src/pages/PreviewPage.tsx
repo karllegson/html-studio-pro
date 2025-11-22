@@ -573,8 +573,12 @@ export default function PreviewPage() {
     
     let processed = html;
     
+    // Check if HTML has numbered src attributes (don't process images if so)
+    const hasNumberedSrc = checkImageSrcNumbers(html).hasNumberedSrc;
+    
     // Replace image src URLs with uploaded images (for preview only)
-    if (task.images && task.images.length > 0 && company) {
+    // BUT only if src doesn't contain numbers (src="1", src="2", etc)
+    if (task.images && task.images.length > 0 && company && !hasNumberedSrc) {
       const usedImageIndices = new Set<number>(); // Track which images have been used
       let fallbackIndex = 0; // Track index for fallback matching
       
