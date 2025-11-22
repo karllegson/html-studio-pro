@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useTaskContext } from '../context/TaskContext';
 import { Company, TaskImage } from '../types';
 import { db } from '../firebase/config';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import '../styles/wordpress-preview.css';
 
 /**
@@ -20,6 +20,63 @@ export default function PreviewPage() {
   const [company, setCompany] = useState<Company | null>(null);
   const [companyFaqTags, setCompanyFaqTags] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
+  const [hrefsImported, setHrefsImported] = useState(false);
+  const [htmlBeforeImport, setHtmlBeforeImport] = useState('');
+
+  // Handle importing/undoing image hrefs
+  const handleToggleImageHrefs = async () => {
+    if (!task || !taskId || !company) return;
+
+    if (hrefsImported) {
+      // Undo: restore original HTML
+      const updatedTask = { ...task, htmlContent: htmlBeforeImport };
+      setTask(updatedTask);
+      
+      // Update Firestore
+      try {
+        const taskRef = doc(db, 'tasks', taskId);
+        await updateDoc(taskRef, { htmlContent: htmlBeforeImport });
+      } catch (error) {
+        console.error('Error undoing hrefs:', error);
+      }
+      
+      setHrefsImported(false);
+      setHtmlBeforeImport('');
+    } else {
+      // Import hrefs
+      if (!task.images || task.images.length === 0 || !task.htmlContent) return;
+
+      // Save current HTML for undo
+      setHtmlBeforeImport(task.htmlContent);
+
+      const nonFeaturedImages = task.images.filter((img: TaskImage) => img.url !== task.featuredImg);
+      let updatedHtml = task.htmlContent;
+
+      nonFeaturedImages.forEach((image: TaskImage, index: number) => {
+        const srcNumber = index + 1;
+        const filename = image.name.replace(/\.[^/.]+$/, '').replace(/-\d+x\d+$/, '');
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const url = `${company.basePath}${year}/${month}/${company.prefix}${filename}${company.fileSuffix}`;
+        
+        updatedHtml = updatedHtml.replace(new RegExp(`src=["']${srcNumber}["']`, 'gi'), `src="${url}"`);
+      });
+
+      const updatedTask = { ...task, htmlContent: updatedHtml };
+      setTask(updatedTask);
+      
+      // Update Firestore
+      try {
+        const taskRef = doc(db, 'tasks', taskId);
+        await updateDoc(taskRef, { htmlContent: updatedHtml });
+      } catch (error) {
+        console.error('Error importing hrefs:', error);
+      }
+      
+      setHrefsImported(true);
+    }
+  };
 
   useEffect(() => {
     // Override body styles for clean white background
@@ -1058,6 +1115,39 @@ export default function PreviewPage() {
                   {/* Task Info Section */}
                   <div className="checklist-section">
                     <h4 className="checklist-section-title">Task Information</h4>
+                    
+                    {/* Import Image Hrefs Button */}
+                    <button
+                      onClick={handleToggleImageHrefs}
+                      disabled={!task.images || task.images.length === 0}
+                      style={{
+                        width: '100%',
+                        padding: '0.75rem 1rem',
+                        marginBottom: '1rem',
+                        borderRadius: '0.5rem',
+                        border: 'none',
+                        fontSize: '0.875rem',
+                        fontWeight: 600,
+                        cursor: task.images && task.images.length > 0 ? 'pointer' : 'not-allowed',
+                        opacity: task.images && task.images.length > 0 ? 1 : 0.5,
+                        background: hrefsImported ? '#dc3545' : '#0d6efd',
+                        color: '#fff',
+                        transition: 'all 0.2s ease'
+                      }}
+                      onMouseEnter={(e) => {
+                        if (task.images && task.images.length > 0) {
+                          e.currentTarget.style.opacity = '0.9';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (task.images && task.images.length > 0) {
+                          e.currentTarget.style.opacity = '1';
+                        }
+                      }}
+                    >
+                      {hrefsImported ? 'Undo Hrefs' : 'Import Image Hrefs'}
+                    </button>
+                    
                     <div className="checklist-item">
                       <span className="checklist-label">Page Type:</span>
                       <span className="checklist-value">
