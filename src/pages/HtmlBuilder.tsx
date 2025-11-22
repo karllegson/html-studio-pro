@@ -448,12 +448,27 @@ const HtmlBuilder: React.FC = () => {
   const handleApplyImageMetadata = (parsedImages: ParsedImageInfo[]) => {
     if (!currentTask || parsedImages.length === 0) return;
 
+    // Check if images are uploaded
+    if (images.length === 0) {
+      toast({
+        title: 'No images uploaded',
+        description: 'Please upload images first before importing metadata',
+        variant: 'destructive'
+      });
+      return;
+    }
+
     try {
       // Match parsed metadata with uploaded images
       const mappings = matchImageMetadata(images, parsedImages, htmlContent);
 
+      console.log('Image Mappings:', mappings);
+
       // Apply metadata to images
       const updatedImages = [...images];
+      let featuredImageUrl: string | null = null;
+      let featuredAltText: string | null = null;
+      let featuredTitleText: string | null = null;
       
       mappings.forEach(mapping => {
         const { imageIndex, metadata, matchType } = mapping;
@@ -467,14 +482,15 @@ const HtmlBuilder: React.FC = () => {
 
           // If this is the featured image, auto-select it
           if (matchType === 'featured') {
-            setFeaturedImg(updatedImages[imageIndex].url);
-            // Also set featured image alt and title
-            if (metadata.altText) {
-              setFeaturedAlt(metadata.altText);
-            }
-            if (metadata.searchTitle) {
-              setFeaturedTitle(metadata.searchTitle);
-            }
+            featuredImageUrl = updatedImages[imageIndex].url;
+            featuredAltText = metadata.altText || null;
+            featuredTitleText = metadata.searchTitle || null;
+            
+            console.log('Setting featured image:', {
+              url: featuredImageUrl,
+              alt: featuredAltText,
+              title: featuredTitleText
+            });
           }
         }
       });
@@ -482,21 +498,39 @@ const HtmlBuilder: React.FC = () => {
       // Update images state
       setImages(updatedImages);
 
+      // Update featured image states if found
+      if (featuredImageUrl) {
+        setFeaturedImg(featuredImageUrl);
+        if (featuredAltText) {
+          setFeaturedAlt(featuredAltText);
+        }
+        if (featuredTitleText) {
+          setFeaturedTitle(featuredTitleText);
+        }
+      }
+
       // Save to Firestore
       if (currentTask) {
-        updateTask(currentTask.id, { 
+        const updateData: any = { 
           images: updatedImages,
-          featuredImg: mappings.find(m => m.matchType === 'featured')?.imageIndex !== undefined
-            ? updatedImages[mappings.find(m => m.matchType === 'featured')!.imageIndex].url
-            : featuredImg,
-          featuredAlt: parsedImages[0]?.altText || featuredAlt,
-          featuredTitle: parsedImages[0]?.searchTitle || featuredTitle
-        });
+        };
+
+        if (featuredImageUrl) {
+          updateData.featuredImg = featuredImageUrl;
+        }
+        if (featuredAltText) {
+          updateData.featuredAlt = featuredAltText;
+        }
+        if (featuredTitleText) {
+          updateData.featuredTitle = featuredTitleText;
+        }
+
+        updateTask(currentTask.id, updateData);
       }
 
       toast({
         title: 'Image metadata applied',
-        description: `Successfully applied metadata to ${mappings.length} image(s)`,
+        description: `Successfully applied metadata to ${mappings.length} image(s)${featuredImageUrl ? ' and set featured image' : ''}`,
       });
     } catch (error) {
       console.error('Error applying image metadata:', error);
