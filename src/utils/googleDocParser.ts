@@ -39,47 +39,62 @@ export function parseImageInfoFromGoogleDoc(content: string): ParsedImageInfo[] 
   let lastField: 'imageUrl' | 'fileName' | 'searchTitle' | 'altText' | null = null;
   let order = 1;
   
+  console.log('Parsing Google Doc content, total lines:', lines.length);
+  
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
+    const upperLine = line.toUpperCase();
     
-    // Check for field markers
-    if (line === 'IMAGE URL') {
+    // Skip empty lines
+    if (line.length === 0) continue;
+    
+    // Check for field markers (case-insensitive, flexible matching)
+    if (upperLine.includes('IMAGE URL') || upperLine === 'IMAGE URL') {
       // Save previous image if it exists
       if (Object.keys(currentImage).length > 0) {
+        console.log(`Saving image ${order}:`, currentImage);
         images.push({ ...currentImage, order } as ParsedImageInfo);
         order++;
         currentImage = {};
       }
       lastField = 'imageUrl';
+      console.log('Found IMAGE URL marker');
       continue;
     }
     
-    if (line === 'IMAGE FILE NAME') {
+    if (upperLine.includes('IMAGE FILE NAME') || upperLine === 'IMAGE FILE NAME') {
       lastField = 'fileName';
+      console.log('Found IMAGE FILE NAME marker');
       continue;
     }
     
-    if (line === 'IMAGE (SEARCH) TITLE' || line === 'IMAGE SEARCH TITLE') {
+    if (upperLine.includes('IMAGE') && (upperLine.includes('SEARCH') || upperLine.includes('TITLE'))) {
       lastField = 'searchTitle';
+      console.log('Found IMAGE TITLE marker');
       continue;
     }
     
-    if (line === 'IMAGE ALT TEXT') {
+    if (upperLine.includes('IMAGE ALT') || upperLine === 'IMAGE ALT TEXT') {
       lastField = 'altText';
+      console.log('Found IMAGE ALT TEXT marker');
       continue;
     }
     
     // If we have a field marker set, the next non-empty line is the value
     if (lastField && line.length > 0) {
       currentImage[lastField] = line;
+      console.log(`Set ${lastField} to:`, line);
       lastField = null;
     }
   }
   
   // Save the last image if it exists
   if (Object.keys(currentImage).length > 0) {
+    console.log(`Saving final image ${order}:`, currentImage);
     images.push({ ...currentImage, order } as ParsedImageInfo);
   }
+  
+  console.log('Total images parsed:', images.length);
   
   return images;
 }
