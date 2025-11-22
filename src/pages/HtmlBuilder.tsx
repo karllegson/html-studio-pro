@@ -26,6 +26,7 @@ import { sortImagesByHtmlOrder } from '@/utils/imageSorting';
 import { GoogleDocImportModal } from '@/components/html-builder/GoogleDocImportModal';
 import { ParsedImageInfo } from '@/utils/googleDocParser';
 import { matchImageMetadata } from '@/utils/imageMatching';
+import { extractImageNumbers } from '@/utils/imageNumbering';
 
 // Auto-save disabled for debugging jitter issue
 
@@ -1466,9 +1467,20 @@ const HtmlBuilder: React.FC = () => {
                         // Determine image number for non-featured images when sorting is enabled
                         let imageNumber: number | null = null;
                         if (reorderByHtml && !isFeaturedImage) {
-                          // Find the index in sortedImages (excluding featured)
+                          // Extract HTML src numbers
+                          const htmlSrcNumbers = extractImageNumbers(htmlContent);
+                          
+                          // Find the index of this image in sortedImages (excluding featured)
                           const nonFeaturedSorted = sortedImages.filter(img => !(featuredImg && img.url === featuredImg));
-                          imageNumber = nonFeaturedSorted.findIndex(img => img.url === image.url) + 1;
+                          const positionInSorted = nonFeaturedSorted.findIndex(img => img.url === image.url);
+                          
+                          // Map position to HTML src number
+                          if (positionInSorted >= 0 && positionInSorted < htmlSrcNumbers.length) {
+                            imageNumber = htmlSrcNumbers[positionInSorted];
+                          } else {
+                            // If no matching src number, show sequential position
+                            imageNumber = positionInSorted + 1;
+                          }
                         }
                         
                         return (
