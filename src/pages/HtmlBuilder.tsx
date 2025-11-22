@@ -573,6 +573,32 @@ const HtmlBuilder: React.FC = () => {
     }
   };
 
+  // Handle importing image hrefs into HTML code
+  const handleImportImageHrefs = () => {
+    if (!companyId || images.length === 0 || !htmlContent.trim()) return;
+
+    const company = getCompanyById(companyId);
+    if (!company) return;
+
+    const nonFeaturedImages = images.filter(img => img.url !== featuredImg);
+    let updatedHtml = htmlContent;
+
+    nonFeaturedImages.forEach((image, index) => {
+      const srcNumber = index + 1;
+      const filename = image.name.replace(/\.[^/.]+$/, '').replace(/-\d+x\d+$/, '');
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const url = `${company.basePath}${year}/${month}/${company.prefix}${filename}${company.fileSuffix}`;
+      
+      updatedHtml = updatedHtml.replace(new RegExp(`src=["']${srcNumber}["']`, 'gi'), `src="${url}"`);
+    });
+
+    setHtmlContent(updatedHtml);
+    if (currentTask) updateTask(currentTask.id, { htmlContent: updatedHtml });
+    toast({ title: 'Image hrefs imported', description: `Updated ${nonFeaturedImages.length} image src attributes` });
+  };
+
   // Unified text change handler with silent validation
   const handleTextChange = (field: string, value: string) => {
     // Basic validation
@@ -2028,8 +2054,16 @@ const HtmlBuilder: React.FC = () => {
                     onHighlight={handleHighlight}
                     highlightDisabled={!selectedText}
                   />
-                  {/* Go to top button below editor */}
-                  <div className="w-full flex justify-center mt-2">
+                  {/* Action buttons below editor */}
+                  <div className="w-full flex justify-center gap-3 mt-2">
+                    <Button 
+                      variant="default" 
+                      size="sm" 
+                      onClick={handleImportImageHrefs}
+                      disabled={images.length === 0}
+                    >
+                      Import Image Hrefs
+                    </Button>
                     <Button variant="outline" size="sm" onClick={() => {
                       try {
                         // Scroll to the very top of the page
