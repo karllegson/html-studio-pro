@@ -122,7 +122,7 @@ export const CompanySection: React.FC<CompanySectionProps> = ({
               className="w-full"
               size="sm"
             >
-              Import Image Info from Google Doc
+              Paste Google Doc Content Here
             </Button>
           </div>
         )}
