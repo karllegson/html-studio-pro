@@ -1371,12 +1371,6 @@ const HtmlBuilder: React.FC = () => {
                         
                         return (
                           <div key={`${image.url}-${index}`} className={`flex items-center gap-6 p-5 bg-muted rounded-lg border hover:border-blue-500 transition-colors ${isFeaturedImage ? 'border-green-500 border-2' : ''}`}>
-                            {/* Featured Image Badge */}
-                            {isFeaturedImage && (
-                              <div className="absolute top-2 left-2 bg-green-600 text-white px-3 py-1 rounded-full text-xs font-semibold shadow-lg">
-                                ⭐ Featured Image
-                              </div>
-                            )}
                             {/* Image Thumbnail */}
                             <div className="flex-shrink-0 relative">
                               <img
