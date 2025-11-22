@@ -465,39 +465,69 @@ const HtmlBuilder: React.FC = () => {
 
       console.log('Image Mappings:', mappings);
 
-      // Apply metadata to images
-      const updatedImages = [...images];
+      // Create a new ordered array based on mappings
+      const reorderedImages: TaskImage[] = [];
       let featuredImageUrl: string | null = null;
       let featuredAltText: string | null = null;
       let featuredTitleText: string | null = null;
+      let featuredImageWithMetadata: TaskImage | null = null;
       
-      mappings.forEach(mapping => {
-        const { imageIndex, metadata, matchType } = mapping;
+      // Separate featured from non-featured mappings
+      const featuredMapping = mappings.find(m => m.matchType === 'featured');
+      const nonFeaturedMappings = mappings.filter(m => m.matchType !== 'featured');
+      
+      // Process non-featured images in order of parsed metadata
+      nonFeaturedMappings.forEach(mapping => {
+        const { imageIndex, metadata } = mapping;
         
-        if (imageIndex >= 0 && imageIndex < updatedImages.length) {
-          updatedImages[imageIndex] = {
-            ...updatedImages[imageIndex],
-            alt: metadata.altText || updatedImages[imageIndex].alt,
-            title: metadata.searchTitle || updatedImages[imageIndex].title
+        if (imageIndex >= 0 && imageIndex < images.length) {
+          const imageWithMetadata = {
+            ...images[imageIndex],
+            alt: metadata.altText || images[imageIndex].alt,
+            title: metadata.searchTitle || images[imageIndex].title
           };
-
-          // If this is the featured image, auto-select it
-          if (matchType === 'featured') {
-            featuredImageUrl = updatedImages[imageIndex].url;
-            featuredAltText = metadata.altText || null;
-            featuredTitleText = metadata.searchTitle || null;
-            
-            console.log('Setting featured image:', {
-              url: featuredImageUrl,
-              alt: featuredAltText,
-              title: featuredTitleText
-            });
-          }
+          reorderedImages.push(imageWithMetadata);
+        }
+      });
+      
+      // Process featured image
+      if (featuredMapping) {
+        const { imageIndex, metadata } = featuredMapping;
+        
+        if (imageIndex >= 0 && imageIndex < images.length) {
+          featuredImageWithMetadata = {
+            ...images[imageIndex],
+            alt: metadata.altText || images[imageIndex].alt,
+            title: metadata.searchTitle || images[imageIndex].title
+          };
+          
+          featuredImageUrl = featuredImageWithMetadata.url;
+          featuredAltText = metadata.altText || null;
+          featuredTitleText = metadata.searchTitle || null;
+          
+          console.log('Setting featured image:', {
+            url: featuredImageUrl,
+            alt: featuredAltText,
+            title: featuredTitleText
+          });
+          
+          // Add featured image at the END
+          reorderedImages.push(featuredImageWithMetadata);
+        }
+      }
+      
+      // Add any remaining images that weren't matched
+      const usedIndices = new Set(mappings.map(m => m.imageIndex));
+      images.forEach((img, index) => {
+        if (!usedIndices.has(index)) {
+          reorderedImages.push(img);
         }
       });
 
-      // Update images state
-      setImages(updatedImages);
+      console.log('Reordered images array:', reorderedImages.map(img => img.name));
+
+      // Update images state with reordered array
+      setImages(reorderedImages);
 
       // Update featured image states if found
       if (featuredImageUrl) {
@@ -513,7 +543,7 @@ const HtmlBuilder: React.FC = () => {
       // Save to Firestore
       if (currentTask) {
         const updateData: any = { 
-          images: updatedImages,
+          images: reorderedImages,
         };
 
         if (featuredImageUrl) {
