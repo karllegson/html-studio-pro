@@ -1737,12 +1737,12 @@ const HtmlBuilder: React.FC = () => {
                         
                         {/* Featured Image Selection Modal */}
                         <Dialog open={featuredImgModalOpen} onOpenChange={setFeaturedImgModalOpen}>
-                          <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden flex flex-col">
+                          <DialogContent className="max-w-4xl max-h-[85vh] overflow-hidden flex flex-col">
                             <DialogHeader>
                               <DialogTitle>Select Featured Image</DialogTitle>
                             </DialogHeader>
-                            <ScrollArea className="flex-1 pr-4">
-                              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 p-2">
+                            <div className="overflow-y-auto max-h-[calc(85vh-8rem)] pr-2">
+                              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 p-2">
                                 {(currentTask?.images || []).map(img => (
                                   <div
                                     key={img.url}
@@ -1775,7 +1775,7 @@ const HtmlBuilder: React.FC = () => {
                                   </div>
                                 ))}
                               </div>
-                            </ScrollArea>
+                            </div>
                           </DialogContent>
                         </Dialog>
                       </div>
