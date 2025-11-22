@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { useTaskContext } from '@/context/TaskContext';
 import { Button } from '@/components/ui/button';
@@ -22,6 +22,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { CompanyTemplateList } from '@/components/html-builder/CompanyTemplateSection';
 import { subscribeToCompanyTags, CompanyTags } from '@/utils/companyTags';
 import { LinkDialog } from '@/components/html-builder/LinkDialog';
+import { sortImagesByHtmlOrder } from '@/utils/imageSorting';
 
 // Auto-save disabled for debugging jitter issue
 
@@ -103,6 +104,12 @@ const HtmlBuilder: React.FC = () => {
   // Copy button click tracking (local state only)
   const [copyClickOrder, setCopyClickOrder] = useState<{ [buttonId: string]: number }>({});
   const [copyClickCounter, setCopyClickCounter] = useState(0);
+
+  // Image reordering toggle
+  const [reorderByHtml, setReorderByHtml] = useState(true);
+  
+  // Featured image selection modal
+  const [featuredImgModalOpen, setFeaturedImgModalOpen] = useState(false);
 
   const handleCopyClick = (buttonId: string) => {
     if (!copyClickOrder[buttonId]) {
@@ -1148,7 +1155,7 @@ const HtmlBuilder: React.FC = () => {
                 </div>
                 
                 <div className="space-y-4">
-                  <div className="flex gap-4">
+                  <div className="flex gap-4 flex-wrap">
                     <button
                       type="button"
                       className="px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2 font-medium transition-all shadow-md hover:shadow-lg whitespace-nowrap"
@@ -1198,6 +1205,21 @@ const HtmlBuilder: React.FC = () => {
                           <span>Download All</span>
                         </>
                       )}
+                    </button>
+                    <button
+                      type="button"
+                      className={`px-6 py-2.5 rounded-lg inline-flex items-center justify-center gap-2 font-medium transition-all shadow-md hover:shadow-lg whitespace-nowrap ${
+                        reorderByHtml 
+                          ? 'bg-orange-600 hover:bg-orange-700 text-white' 
+                          : 'bg-gray-600 hover:bg-gray-700 text-white'
+                      }`}
+                      onClick={() => setReorderByHtml(!reorderByHtml)}
+                      title={reorderByHtml ? 'Images sorted by HTML order' : 'Images in upload order'}
+                    >
+                      <svg className="h-4 w-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
+                      </svg>
+                      <span>{reorderByHtml ? '✓ Sorted by HTML' : 'Sort by HTML'}</span>
                     </button>
                   </div>
                   
@@ -1313,8 +1335,14 @@ const HtmlBuilder: React.FC = () => {
                     ))}
                     
                     {/* Show uploaded images */}
-                    {images.length > 0 ? (
-                      images.map((image, index) => {
+                    {(() => {
+                      // Sort images by HTML order when in images-only mode AND toggle is on
+                      const sortedImages = isImagesOnlyMode && htmlContent && reorderByHtml
+                        ? sortImagesByHtmlOrder(htmlContent, images, featuredImg)
+                        : images;
+                      
+                      return sortedImages.length > 0 ? (
+                        sortedImages.map((image, index) => {
                         // Extract filename from the image name
                         const filename = image.name.replace(/\.[^/.]+$/, ""); // Remove file extension
                         
@@ -1331,11 +1359,26 @@ const HtmlBuilder: React.FC = () => {
                         };
                         
                         const fullUrl = generateImageUrl(filename);
+                        const isFeaturedImage = featuredImg && image.url === featuredImg;
+                        
+                        // Determine image number for non-featured images when sorting is enabled
+                        let imageNumber: number | null = null;
+                        if (reorderByHtml && !isFeaturedImage) {
+                          // Find the index in sortedImages (excluding featured)
+                          const nonFeaturedSorted = sortedImages.filter(img => !(featuredImg && img.url === featuredImg));
+                          imageNumber = nonFeaturedSorted.findIndex(img => img.url === image.url) + 1;
+                        }
                         
                         return (
-                          <div key={index} className="flex items-center gap-6 p-5 bg-muted rounded-lg border hover:border-blue-500 transition-colors">
+                          <div key={`${image.url}-${index}`} className={`flex items-center gap-6 p-5 bg-muted rounded-lg border hover:border-blue-500 transition-colors ${isFeaturedImage ? 'border-green-500 border-2' : ''}`}>
+                            {/* Featured Image Badge */}
+                            {isFeaturedImage && (
+                              <div className="absolute top-2 left-2 bg-green-600 text-white px-3 py-1 rounded-full text-xs font-semibold shadow-lg">
+                                ⭐ Featured Image
+                              </div>
+                            )}
                             {/* Image Thumbnail */}
-                            <div className="flex-shrink-0">
+                            <div className="flex-shrink-0 relative">
                               <img
                                 src={image.url}
                                 alt={image.name}
@@ -1348,9 +1391,19 @@ const HtmlBuilder: React.FC = () => {
                             {/* Image Info and URL */}
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2 mb-2">
+                                {imageNumber !== null && (
+                                  <span className="text-lg font-bold text-blue-600 bg-blue-100 px-2 py-0.5 rounded">
+                                    #{imageNumber}
+                                  </span>
+                                )}
                                 <span className="text-base font-medium text-foreground truncate">
                                   {image.name}
                                 </span>
+                                {isFeaturedImage && (
+                                  <span className="text-xs font-semibold text-green-600 bg-green-100 px-2 py-0.5 rounded">
+                                    Featured Image
+                                  </span>
+                                )}
                                 <span className="text-sm text-muted-foreground">
                                   ({(image.size / 1024).toFixed(1)} KB)
                                 </span>
@@ -1383,7 +1436,8 @@ const HtmlBuilder: React.FC = () => {
                         <p>No images uploaded yet</p>
                         <p className="text-sm mt-1">Upload images to see them with their generated URLs</p>
                       </div>
-                    )}
+                    );
+                    })()}
                   </div>
                   
                   {/* Upload Section */}
@@ -1527,7 +1581,7 @@ const HtmlBuilder: React.FC = () => {
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => setShowFeaturedDropdown(v => !v)}
+                          onClick={() => setFeaturedImgModalOpen(true)}
                           type="button"
                           className="w-48 justify-between"
                         >
@@ -1539,30 +1593,52 @@ const HtmlBuilder: React.FC = () => {
                               {currentTask?.images?.find(img => img.url === featuredImg)?.name || 'Select image'}
                             </span>
                           ) : 'Select image'}
-                          <span className="ml-2">▼</span>
+                          <span className="ml-2">🖼️</span>
                         </Button>
-                        {/* Dropdown popover */}
-                        {showFeaturedDropdown && (
-                          <div className="absolute left-1/2 -translate-x-1/2 top-full z-10 mt-1 w-48 bg-background border border-border rounded shadow-lg">
-                            <ul className="max-h-48 overflow-auto">
-                              {(currentTask?.images || []).map(img => (
-                                <li
-                                  key={img.url}
-                                  className={`px-3 py-2 cursor-pointer hover:bg-muted ${featuredImg === img.url ? 'bg-muted' : ''}`}
-                                  onClick={() => {
-                                    setFeaturedImg(img.url);
-                                    setShowFeaturedDropdown(false);
-                                    if (currentTask) {
-                                      updateTask(currentTask.id, { featuredImg: img.url });
-                                    }
-                                  }}
-                                >
-                                  {img.name}
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
+                        
+                        {/* Featured Image Selection Modal */}
+                        <Dialog open={featuredImgModalOpen} onOpenChange={setFeaturedImgModalOpen}>
+                          <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden flex flex-col">
+                            <DialogHeader>
+                              <DialogTitle>Select Featured Image</DialogTitle>
+                            </DialogHeader>
+                            <ScrollArea className="flex-1 pr-4">
+                              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 p-2">
+                                {(currentTask?.images || []).map(img => (
+                                  <div
+                                    key={img.url}
+                                    className={`relative cursor-pointer rounded-lg overflow-hidden border-4 transition-all hover:scale-105 ${
+                                      featuredImg === img.url 
+                                        ? 'border-green-500 ring-4 ring-green-300' 
+                                        : 'border-gray-300 hover:border-blue-400'
+                                    }`}
+                                    onClick={() => {
+                                      setFeaturedImg(img.url);
+                                      if (currentTask) {
+                                        updateTask(currentTask.id, { featuredImg: img.url });
+                                      }
+                                      setFeaturedImgModalOpen(false);
+                                    }}
+                                  >
+                                    <img
+                                      src={img.url}
+                                      alt={img.name}
+                                      className="w-full h-48 object-cover"
+                                    />
+                                    {featuredImg === img.url && (
+                                      <div className="absolute top-2 right-2 bg-green-600 text-white rounded-full p-2 shadow-lg">
+                                        <Check className="h-5 w-5" />
+                                      </div>
+                                    )}
+                                    <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-70 text-white p-2 text-xs truncate">
+                                      {img.name}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </ScrollArea>
+                          </DialogContent>
+                        </Dialog>
                       </div>
                     </div>
                     {/* Preview of selected image */}

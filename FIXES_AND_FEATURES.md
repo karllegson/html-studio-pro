@@ -286,6 +286,216 @@ The original 64×64px thumbnails were too small to distinguish between different
 
 ---
 
+### **Auto-Sort Images by HTML Order** _(Added: Nov 22, 2025)_
+
+**Description:**  
+Images in the Images & Converter tab can be automatically reorganized to match the order they appear in the HTML editor code. A toggle button lets users switch between HTML order and upload order. Featured image is labeled with a badge and placed at the bottom when sorting is enabled.
+
+**Use Case:**  
+When working with blog posts or landing pages, users paste HTML code with multiple `<img>` tags that have alt text. The uploaded images need to be inserted in the correct order matching the HTML. Previously, images were only shown in upload order, making it difficult to match them with the HTML code. Now users can toggle sorting to match HTML order, making it easy to copy the correct image URL for each tag.
+
+**How It Works:**
+
+*Toggle Button:*
+- Orange "✓ Sorted by HTML" = Images are sorted by HTML order
+- Gray "Sort by HTML" = Images in upload order
+- Click to toggle between modes
+
+*Featured Image Treatment:*
+- Featured image is labeled with "⭐ Featured Image" green badge
+- Featured image has green border for easy identification
+- When sorting is enabled, featured image always appears at the bottom
+- This keeps featured image separate from body content images
+
+*Matching Process:*
+1. System extracts all `<img>` tags from HTML editor in order
+2. Gets the `alt` attribute from each img tag
+3. Normalizes alt text and image filenames (lowercase, remove special chars)
+4. Matches alt text with uploaded image filenames
+5. Reorders images to match HTML order
+6. Places featured image at the bottom
+
+*Example:*
+```html
+HTML Code:
+<img src="" alt="amazing-roof-cleaning">
+<img src="" alt="great-roof-cleaning">
+<img src="" alt="professional-roof-cleaning">
+
+Uploaded Images:
+- professional-roof-cleaning-seabrook-tx.jpeg
+- amazing-roof-cleaning-seabrook-tx.jpeg  
+- great-roof-cleaning-seabrook-tx.jpeg
+- hero-image-featured.jpeg (marked as featured)
+
+Click "Sort by HTML" Button:
+
+Images Tab Display (Sorted):
+1. amazing-roof-cleaning-seabrook-tx.jpeg     [Copy URL]
+2. great-roof-cleaning-seabrook-tx.jpeg       [Copy URL]
+3. professional-roof-cleaning-seabrook-tx.jpeg [Copy URL]
+4. ⭐ Featured Image: hero-image-featured.jpeg  [Copy URL]
+```
+
+**Behavior:**
+- Toggle control: Orange button shows sorting is active, gray shows upload order
+- Default: Sorting enabled when opening Images tab
+- Smart matching: Alt text "roof-cleaning" matches "amazing-roof-cleaning-tx-brinkmann.jpeg"
+- Unmatched images: Images without matching alt text appear after matched images
+- Featured always last: Featured image always at bottom when sorted
+- Only in Images tab: Sorting only applies to the separate Images & Converter page
+
+**Implementation:**  
+- Created `sortImagesByHtmlOrder()` utility function that parses HTML and matches images by alt attributes
+- Integrated sorting into HtmlBuilder component with toggle button
+- Added visual indicator (orange vs gray) to show sort state
+- Added featured image detection and labeling
+
+**Files Modified:**
+- `src/utils/imageSorting.ts` - Image sorting utility with HTML parsing, matching logic, and featured image handling
+- `src/pages/HtmlBuilder.tsx` - Added toggle button, conditional sorting logic, and featured image badge
+
+---
+
+### **Featured Image Modal Selector** _(Added: Nov 22, 2025)_
+
+**Description:**  
+Replaced small dropdown menu for featured image selection with a large modal popup showing bigger image thumbnails in a grid layout. Makes it much easier to identify and select the correct featured image.
+
+**Use Case:**  
+Previously, the featured image selector was a narrow dropdown showing only image filenames. Users had difficulty identifying which image to select, especially when multiple images had similar names. The new modal shows large thumbnails (192px tall) in a grid, making visual identification easy.
+
+**How It Works:**
+
+*Modal Features:*
+- Click "Select image" button → Opens full-screen modal
+- Grid layout: 2 columns on mobile, 3 on desktop
+- Large thumbnails: 192px height for clear visibility
+- Hover effects: Images scale up slightly on hover
+- Selected indicator: Green border + checkmark badge on selected image
+- Filename overlay: Image name shown at bottom of each thumbnail
+- Click any image → Selects it and closes modal
+
+*Visual Feedback:*
+```
+Before (dropdown):
+┌─────────────────┐
+│ Select image ▼  │
+└─────────────────┘
+  │ image-name-1.jpeg
+  │ image-name-2.jpeg
+  │ image-name-3.jpeg
+  └─ (text only, hard to identify)
+
+After (modal):
+┌─────────────────────────────────────┐
+│  Select Featured Image         [×]  │
+├─────────────────────────────────────┤
+│  ┌────────┐  ┌────────┐  ┌────────┐│
+│  │  IMG1  │  │  IMG2  │  │  IMG3 ✓││ (large previews)
+│  │192px h │  │192px h │  │192px h ││
+│  └────────┘  └────────┘  └────────┘│
+└─────────────────────────────────────┘
+```
+
+**Behavior:**
+- Button icon changed from ▼ to 🖼️ to indicate image selection
+- Modal scrollable for many images
+- Selected image shows green ring and checkmark
+- Clicking outside modal closes it without changing selection
+
+**Implementation:**  
+- Replaced dropdown with Dialog component
+- Added grid layout with responsive columns
+- Increased thumbnail size from small icon to 192px height
+- Added visual selection indicators
+
+**Files Modified:**
+- `src/pages/HtmlBuilder.tsx` - Replaced featured image dropdown with modal selector, added grid layout with larger thumbnails
+
+---
+
+### **Image Number-Based Sorting** _(Added: Nov 22, 2025)_
+
+**Description:**  
+Images in the Images & Converter tab can now be sorted based on numbered img src attributes in the HTML code. Users manually number their img src (e.g., `src="1"`, `src="2"`, `src="3"`), and the system automatically reorders images to match those numbers when "Sort by HTML" is enabled.
+
+**Use Case:**  
+When building HTML content, users paste code with img tags but need to match them with uploaded images. By manually numbering the img src attributes (replacing long URLs with simple numbers), users can easily see which image corresponds to which position in their HTML. The Images tab then shows a numbered badge next to each image for quick identification.
+
+**How It Works:**
+
+*User Workflow:*
+1. Paste HTML code with img tags
+2. Manually change img src from URLs to numbers:
+   ```html
+   Before:
+   <img src="https://long-url.com/image.jpg" alt="text">
+   
+   After:
+   <img src="1" alt="text">
+   <img src="2" alt="text">
+   <img src="3" alt="text">
+   ```
+3. Open Images & Converter tab
+4. Click "✓ Sorted by HTML" (orange button)
+5. Images reorder to match numbered src
+6. Each image shows a blue badge with its number (e.g., "#1", "#2")
+
+*Matching Logic:*
+- System extracts img src numbers from HTML (e.g., src="1", src="2")
+- Maps numbers to uploaded images by upload order
+- Image 1 = first uploaded image, Image 2 = second, etc.
+- Featured image always appears at bottom with "Featured Image" label
+- Non-featured images show "#N" badge when sorted
+
+*Example:*
+```
+HTML Code (user manually numbered):
+<img src="1" alt="roof-cleaning">
+<img src="2" alt="gutter-cleaning">
+<img src="3" alt="pressure-washing">
+
+Uploaded Images (in upload order):
+1. amazing-roof-tx.jpeg
+2. gutter-clean-tx.jpeg  
+3. pressure-wash-tx.jpeg
+4. hero-featured.jpeg (marked as featured)
+
+Images Tab Display (Sorted):
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#1  amazing-roof-tx.jpeg         [Copy URL]
+#2  gutter-clean-tx.jpeg         [Copy URL]
+#3  pressure-wash-tx.jpeg        [Copy URL]
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    hero-featured.jpeg           [Copy URL]
+    Featured Image
+```
+
+**Visual Elements:**
+- **Blue badge "#N"**: Shows image number when sorting is active
+- **Green badge "Featured Image"**: Labels the featured image
+- **Green border + star badge**: Highlights featured image
+- **Featured at bottom**: Separated from body content images
+
+**Fallback Behavior:**
+- If no numbered src found, falls back to alt text matching (previous method)
+- If sorting is disabled (gray button), shows images in upload order
+- Numbers only appear when "Sort by HTML" is enabled
+
+**Implementation:**  
+- Created `imageNumbering.ts` utility to extract img src numbers from HTML
+- Updated `imageSorting.ts` to use number-based ordering with fallback to alt text
+- Added number badge display in HtmlBuilder component
+- Featured image always positioned at bottom when sorted
+
+**Files Modified:**
+- `src/utils/imageNumbering.ts` (new) - Extracts numbered img src from HTML
+- `src/utils/imageSorting.ts` - Updated to use number-based ordering, added featured image handling
+- `src/pages/HtmlBuilder.tsx` - Added number badge display, featured image label, and sorting integration
+
+---
+
 ### [Document New Features Here]
 
 _Add new entries below as features are implemented._
