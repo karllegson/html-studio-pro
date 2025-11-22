@@ -113,6 +113,10 @@ const HtmlBuilder: React.FC = () => {
   // Image reordering toggle
   const [reorderByHtml, setReorderByHtml] = useState(true);
   
+  // Track image hrefs import state for undo
+  const [hrefsImported, setHrefsImported] = useState(false);
+  const [htmlBeforeImport, setHtmlBeforeImport] = useState('');
+  
   // Featured image selection modal
   const [featuredImgModalOpen, setFeaturedImgModalOpen] = useState(false);
 
@@ -573,30 +577,44 @@ const HtmlBuilder: React.FC = () => {
     }
   };
 
-  // Handle importing image hrefs into HTML code
-  const handleImportImageHrefs = () => {
-    if (!companyId || images.length === 0 || !htmlContent.trim()) return;
+  // Handle importing/undoing image hrefs
+  const handleToggleImageHrefs = () => {
+    if (hrefsImported) {
+      // Undo: restore original HTML
+      setHtmlContent(htmlBeforeImport);
+      if (currentTask) updateTask(currentTask.id, { htmlContent: htmlBeforeImport });
+      setHrefsImported(false);
+      setHtmlBeforeImport('');
+      toast({ title: 'Import undone', description: 'Restored original src numbers' });
+    } else {
+      // Import hrefs
+      if (!companyId || images.length === 0 || !htmlContent.trim()) return;
 
-    const company = getCompanyById(companyId);
-    if (!company) return;
+      const company = getCompanyById(companyId);
+      if (!company) return;
 
-    const nonFeaturedImages = images.filter(img => img.url !== featuredImg);
-    let updatedHtml = htmlContent;
+      // Save current HTML for undo
+      setHtmlBeforeImport(htmlContent);
 
-    nonFeaturedImages.forEach((image, index) => {
-      const srcNumber = index + 1;
-      const filename = image.name.replace(/\.[^/.]+$/, '').replace(/-\d+x\d+$/, '');
-      const now = new Date();
-      const year = now.getFullYear();
-      const month = String(now.getMonth() + 1).padStart(2, '0');
-      const url = `${company.basePath}${year}/${month}/${company.prefix}${filename}${company.fileSuffix}`;
-      
-      updatedHtml = updatedHtml.replace(new RegExp(`src=["']${srcNumber}["']`, 'gi'), `src="${url}"`);
-    });
+      const nonFeaturedImages = images.filter(img => img.url !== featuredImg);
+      let updatedHtml = htmlContent;
 
-    setHtmlContent(updatedHtml);
-    if (currentTask) updateTask(currentTask.id, { htmlContent: updatedHtml });
-    toast({ title: 'Image hrefs imported', description: `Updated ${nonFeaturedImages.length} image src attributes` });
+      nonFeaturedImages.forEach((image, index) => {
+        const srcNumber = index + 1;
+        const filename = image.name.replace(/\.[^/.]+$/, '').replace(/-\d+x\d+$/, '');
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const url = `${company.basePath}${year}/${month}/${company.prefix}${filename}${company.fileSuffix}`;
+        
+        updatedHtml = updatedHtml.replace(new RegExp(`src=["']${srcNumber}["']`, 'gi'), `src="${url}"`);
+      });
+
+      setHtmlContent(updatedHtml);
+      if (currentTask) updateTask(currentTask.id, { htmlContent: updatedHtml });
+      setHrefsImported(true);
+      toast({ title: 'Image hrefs imported', description: `Updated ${nonFeaturedImages.length} image src attributes` });
+    }
   };
 
   // Unified text change handler with silent validation
@@ -1246,6 +1264,9 @@ const HtmlBuilder: React.FC = () => {
             editorOnlyMode={true}
             sidebarVisible={sidebarVisible}
             setSidebarVisible={setSidebarVisible}
+            onToggleImageHrefs={handleToggleImageHrefs}
+            hrefsImported={hrefsImported}
+            imagesUploaded={images.length > 0}
           />
         </div>
       );
@@ -1645,6 +1666,9 @@ const HtmlBuilder: React.FC = () => {
                 onContactLinkChange={setContactLink}
                 onNotesChange={handleNotesChange}
                 onPageTypeChange={handlePageTypeChange}
+                onToggleImageHrefs={handleToggleImageHrefs}
+                hrefsImported={hrefsImported}
+                imagesUploaded={images.length > 0}
                 onlyTagsAndComponents={true}
                 sidebarWidth={sidebarWidth}
                 setSidebarWidth={setSidebarWidth}
@@ -1671,6 +1695,9 @@ const HtmlBuilder: React.FC = () => {
                       onContactLinkChange={setContactLink}
                       onNotesChange={handleNotesChange}
                       onPageTypeChange={handlePageTypeChange}
+                      onToggleImageHrefs={handleToggleImageHrefs}
+                      hrefsImported={hrefsImported}
+                      imagesUploaded={images.length > 0}
                       onlyTagsAndComponents={true}
                       sidebarWidth={sidebarWidth}
                       setSidebarWidth={setSidebarWidth}
@@ -2053,17 +2080,12 @@ const HtmlBuilder: React.FC = () => {
                     setSidebarVisible={setSidebarVisible}
                     onHighlight={handleHighlight}
                     highlightDisabled={!selectedText}
+                    onToggleImageHrefs={handleToggleImageHrefs}
+                    hrefsImported={hrefsImported}
+                    imagesUploaded={images.length > 0}
                   />
-                  {/* Action buttons below editor */}
-                  <div className="w-full flex justify-center gap-3 mt-2">
-                    <Button 
-                      variant="default" 
-                      size="sm" 
-                      onClick={handleImportImageHrefs}
-                      disabled={images.length === 0}
-                    >
-                      Import Image Hrefs
-                    </Button>
+                  {/* Go to top button below editor */}
+                  <div className="w-full flex justify-center mt-2">
                     <Button variant="outline" size="sm" onClick={() => {
                       try {
                         // Scroll to the very top of the page

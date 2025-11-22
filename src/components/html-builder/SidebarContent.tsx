@@ -4,6 +4,7 @@ import { TagsSection } from './TagsSection';
 import { CompanySection } from './CompanySection';
 import { ImageConverter } from './ImageConverter';
 import { CompanyTemplateList } from './CompanyTemplateSection';
+import { Button } from '@/components/ui/button';
 
 interface SidebarContentProps {
   companyId: string;
@@ -20,6 +21,9 @@ interface SidebarContentProps {
   sidebarWidth?: number;
   setSidebarWidth?: (width: number) => void;
   visible?: boolean;
+  onToggleImageHrefs?: () => void;
+  hrefsImported?: boolean;
+  imagesUploaded?: boolean;
 }
 
 export const SidebarContent: React.FC<SidebarContentProps> = ({
@@ -37,6 +41,9 @@ export const SidebarContent: React.FC<SidebarContentProps> = ({
   sidebarWidth = 260,
   setSidebarWidth,
   visible = true,
+  onToggleImageHrefs,
+  hrefsImported = false,
+  imagesUploaded = false,
 }) => {
   if (!visible) return null;
 
@@ -117,6 +124,17 @@ export const SidebarContent: React.FC<SidebarContentProps> = ({
             onInsertTemplate={onInsertComponent}
           />
           <ImageConverter companyId={companyId} />
+          {onToggleImageHrefs && (
+            <Button
+              variant={hrefsImported ? "destructive" : "default"}
+              size="sm"
+              onClick={onToggleImageHrefs}
+              disabled={!imagesUploaded}
+              className="w-full"
+            >
+              {hrefsImported ? "Undo Hrefs" : "Import Image Hrefs"}
+            </Button>
+          )}
         </div>
         {/* Scrollable Tags section - stays in view when scrolling */}
         <div className="flex-1 overflow-hidden">

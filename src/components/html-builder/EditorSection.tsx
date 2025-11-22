@@ -34,6 +34,9 @@ interface EditorSectionProps {
   versionHistory?: Version[];
   onVersionSelect?: (index: number) => void;
   viewingVersionIndex?: number | null;
+  onToggleImageHrefs?: () => void;
+  hrefsImported?: boolean;
+  imagesUploaded?: boolean;
 }
 
 // Custom theme for professional dark theme with better code visibility
@@ -67,6 +70,9 @@ export const EditorSection = forwardRef<EditorSectionRef, EditorSectionProps>(({
   highlightDisabled,
   versionHistory = [],
   onVersionSelect,
+  onToggleImageHrefs,
+  hrefsImported = false,
+  imagesUploaded = false,
   viewingVersionIndex = null,
 }, ref) => {
   const editorDivRef = useRef<HTMLDivElement>(null);
@@ -234,6 +240,17 @@ export const EditorSection = forwardRef<EditorSectionRef, EditorSectionProps>(({
             <TooltipContent>{editorOnlyMode ? "Exit Focus Mode" : "Focus: Distraction-Free Editor"}</TooltipContent>
           </Tooltip>
         </TooltipProvider>
+        {onToggleImageHrefs && (
+          <Button
+            variant={hrefsImported ? "destructive" : "default"}
+            size="sm"
+            onClick={onToggleImageHrefs}
+            disabled={!imagesUploaded}
+            className="flex items-center gap-1"
+          >
+            {hrefsImported ? "Undo Hrefs" : "Import Image Hrefs"}
+          </Button>
+        )}
       </div>
       {/* Group 5: Version History - Far Right */}
       <div className="flex items-center gap-2 ml-auto">
