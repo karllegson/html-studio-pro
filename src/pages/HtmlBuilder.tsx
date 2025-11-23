@@ -488,7 +488,8 @@ const HtmlBuilder: React.FC = () => {
           const imageWithMetadata = {
             ...images[imageIndex],
             alt: metadata.altText || images[imageIndex].alt,
-            title: metadata.searchTitle || images[imageIndex].title
+            title: metadata.searchTitle || images[imageIndex].title,
+            googleDocOrder: metadata.order // Store Google Doc order
           };
           reorderedImages.push(imageWithMetadata);
         }
@@ -502,7 +503,8 @@ const HtmlBuilder: React.FC = () => {
           featuredImageWithMetadata = {
             ...images[imageIndex],
             alt: metadata.altText || images[imageIndex].alt,
-            title: metadata.searchTitle || images[imageIndex].title
+            title: metadata.searchTitle || images[imageIndex].title,
+            googleDocOrder: metadata.order // Store Google Doc order (will be 1)
           };
           
           featuredImageUrl = featuredImageWithMetadata.url;
@@ -1605,11 +1607,30 @@ const HtmlBuilder: React.FC = () => {
                             
                             {/* Image Info and URL */}
                             <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2 mb-2">
+                              <div className="flex items-center gap-2 mb-2 flex-wrap">
                                 {imageNumber !== null && (
                                   <span className="text-lg font-bold text-blue-600 bg-blue-100 px-2 py-0.5 rounded">
-                                    #{imageNumber}
+                                    HTML: #{imageNumber}
                                   </span>
+                                )}
+                                {image.googleDocOrder && (
+                                  <span className="text-lg font-bold text-purple-600 bg-purple-100 px-2 py-0.5 rounded">
+                                    Doc: #{image.googleDocOrder}
+                                  </span>
+                                )}
+                                {/* Match indicator - only show if both exist and we're sorting */}
+                                {reorderByHtml && imageNumber !== null && image.googleDocOrder && !isFeaturedImage && (
+                                  <>
+                                    {imageNumber === (image.googleDocOrder - 1) ? (
+                                      <span className="text-sm font-semibold text-green-600 bg-green-100 px-2 py-0.5 rounded flex items-center gap-1">
+                                        ✓ Match
+                                      </span>
+                                    ) : (
+                                      <span className="text-sm font-semibold text-yellow-600 bg-yellow-100 px-2 py-0.5 rounded flex items-center gap-1">
+                                        ⚠ Mismatch
+                                      </span>
+                                    )}
+                                  </>
                                 )}
                                 {isFeaturedImage && (
                                   <span className="text-xs font-semibold text-green-600 bg-green-100 px-2 py-0.5 rounded">

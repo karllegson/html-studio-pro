@@ -60,6 +60,8 @@ export interface TaskImage {
   alt?: string;
   /** Title attribute for the image (from Google Doc import) */
   title?: string;
+  /** Google Doc order (1-based, where 1 = featured image) */
+  googleDocOrder?: number;
 }
 
 /**
