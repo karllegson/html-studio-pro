@@ -98,6 +98,8 @@ export interface Task {
   metaDescription?: string;
   instructionsToLink?: string;
   mapsLocation?: string;
+  googleDocPastedContent?: string; // Pasted content from Google Doc modal
+  googleDocParsedImages?: string; // JSON stringified ParsedImageInfo[]
   mapsEmbedCode?: string;
   /** URL of the selected featured image */
   featuredImg?: string;

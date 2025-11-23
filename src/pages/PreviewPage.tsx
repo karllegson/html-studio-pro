@@ -53,7 +53,7 @@ export default function PreviewPage() {
       let updatedHtml = task.htmlContent;
       let imageIndex = 0;
 
-      // Replace numbered src (src="1", src="2", etc.)
+      // Replace numbered src (src="1", src="[1]", etc.)
       nonFeaturedImages.forEach((image: TaskImage, index: number) => {
         const srcNumber = index + 1;
         const filename = image.name.replace(/\.[^/.]+$/, '').replace(/-\d+x\d+$/, '');
@@ -62,7 +62,8 @@ export default function PreviewPage() {
         const month = String(now.getMonth() + 1).padStart(2, '0');
         const url = `${company.basePath}${year}/${month}/${company.prefix}${filename}${company.fileSuffix}`;
         
-        updatedHtml = updatedHtml.replace(new RegExp(`src=["']${srcNumber}["']`, 'gi'), `src="${url}"`);
+        // Replace both src="1" and src="[1]" formats
+        updatedHtml = updatedHtml.replace(new RegExp(`src=["']\\[?${srcNumber}\\]?["']`, 'gi'), `src="${url}"`);
       });
 
       // Also replace empty src (src="" or src='')
@@ -855,8 +856,9 @@ export default function PreviewPage() {
       return { hasNumberedSrc: false, numberedSrcCount: 0 };
     }
 
-    // Pattern to match <img> tags with src that are just numbers OR empty
-    const numberedSrcRegex = /<img[^>]*src=["'](\d+)["'][^>]*>/gi;
+    // Pattern to match <img> tags with src that are just numbers (with or without brackets) OR empty
+    // Matches: src="1", src="[1]", src=""
+    const numberedSrcRegex = /<img[^>]*src=["']\[?(\d+)\]?["'][^>]*>/gi;
     const emptySrcRegex = /<img[^>]*src=["']["'][^>]*>/gi;
     
     const numberedMatches = htmlContent.match(numberedSrcRegex);

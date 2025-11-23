@@ -104,6 +104,21 @@ const HtmlBuilder: React.FC = () => {
   const [googleDocPastedContent, setGoogleDocPastedContent] = useState('');
   const [googleDocParsedImages, setGoogleDocParsedImages] = useState<ParsedImageInfo[]>([]);
 
+  // Save Google Doc content to Firestore whenever it changes
+  const updateGoogleDocContent = (content: string) => {
+    setGoogleDocPastedContent(content);
+    if (currentTask) {
+      updateTask(currentTask.id, { googleDocPastedContent: content });
+    }
+  };
+
+  const updateGoogleDocParsedImages = (images: ParsedImageInfo[]) => {
+    setGoogleDocParsedImages(images);
+    if (currentTask) {
+      updateTask(currentTask.id, { googleDocParsedImages: JSON.stringify(images) });
+    }
+  };
+
   const [sidebarWidth, setSidebarWidth] = useState(260);
   const [editorOnlyMode, setEditorOnlyMode] = useState(false);
   const [sidebarVisible, setSidebarVisible] = useState(true);
@@ -592,10 +607,26 @@ const HtmlBuilder: React.FC = () => {
       toast({ title: 'Import undone', description: 'Restored original src numbers' });
     } else {
       // Import hrefs
-      if (!companyId || images.length === 0 || !htmlContent.trim()) return;
+      if (!companyId) {
+        toast({ title: 'Error', description: 'Please select a company first', variant: 'destructive' });
+        return;
+      }
+      
+      if (images.length === 0) {
+        toast({ title: 'Error', description: 'Please upload images first', variant: 'destructive' });
+        return;
+      }
+      
+      if (!htmlContent.trim()) {
+        toast({ title: 'Error', description: 'Please add HTML code first', variant: 'destructive' });
+        return;
+      }
 
       const company = getCompanyById(companyId);
-      if (!company) return;
+      if (!company) {
+        toast({ title: 'Error', description: 'Company not found', variant: 'destructive' });
+        return;
+      }
 
       // Save current HTML for undo
       setHtmlBeforeImport(htmlContent);
@@ -604,7 +635,7 @@ const HtmlBuilder: React.FC = () => {
       let updatedHtml = htmlContent;
       let imageIndex = 0;
 
-      // Replace numbered src (src="1", src="2", etc.)
+      // Replace numbered src (src="1", src="[1]", etc.)
       nonFeaturedImages.forEach((image, index) => {
         const srcNumber = index + 1;
         const filename = image.name.replace(/\.[^/.]+$/, '').replace(/-\d+x\d+$/, '');
@@ -613,7 +644,8 @@ const HtmlBuilder: React.FC = () => {
         const month = String(now.getMonth() + 1).padStart(2, '0');
         const url = `${company.basePath}${year}/${month}/${company.prefix}${filename}${company.fileSuffix}`;
         
-        updatedHtml = updatedHtml.replace(new RegExp(`src=["']${srcNumber}["']`, 'gi'), `src="${url}"`);
+        // Replace both src="1" and src="[1]" formats
+        updatedHtml = updatedHtml.replace(new RegExp(`src=["']\\[?${srcNumber}\\]?["']`, 'gi'), `src="${url}"`);
       });
 
       // Also replace empty src (src="" or src='')
@@ -744,6 +776,17 @@ const HtmlBuilder: React.FC = () => {
       const company = getCompanyById(currentTask.companyId);
       if (company) {
         setContactLink(company.contactLink || '');
+      }
+      // Load Google Doc modal data
+      setGoogleDocPastedContent(currentTask.googleDocPastedContent || '');
+      if (currentTask.googleDocParsedImages) {
+        try {
+          const parsed = JSON.parse(currentTask.googleDocParsedImages);
+          setGoogleDocParsedImages(parsed);
+        } catch (err) {
+          console.error('Failed to parse googleDocParsedImages:', err);
+          setGoogleDocParsedImages([]);
+        }
       }
     }
   }, [currentTask, tasksLoaded, getCompanyById, updateTask]);
@@ -1583,13 +1626,14 @@ const HtmlBuilder: React.FC = () => {
                           
                           // Only show numbers if HTML actually has src numbers
                           if (htmlSrcNumbers.length > 0) {
-                            // Find the index of this image in sortedImages (excluding featured)
-                            const nonFeaturedSorted = sortedImages.filter(img => !(featuredImg && img.url === featuredImg));
-                            const positionInSorted = nonFeaturedSorted.findIndex(img => img.url === image.url);
+                            // Find this image's position in the ORIGINAL non-featured array (upload order)
+                            const originalNonFeatured = images.filter(img => !(featuredImg && img.url === featuredImg));
+                            const originalPosition = originalNonFeatured.findIndex(img => img.url === image.url);
                             
-                            // Map position to HTML src number
-                            if (positionInSorted >= 0 && positionInSorted < htmlSrcNumbers.length) {
-                              imageNumber = htmlSrcNumbers[positionInSorted];
+                            // Map original position to HTML src number
+                            // This way, if image at position 0 has src="[9]", it will show HTML: #9
+                            if (originalPosition >= 0 && originalPosition < htmlSrcNumbers.length) {
+                              imageNumber = htmlSrcNumbers[originalPosition];
                             }
                           }
                         }
@@ -2363,9 +2407,9 @@ const HtmlBuilder: React.FC = () => {
           onOpenChange={setGoogleDocImportOpen}
           onApply={handleApplyImageMetadata}
           pastedContent={googleDocPastedContent}
-          setPastedContent={setGoogleDocPastedContent}
+          setPastedContent={updateGoogleDocContent}
           parsedImages={googleDocParsedImages}
-          setParsedImages={setGoogleDocParsedImages}
+          setParsedImages={updateGoogleDocParsedImages}
         />
         
         {/* Task Completion Popup */}

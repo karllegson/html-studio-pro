@@ -32,6 +32,7 @@ export function numberImageSources(htmlContent: string): {
 /**
  * Extracts image numbers from img src attributes in HTML
  * Returns array of numbers in the order they appear
+ * Supports both src="1" and src="[1]" formats
  * 
  * @param htmlContent - The HTML code to parse
  * @returns Array of image numbers (e.g., [1, 2, 3])
@@ -39,8 +40,9 @@ export function numberImageSources(htmlContent: string): {
 export function extractImageNumbers(htmlContent: string): number[] {
   const numbers: number[] = [];
   
-  // Match all img tags with numeric src attributes
-  const imgTagRegex = /<img[^>]*src=["'](\d+)["'][^>]*>/gi;
+  // Match all img tags with numeric src attributes (with or without brackets)
+  // Matches: src="1", src="[1]", src='2', src='[2]'
+  const imgTagRegex = /<img[^>]*src=["']\[?(\d+)\]?["'][^>]*>/gi;
   let match;
   
   while ((match = imgTagRegex.exec(htmlContent)) !== null) {
