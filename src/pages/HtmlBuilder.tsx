@@ -101,6 +101,8 @@ const HtmlBuilder: React.FC = () => {
 
   const [linkDialogOpen, setLinkDialogOpen] = useState(false);
   const [googleDocImportOpen, setGoogleDocImportOpen] = useState(false);
+  const [googleDocPastedContent, setGoogleDocPastedContent] = useState('');
+  const [googleDocParsedImages, setGoogleDocParsedImages] = useState<ParsedImageInfo[]>([]);
 
   const [sidebarWidth, setSidebarWidth] = useState(260);
   const [editorOnlyMode, setEditorOnlyMode] = useState(false);
@@ -2360,6 +2362,10 @@ const HtmlBuilder: React.FC = () => {
           open={googleDocImportOpen}
           onOpenChange={setGoogleDocImportOpen}
           onApply={handleApplyImageMetadata}
+          pastedContent={googleDocPastedContent}
+          setPastedContent={setGoogleDocPastedContent}
+          parsedImages={googleDocParsedImages}
+          setParsedImages={setGoogleDocParsedImages}
         />
         
         {/* Task Completion Popup */}

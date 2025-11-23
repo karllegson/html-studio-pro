@@ -9,13 +9,30 @@ interface GoogleDocImportModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onApply: (parsedImages: ParsedImageInfo[]) => void;
+  pastedContent: string;
+  setPastedContent: (content: string) => void;
+  parsedImages: ParsedImageInfo[];
+  setParsedImages: (images: ParsedImageInfo[]) => void;
 }
 
-export function GoogleDocImportModal({ open, onOpenChange, onApply }: GoogleDocImportModalProps) {
-  const [pastedContent, setPastedContent] = useState('');
-  const [parsedImages, setParsedImages] = useState<ParsedImageInfo[]>([]);
+export function GoogleDocImportModal({ 
+  open, 
+  onOpenChange, 
+  onApply,
+  pastedContent,
+  setPastedContent,
+  parsedImages,
+  setParsedImages
+}: GoogleDocImportModalProps) {
   const [showPreview, setShowPreview] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Restore preview state if we have parsed images
+  React.useEffect(() => {
+    if (parsedImages.length > 0) {
+      setShowPreview(true);
+    }
+  }, [open, parsedImages]);
 
   const handleParse = () => {
     if (!pastedContent.trim()) {
@@ -46,15 +63,11 @@ export function GoogleDocImportModal({ open, onOpenChange, onApply }: GoogleDocI
   const handleApply = () => {
     if (parsedImages.length > 0) {
       onApply(parsedImages);
-      handleClose();
+      onOpenChange(false);
     }
   };
 
   const handleClose = () => {
-    setPastedContent('');
-    setParsedImages([]);
-    setShowPreview(false);
-    setError(null);
     onOpenChange(false);
   };
 
