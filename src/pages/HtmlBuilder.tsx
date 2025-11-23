@@ -598,7 +598,9 @@ const HtmlBuilder: React.FC = () => {
 
       const nonFeaturedImages = images.filter(img => img.url !== featuredImg);
       let updatedHtml = htmlContent;
+      let imageIndex = 0;
 
+      // Replace numbered src (src="1", src="2", etc.)
       nonFeaturedImages.forEach((image, index) => {
         const srcNumber = index + 1;
         const filename = image.name.replace(/\.[^/.]+$/, '').replace(/-\d+x\d+$/, '');
@@ -608,6 +610,21 @@ const HtmlBuilder: React.FC = () => {
         const url = `${company.basePath}${year}/${month}/${company.prefix}${filename}${company.fileSuffix}`;
         
         updatedHtml = updatedHtml.replace(new RegExp(`src=["']${srcNumber}["']`, 'gi'), `src="${url}"`);
+      });
+
+      // Also replace empty src (src="" or src='')
+      updatedHtml = updatedHtml.replace(/(<img[^>]*?)src=["']["']/gi, (match) => {
+        if (imageIndex < nonFeaturedImages.length) {
+          const image = nonFeaturedImages[imageIndex];
+          const filename = image.name.replace(/\.[^/.]+$/, '').replace(/-\d+x\d+$/, '');
+          const now = new Date();
+          const year = now.getFullYear();
+          const month = String(now.getMonth() + 1).padStart(2, '0');
+          const url = `${company.basePath}${year}/${month}/${company.prefix}${filename}${company.fileSuffix}`;
+          imageIndex++;
+          return match.replace(/src=["']["']/, `src="${url}"`);
+        }
+        return match;
       });
 
       setHtmlContent(updatedHtml);

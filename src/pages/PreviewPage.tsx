@@ -51,7 +51,9 @@ export default function PreviewPage() {
 
       const nonFeaturedImages = task.images.filter((img: TaskImage) => img.url !== task.featuredImg);
       let updatedHtml = task.htmlContent;
+      let imageIndex = 0;
 
+      // Replace numbered src (src="1", src="2", etc.)
       nonFeaturedImages.forEach((image: TaskImage, index: number) => {
         const srcNumber = index + 1;
         const filename = image.name.replace(/\.[^/.]+$/, '').replace(/-\d+x\d+$/, '');
@@ -61,6 +63,21 @@ export default function PreviewPage() {
         const url = `${company.basePath}${year}/${month}/${company.prefix}${filename}${company.fileSuffix}`;
         
         updatedHtml = updatedHtml.replace(new RegExp(`src=["']${srcNumber}["']`, 'gi'), `src="${url}"`);
+      });
+
+      // Also replace empty src (src="" or src='')
+      updatedHtml = updatedHtml.replace(/(<img[^>]*?)src=["']["']/gi, (match) => {
+        if (imageIndex < nonFeaturedImages.length) {
+          const image = nonFeaturedImages[imageIndex];
+          const filename = image.name.replace(/\.[^/.]+$/, '').replace(/-\d+x\d+$/, '');
+          const now = new Date();
+          const year = now.getFullYear();
+          const month = String(now.getMonth() + 1).padStart(2, '0');
+          const url = `${company.basePath}${year}/${month}/${company.prefix}${filename}${company.fileSuffix}`;
+          imageIndex++;
+          return match.replace(/src=["']["']/, `src="${url}"`);
+        }
+        return match;
       });
 
       const updatedTask = { ...task, htmlContent: updatedHtml };
@@ -838,13 +855,18 @@ export default function PreviewPage() {
       return { hasNumberedSrc: false, numberedSrcCount: 0 };
     }
 
-    // Pattern to match <img> tags with src that are just numbers
-    const imgTagRegex = /<img[^>]*src=["'](\d+)["'][^>]*>/gi;
-    const matches = htmlContent.match(imgTagRegex);
+    // Pattern to match <img> tags with src that are just numbers OR empty
+    const numberedSrcRegex = /<img[^>]*src=["'](\d+)["'][^>]*>/gi;
+    const emptySrcRegex = /<img[^>]*src=["']["'][^>]*>/gi;
+    
+    const numberedMatches = htmlContent.match(numberedSrcRegex);
+    const emptyMatches = htmlContent.match(emptySrcRegex);
+    
+    const totalCount = (numberedMatches?.length || 0) + (emptyMatches?.length || 0);
     
     return {
-      hasNumberedSrc: matches !== null && matches.length > 0,
-      numberedSrcCount: matches ? matches.length : 0
+      hasNumberedSrc: totalCount > 0,
+      numberedSrcCount: totalCount
     };
   };
 
