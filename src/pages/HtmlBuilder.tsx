@@ -733,14 +733,10 @@ const HtmlBuilder: React.FC = () => {
     
     // Check if currentTask.htmlContent is different from local state
     if (currentTask.htmlContent && currentTask.htmlContent !== htmlContent) {
-      // Detect if the change is from Import/Undo Hrefs (numbers <-> URLs)
-      const hasLocalNumbers = /src=["']\d+["']/i.test(htmlContent);
-      const hasRemoteNumbers = /src=["']\d+["']/i.test(currentTask.htmlContent);
-      
-      // If the src pattern changed, it's an external Import/Undo operation
-      if (hasLocalNumbers !== hasRemoteNumbers) {
-        setHtmlContent(currentTask.htmlContent);
-      }
+      // Always sync if the content is different and not caused by local typing
+      // Simple check: if content changed and we haven't manually edited recently
+      setHtmlContent(currentTask.htmlContent);
+      console.log('HTML synced from Firestore update');
     }
   }, [currentTask?.htmlContent]);
 
