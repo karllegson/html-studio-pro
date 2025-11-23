@@ -1615,7 +1615,7 @@ const HtmlBuilder: React.FC = () => {
                                 )}
                                 {image.googleDocOrder && (
                                   <span className="text-lg font-bold text-purple-600 bg-purple-100 px-2 py-0.5 rounded">
-                                    Doc: #{image.googleDocOrder}
+                                    {isFeaturedImage ? 'Featured' : `Doc: #${image.googleDocOrder - 1}`}
                                   </span>
                                 )}
                                 {/* Match indicator - only show if both exist and we're sorting */}
