@@ -848,6 +848,52 @@ export default function PreviewPage() {
     };
   };
 
+  // Check if HTML image URLs match the generated URLs from Images tab
+  const checkImageUrlsMatch = (htmlContent: string, images: TaskImage[], company: Company | null): { allMatch: boolean; mismatchCount: number } => {
+    if (!htmlContent || !images || images.length === 0 || !company) {
+      return { allMatch: true, mismatchCount: 0 };
+    }
+
+    // Generate expected URLs for non-featured images
+    const nonFeaturedImages = images.filter((img: TaskImage) => img.url !== task?.featuredImg);
+    const expectedUrls: string[] = [];
+    
+    nonFeaturedImages.forEach((image: TaskImage) => {
+      const filename = image.name.replace(/\.[^/.]+$/, '').replace(/-\d+x\d+$/, '');
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const url = `${company.basePath}${year}/${month}/${company.prefix}${filename}${company.fileSuffix}`;
+      expectedUrls.push(url);
+    });
+
+    // Extract all img src from HTML
+    const imgSrcRegex = /<img[^>]*src=["']([^"']+)["'][^>]*>/gi;
+    let match;
+    let mismatchCount = 0;
+    let foundSrcs: string[] = [];
+
+    while ((match = imgSrcRegex.exec(htmlContent)) !== null) {
+      const srcUrl = match[1];
+      // Skip if it's a number (already handled by checkImageSrcNumbers)
+      if (/^\d+$/.test(srcUrl)) continue;
+      
+      foundSrcs.push(srcUrl);
+    }
+
+    // Check if found URLs match expected URLs
+    expectedUrls.forEach(expectedUrl => {
+      if (!foundSrcs.some(foundUrl => foundUrl === expectedUrl)) {
+        mismatchCount++;
+      }
+    });
+
+    return {
+      allMatch: mismatchCount === 0 && foundSrcs.length > 0,
+      mismatchCount
+    };
+  };
+
   // Check for empty hrefs in buttons and anchor tags
   const checkEmptyHrefs = (htmlContent: string): { hasEmptyHref: boolean; firstEmptyHrefPosition: number | null } => {
     if (!htmlContent) {
@@ -1281,20 +1327,37 @@ export default function PreviewPage() {
                     })()}
                     {(() => {
                       const imageSrcCheck = checkImageSrcNumbers(task.htmlContent || '');
-                      return (
-                        <div className="checklist-item">
-                          <span className="checklist-label">Image URLs:</span>
-                          {imageSrcCheck.hasNumberedSrc ? (
+                      const urlMatchCheck = checkImageUrlsMatch(task.htmlContent || '', task.images || [], company);
+                      
+                      // Priority: numbered src > URL mismatch
+                      if (imageSrcCheck.hasNumberedSrc) {
+                        return (
+                          <div className="checklist-item">
+                            <span className="checklist-label">Image URLs:</span>
                             <span className="checklist-value checklist-incomplete">
                               ✗ {imageSrcCheck.numberedSrcCount} image(s) with numbered src (click "Import Image Hrefs")
                             </span>
-                          ) : (
-                            <span className="checklist-value checklist-complete">
-                              ✓ All images have URLs
+                          </div>
+                        );
+                      } else if (!urlMatchCheck.allMatch && urlMatchCheck.mismatchCount > 0) {
+                        return (
+                          <div className="checklist-item">
+                            <span className="checklist-label">Image URLs:</span>
+                            <span className="checklist-value checklist-incomplete">
+                              ✗ {urlMatchCheck.mismatchCount} URL(s) don't match Images tab - Transfer URLs
                             </span>
-                          )}
-                        </div>
-                      );
+                          </div>
+                        );
+                      } else {
+                        return (
+                          <div className="checklist-item">
+                            <span className="checklist-label">Image URLs:</span>
+                            <span className="checklist-value checklist-complete">
+                              ✓ All images have correct URLs
+                            </span>
+                          </div>
+                        );
+                      }
                     })()}
                   </div>
 
