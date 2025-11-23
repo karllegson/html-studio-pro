@@ -1575,9 +1575,9 @@ const HtmlBuilder: React.FC = () => {
                         const fullUrl = generateImageUrl(filename);
                         const isFeaturedImage = featuredImg && image.url === featuredImg;
                         
-                        // Determine image number for non-featured images when sorting is enabled
+                        // Determine image number for non-featured images (always show if HTML has src numbers)
                         let imageNumber: number | null = null;
-                        if (reorderByHtml && !isFeaturedImage) {
+                        if (!isFeaturedImage && htmlContent) {
                           // Extract HTML src numbers
                           const htmlSrcNumbers = extractImageNumbers(htmlContent);
                           
@@ -1620,8 +1620,8 @@ const HtmlBuilder: React.FC = () => {
                                     {isFeaturedImage ? 'Featured' : `Doc: #${image.googleDocOrder - 1}`}
                                   </span>
                                 )}
-                                {/* Match indicator - only show if both exist and we're sorting */}
-                                {reorderByHtml && imageNumber !== null && image.googleDocOrder && !isFeaturedImage && (
+                                {/* Match indicator - only show if both HTML and Google Doc data exist */}
+                                {imageNumber !== null && image.googleDocOrder && !isFeaturedImage && (
                                   <>
                                     {imageNumber === (image.googleDocOrder - 1) ? (
                                       <span className="text-sm font-semibold text-green-600 bg-green-100 px-2 py-0.5 rounded flex items-center gap-1">
