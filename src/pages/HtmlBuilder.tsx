@@ -1581,16 +1581,16 @@ const HtmlBuilder: React.FC = () => {
                           // Extract HTML src numbers
                           const htmlSrcNumbers = extractImageNumbers(htmlContent);
                           
-                          // Find the index of this image in sortedImages (excluding featured)
-                          const nonFeaturedSorted = sortedImages.filter(img => !(featuredImg && img.url === featuredImg));
-                          const positionInSorted = nonFeaturedSorted.findIndex(img => img.url === image.url);
-                          
-                          // Map position to HTML src number
-                          if (positionInSorted >= 0 && positionInSorted < htmlSrcNumbers.length) {
-                            imageNumber = htmlSrcNumbers[positionInSorted];
-                          } else {
-                            // If no matching src number, show sequential position
-                            imageNumber = positionInSorted + 1;
+                          // Only show numbers if HTML actually has src numbers
+                          if (htmlSrcNumbers.length > 0) {
+                            // Find the index of this image in sortedImages (excluding featured)
+                            const nonFeaturedSorted = sortedImages.filter(img => !(featuredImg && img.url === featuredImg));
+                            const positionInSorted = nonFeaturedSorted.findIndex(img => img.url === image.url);
+                            
+                            // Map position to HTML src number
+                            if (positionInSorted >= 0 && positionInSorted < htmlSrcNumbers.length) {
+                              imageNumber = htmlSrcNumbers[positionInSorted];
+                            }
                           }
                         }
                         
