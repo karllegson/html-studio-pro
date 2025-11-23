@@ -727,6 +727,23 @@ const HtmlBuilder: React.FC = () => {
     }
   }, [currentTask, tasksLoaded, getCompanyById, updateTask]);
 
+  // Sync htmlContent when it changes from external updates (e.g., Import Hrefs from Preview page)
+  useEffect(() => {
+    if (!currentTask || !htmlContent) return;
+    
+    // Check if currentTask.htmlContent is different from local state
+    if (currentTask.htmlContent && currentTask.htmlContent !== htmlContent) {
+      // Detect if the change is from Import/Undo Hrefs (numbers <-> URLs)
+      const hasLocalNumbers = /src=["']\d+["']/i.test(htmlContent);
+      const hasRemoteNumbers = /src=["']\d+["']/i.test(currentTask.htmlContent);
+      
+      // If the src pattern changed, it's an external Import/Undo operation
+      if (hasLocalNumbers !== hasRemoteNumbers) {
+        setHtmlContent(currentTask.htmlContent);
+      }
+    }
+  }, [currentTask?.htmlContent]);
+
   // Mark tasks as loaded when they arrive
   useEffect(() => {
     if (tasks.length > 0) setTasksLoaded(true);
