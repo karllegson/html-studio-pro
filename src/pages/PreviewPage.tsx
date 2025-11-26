@@ -23,6 +23,18 @@ export default function PreviewPage() {
   const [hrefsImported, setHrefsImported] = useState(false);
   const [htmlBeforeImport, setHtmlBeforeImport] = useState('');
 
+  // Set page title dynamically based on company
+  useEffect(() => {
+    if (company) {
+      const companyName = company.name || 'Unknown';
+      // Shorten company name (take first word or first 10 chars)
+      const shortCompany = companyName.split(' ')[0].substring(0, 10);
+      document.title = `Preview/${shortCompany}`;
+    } else {
+      document.title = 'Preview';
+    }
+  }, [company]);
+
   // Handle importing/undoing image hrefs
   const handleToggleImageHrefs = async () => {
     if (!task || !taskId || !company) return;

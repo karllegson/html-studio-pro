@@ -137,6 +137,30 @@ const HtmlBuilder: React.FC = () => {
   // Featured image selection modal
   const [featuredImgModalOpen, setFeaturedImgModalOpen] = useState(false);
 
+  // Set dynamic page title based on mode, company, and page type
+  useEffect(() => {
+    if (companyId) {
+      const company = getCompanyById(companyId);
+      const companyName = company?.name || 'Unknown';
+      // Shorten company name (take first word or first 10 chars)
+      const shortCompany = companyName.split(' ')[0].substring(0, 10);
+      
+      if (isImagesOnlyMode) {
+        document.title = `Images/${shortCompany}`;
+      } else if (currentTask && pageType) {
+        // Shorten page type (Landing, Sub, Blog)
+        const shortPageType = pageType === 'Landing Page' ? 'Landing' : 
+                              pageType === 'Sub Page' ? 'Sub' : 
+                              pageType === 'Blog' ? 'Blog' : pageType;
+        document.title = `${shortPageType}/${shortCompany}`;
+      } else {
+        document.title = 'HTML Studio Pro';
+      }
+    } else {
+      document.title = isImagesOnlyMode ? 'Image List' : 'HTML Studio Pro';
+    }
+  }, [isImagesOnlyMode, currentTask, companyId, pageType, getCompanyById]);
+
   const handleCopyClick = (buttonId: string) => {
     if (!copyClickOrder[buttonId]) {
       setCopyClickOrder(prev => ({

@@ -34,6 +34,11 @@ const statusToTabMap: Record<TaskStatus, string> = {
 };
 
 const Dashboard: React.FC = () => {
+  // Set page title
+  useEffect(() => {
+    document.title = 'Dashboard';
+  }, []);
+
   const {
     tasks,
     companies,

@@ -17,7 +17,7 @@ export const htmlTags: Record<string, string[]> = {
   "b-quote": ["<blockquote>", "</blockquote>"],
   "EN—Dash": ["&ndash;", null],
   "EM—Dash": ["&mdash;", null],
-  "img": ['<img src="" alt="">', null],
+  "img": ['<img src="" alt="" title="">', null],
   "ul ✓": [
     `<ul>\n  <li>Item 1</li>\n  <li>Item 2</li>\n  <li>Item 3</li>\n</ul>`,
     null
@@ -50,7 +50,7 @@ export const htmlComponents: Record<string, string> = {
   
 <div class="image-card"> <!-- Start Image Card -->
   <div class="image-card--image">
-    <img src="" alt="">
+    <img src="" alt="" title="">
   </div>
   <div class="image-card--content">
     <h3 class="title">Title</h3>
@@ -61,7 +61,7 @@ export const htmlComponents: Record<string, string> = {
   
 <div class="image-card"> <!-- Start Image Card -->
   <div class="image-card--image">
-    <img src="" alt="">
+    <img src="" alt="" title="">
   </div>
   <div class="image-card--content">
     <h3 class="title">Title</h3>
@@ -74,7 +74,7 @@ export const htmlComponents: Record<string, string> = {
   
 <div class="image-card"> <!-- Start Image Card -->
   <div class="image-card--image">
-    <img src="" alt="">
+    <img src="" alt="" title="">
   </div>
   <div class="image-card--content">
     <h3 class="title">Title</h3>
@@ -85,7 +85,7 @@ export const htmlComponents: Record<string, string> = {
   
 <div class="image-card"> <!-- Start Image Card -->
   <div class="image-card--image">
-    <img src="" alt="">
+    <img src="" alt="" title="">
   </div>
   <div class="image-card--content">
     <h3 class="title">Title</h3>
@@ -96,7 +96,7 @@ export const htmlComponents: Record<string, string> = {
   
 <div class="image-card"> <!-- Start Image Card -->
   <div class="image-card--image">
-    <img src="" alt="">
+    <img src="" alt="" title="">
   </div>
   <div class="image-card--content">
     <h3 class="title">Title</h3>
@@ -109,7 +109,7 @@ export const htmlComponents: Record<string, string> = {
   
 <div class="image-card"> <!-- Start Image Card -->
   <div class="image-card--image">
-    <img src="" alt="">
+    <img src="" alt="" title="">
   </div>
   <div class="image-card--icon">
     <div><i class="fas fa-house"></i></div>
@@ -123,7 +123,7 @@ export const htmlComponents: Record<string, string> = {
   
 <div class="image-card"> <!-- Start Image Card -->
   <div class="image-card--image">
-    <img src="" alt="">
+    <img src="" alt="" title="">
   </div>
   <div class="image-card--icon">
     <div><i class="fas fa-house"></i></div>
@@ -137,7 +137,7 @@ export const htmlComponents: Record<string, string> = {
   
 <div class="image-card"> <!-- Start Image Card -->
   <div class="image-card--image">
-    <img src="" alt="">
+    <img src="" alt="" title="">
   </div>
   <div class="image-card--icon">
     <div><i class="fas fa-house"></i></div>
@@ -154,7 +154,7 @@ export const htmlComponents: Record<string, string> = {
 <div class="image-card"> <!-- Start Image Card -->
   <span class="image-card--ribbon" style="top: .8rem; left: -3.5rem; ">New</span>
   <div class="image-card--image">
-    <img src="" alt="">
+    <img src="" alt="" title="">
   </div>
   <div class="image-card--icon">
     <div><i class="fas fa-house"></i></div>
@@ -169,7 +169,7 @@ export const htmlComponents: Record<string, string> = {
 <div class="image-card"> <!-- Start Image Card -->
   <span class="image-card--ribbon" style="top: .8rem; left: -3.5rem; ">New</span>
   <div class="image-card--image">
-    <img src="" alt="">
+    <img src="" alt="" title="">
   </div>
   <div class="image-card--icon">
     <div><i class="fas fa-house"></i></div>
@@ -184,7 +184,7 @@ export const htmlComponents: Record<string, string> = {
 <div class="image-card"> <!-- Start Image Card -->
   <span class="image-card--ribbon" style="top: .8rem; left: -3.5rem; ">New</span>
   <div class="image-card--image">
-    <img src="" alt="">
+    <img src="" alt="" title="">
   </div>
   <div class="image-card--icon">
     <div><i class="fas fa-house"></i></div>
@@ -278,7 +278,7 @@ export const htmlComponents: Record<string, string> = {
 </div> <!-- End Highlight Box -->`,
   "Horizontal Image Card": `<div class="image-card single horizontal"> <!-- Start Image Card -->
   <div class="image-card--image">
-    <img src="" alt="">
+    <img src="" alt="" title="">
   </div>
   <div class="image-card--content">
     <h3 class="title">Title</h3>
@@ -313,7 +313,7 @@ export const htmlComponents: Record<string, string> = {
 </div> <!-- End Icon CTA Box -->`,
   "Image Card": `<div class="image-card single"> <!-- Start Image Card -->
   <div class="image-card--image">
-    <img src="" alt="">
+    <img src="" alt="" title="">
   </div>
   <div class="image-card--content">
     <h3 class="title">Title</h3>
@@ -323,7 +323,7 @@ export const htmlComponents: Record<string, string> = {
 </div> <!-- End Image Card -->`,
   "Image Card Left": `<div class="image-card single left--image"> <!-- Start Image Card -->
   <div class="image-card--image">
-    <img src="" alt="">
+    <img src="" alt="" title="">
   </div>
   <div class="image-card--content">
     <h3 class="title">Title</h3>
@@ -333,7 +333,7 @@ export const htmlComponents: Record<string, string> = {
 </div> <!-- End Image Card -->`,
   "Image Card Right": `<div class="image-card single right--image"> <!-- Start Image Card -->
   <div class="image-card--image">
-    <img src="" alt="">
+    <img src="" alt="" title="">
   </div>
   <div class="image-card--content">
     <h3 class="title">Title</h3>

@@ -23,6 +23,11 @@ const validateCompanyRules = (rules: { basePath: string; prefix: string; fileSuf
 };
 
 export default function AdminPage() {
+  // Set page title
+  useEffect(() => {
+    document.title = 'Admin';
+  }, []);
+
   const [activeTab, setActiveTab] = useState('companies');
   const [selectedCompany, setSelectedCompany] = useState<string | null>(null);
   const [editCompany, setEditCompany] = useState<{ contactLink: string, basePath: string, prefix: string, fileSuffix: string, info: string, logoUrl: string } | null>(null);

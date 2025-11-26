@@ -23,7 +23,7 @@ export interface ParsedImageInfo {
  * IMAGE (SEARCH) TITLE
  * [Full title text]
  * 
- * IMAGE ALT TEXT
+ * IMAGE ALT TEXT (or IMAGE DESCRIPTION)
  * [Alt text description]
  * 
  * @param content - Raw text pasted from Google Doc
@@ -74,9 +74,9 @@ export function parseImageInfoFromGoogleDoc(content: string): ParsedImageInfo[] 
       continue;
     }
     
-    if (upperLine.includes('IMAGE ALT') || upperLine === 'IMAGE ALT TEXT') {
+    if (upperLine.includes('IMAGE ALT') || upperLine === 'IMAGE ALT TEXT' || upperLine.includes('IMAGE DESCRIPTION')) {
       lastField = 'altText';
-      console.log('Found IMAGE ALT TEXT marker');
+      console.log('Found IMAGE ALT TEXT / DESCRIPTION marker');
       continue;
     }
     

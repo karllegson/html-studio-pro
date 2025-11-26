@@ -709,6 +709,32 @@ main#content p {
   margin: 0 0 2rem 0 !important;
 }
 
+/* Blockquote styling - box with border */
+.entry-content blockquote,
+.wp-content blockquote,
+main#content blockquote {
+  margin: 2rem 0 !important;
+  padding: 1.5rem 2rem !important;
+  background-color: var(--ultralight, #f1f4f7) !important;
+  border-left: 4px solid var(--primary, #6f8db3) !important;
+  border-radius: 0.5rem !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+  font-style: italic !important;
+  color: var(--text, #797778) !important;
+}
+
+.entry-content blockquote p,
+.wp-content blockquote p,
+main#content blockquote p {
+  margin: 0 0 1rem 0 !important;
+}
+
+.entry-content blockquote p:last-child,
+.wp-content blockquote p:last-child,
+main#content blockquote p:last-child {
+  margin-bottom: 0 !important;
+}
+
 main#content h1:not(h1.title), 
 main#content h2:not(h2.title), 
 main#content h3:not(h3.title), 
