@@ -6,7 +6,7 @@ const Index = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Redirect to Dashboard
+    // Redirect to Home
     navigate('/');
   }, [navigate]);
 

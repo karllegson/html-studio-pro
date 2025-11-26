@@ -8,6 +8,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/toaster";
 import { TaskProvider } from "./context/TaskContext";
+import Home from "./pages/Home";
 import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/NotFound";
 import Footer from '@/components/Footer';
@@ -46,7 +47,8 @@ const App: React.FC = () => {
             <TaskProvider user={user}>
               <TooltipProvider>
                 <Routes>
-                  <Route path="/" element={<Dashboard />} />
+                  <Route path="/" element={<Home />} />
+                  <Route path="/dashboard" element={<Dashboard />} />
                   <Route path="/builder/:taskId" element={<HtmlBuilder />} />
                   <Route path="/builder/:taskId/preview" element={<PreviewPage />} />
                   <Route path="/task/:taskId/images" element={<HtmlBuilder />} />
