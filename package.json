@@ -30,6 +30,7 @@
     "clsx": "^2.1.0",
     "date-fns": "^3.3.1",
     "firebase": "^11.6.1",
+    "googleapis": "^166.0.0",
     "jszip": "^3.10.1",
     "lodash.isequal": "^4.5.0",
     "lucide-react": "^0.323.0",

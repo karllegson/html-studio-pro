@@ -384,7 +384,12 @@ const Dashboard: React.FC = () => {
     <div>
       <div className="container mx-auto py-8 px-px">
         <div className="flex items-center justify-between mb-8">
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-[#3b82f6] to-[#2563eb] bg-clip-text text-transparent drop-shadow-md">Welcome to the Studio</h1>
+          <h1 
+            className="text-3xl font-bold bg-gradient-to-r from-[#3b82f6] to-[#2563eb] bg-clip-text text-transparent drop-shadow-md cursor-pointer hover:opacity-80 transition-opacity"
+            onClick={() => navigate('/')}
+          >
+            Welcome to the Studio
+          </h1>
           <div className="flex items-center gap-2">
             <Button variant="outline" onClick={handleLogout}>Log out</Button>
             <Button

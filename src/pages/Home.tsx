@@ -1,7 +1,8 @@
 import { useNavigate } from 'react-router-dom';
-import { FileText, Upload } from 'lucide-react';
+import { FileText, Upload, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useEffect } from 'react';
+import { TaskStatsWidget } from '@/components/TaskStatsWidget';
 
 export default function Home() {
   const navigate = useNavigate();
@@ -12,82 +13,105 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
-      <div className="max-w-4xl mx-auto px-8 py-16 text-center">
-        {/* Header */}
-        <div className="mb-16">
-          <h1 className="text-6xl font-bold text-white mb-4">
-            HTML Studio Pro
-          </h1>
-          <p className="text-xl text-gray-400">
-            Professional HTML Development Environment
-          </p>
-        </div>
-
-        {/* Action Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {/* Tasks Button */}
-          <div 
-            className="group relative bg-gradient-to-br from-blue-600 to-blue-700 rounded-3xl p-12 cursor-pointer transform transition-all duration-300 hover:scale-105 hover:shadow-2xl"
-            onClick={() => navigate('/dashboard')}
-          >
-            <div className="flex flex-col items-center space-y-6">
-              <div className="bg-white/10 backdrop-blur-sm rounded-full p-8 group-hover:bg-white/20 transition-all duration-300">
-                <FileText size={80} className="text-white" />
-              </div>
-              <h2 className="text-3xl font-bold text-white">
-                Tasks
-              </h2>
-              <p className="text-blue-100 text-lg">
-                Manage your HTML projects and tasks
-              </p>
+    <div className="min-h-screen w-full bg-background">
+      {/* Hero Section */}
+      <section className="relative px-6 py-20 lg:py-32">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center max-w-3xl mx-auto">
+            <h1 className="text-5xl md:text-6xl font-bold text-foreground mb-6">
+              HTML Studio Pro
+            </h1>
+            <p className="text-xl text-muted-foreground mb-8">
+              Professional HTML development environment for creating, managing, and previewing your web content with ease.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button 
                 size="lg" 
-                className="bg-white text-blue-600 hover:bg-blue-50 font-semibold px-8 py-6 text-lg rounded-full"
+                onClick={() => navigate('/dashboard')}
+                className="text-base px-6"
               >
+                <FileText className="mr-2 h-5 w-5" />
                 Go to Tasks
+                <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
-            </div>
-          </div>
-
-          {/* Post a Batch Button */}
-          <div 
-            className="group relative bg-gradient-to-br from-purple-600 to-purple-700 rounded-3xl p-12 cursor-pointer transform transition-all duration-300 hover:scale-105 hover:shadow-2xl opacity-75 hover:opacity-90"
-            onClick={() => {
-              // Future feature - show coming soon toast or navigate to placeholder
-              alert('Post a Batch - Coming Soon!\n\nThis feature is under development.');
-            }}
-          >
-            <div className="flex flex-col items-center space-y-6">
-              <div className="bg-white/10 backdrop-blur-sm rounded-full p-8 group-hover:bg-white/20 transition-all duration-300">
-                <Upload size={80} className="text-white" />
-              </div>
-              <h2 className="text-3xl font-bold text-white">
-                Post a Batch
-              </h2>
-              <p className="text-purple-100 text-lg">
-                Upload and process multiple files
-              </p>
               <Button 
                 size="lg" 
-                className="bg-white text-purple-600 hover:bg-purple-50 font-semibold px-8 py-6 text-lg rounded-full"
+                variant="outline"
+                onClick={() => {
+                  alert('Post a Batch - Coming Soon!\n\nThis feature is under development.');
+                }}
+                className="text-base px-6"
               >
-                Coming Soon
+                <Upload className="mr-2 h-5 w-5" />
+                Post a Batch
+                <span className="ml-2 text-xs bg-yellow-200 text-yellow-800 px-2 py-0.5 rounded-full">SOON</span>
               </Button>
-            </div>
-            
-            {/* Coming Soon Badge */}
-            <div className="absolute top-4 right-4 bg-yellow-400 text-yellow-900 text-xs font-bold px-3 py-1 rounded-full">
-              BETA
             </div>
           </div>
         </div>
+      </section>
 
-        {/* Footer */}
-        <div className="mt-16 text-gray-500 text-sm">
-          <p>Built by Karl Legson</p>
+      {/* Task Stats Section */}
+      <section className="px-6 py-8">
+        <div className="max-w-6xl mx-auto">
+          <TaskStatsWidget />
         </div>
-      </div>
+      </section>
+
+      {/* Features Section */}
+      <section className="px-6 py-16 bg-muted/50">
+        <div className="max-w-6xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {/* Tasks Feature */}
+            <div className="bg-card border rounded-lg p-6 hover:shadow-lg transition-shadow">
+              <div className="flex items-start gap-4">
+                <div className="bg-primary/10 p-3 rounded-lg">
+                  <FileText className="h-6 w-6 text-primary" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-semibold mb-2">Task Management</h3>
+                  <p className="text-muted-foreground mb-4">
+                    Create and manage HTML projects with built-in templates, image handling, and WordPress preview.
+                  </p>
+                  <Button 
+                    variant="link" 
+                    className="p-0 h-auto"
+                    onClick={() => navigate('/dashboard')}
+                  >
+                    Get Started <ArrowRight className="ml-1 h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            {/* Batch Processing Feature */}
+            <div className="bg-card border rounded-lg p-6 hover:shadow-lg transition-shadow opacity-60">
+              <div className="flex items-start gap-4">
+                <div className="bg-purple-500/10 p-3 rounded-lg">
+                  <Upload className="h-6 w-6 text-purple-500" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-semibold mb-2">
+                    Batch Processing
+                    <span className="ml-2 text-xs bg-yellow-200 text-yellow-800 px-2 py-1 rounded-full">Coming Soon</span>
+                  </h3>
+                  <p className="text-muted-foreground mb-4">
+                    Upload and process multiple HTML files at once with automated workflows and bulk operations.
+                  </p>
+                  <Button 
+                    variant="link" 
+                    className="p-0 h-auto text-muted-foreground"
+                    disabled
+                  >
+                    Available Soon
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
     </div>
   );
 }

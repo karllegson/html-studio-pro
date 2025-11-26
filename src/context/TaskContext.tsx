@@ -126,7 +126,7 @@ export const TaskProvider: React.FC<TaskProviderProps> = ({ children, user }) =>
     try {
       const querySnapshot = await getDocs(collection(db, 'companies'));
       const companiesList = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Company));
-      setCompanies(companiesList);
+        setCompanies(companiesList);
     } catch (error) {
       console.error('Error fetching companies:', error);
       throw error;
