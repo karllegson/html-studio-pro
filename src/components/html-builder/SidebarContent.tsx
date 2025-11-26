@@ -110,17 +110,9 @@ export const SidebarContent: React.FC<SidebarContentProps> = ({
       <div className="flex flex-col h-full">
         {/* Static sections - always visible */}
         <div className="space-y-4 pr-4 mb-4">
-          <CompanySection
-            companyId={companyId}
-            contactLink={contactLink}
-            pageType={pageType}
-            onCompanyChange={onCompanyChange}
-            onContactLinkChange={onContactLinkChange}
-            onPageTypeChange={onPageTypeChange}
-          />
           <CompanyTemplateList
             companyId={companyId}
-            pageType={pageType}
+            pageType={pageType as any}
             onInsertTemplate={onInsertComponent}
           />
           <ImageConverter companyId={companyId} />
