@@ -11,9 +11,7 @@ import { fetchEarningsData, PersonEarnings as SheetPersonEarnings } from '@/util
 interface PersonEarnings {
   name: string;
   currentPeriod: number;
-  previousPeriod: number;
-  invoiceTotal: number;
-  extra: number;
+  invoiceSummary: number;
 }
 
 // Avatar colors for each person
@@ -34,7 +32,6 @@ export default function Earnings() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentSheetName, setCurrentSheetName] = useState<string>('');
-  const [previousSheetName, setPreviousSheetName] = useState<string>('');
 
   useEffect(() => {
     document.title = 'Earnings - HTML Studio Pro';
@@ -58,7 +55,6 @@ export default function Earnings() {
     if (data) {
       setEarnings(data.earnings);
       setCurrentSheetName(data.currentSheetName);
-      setPreviousSheetName(data.previousSheetName);
     } else {
       setError('Unable to load earnings data');
     }
@@ -83,9 +79,8 @@ export default function Earnings() {
     }
   };
 
-  const totalInvoice = earnings.reduce((sum, person) => sum + person.invoiceTotal, 0);
+  const totalInvoice = earnings.reduce((sum, person) => sum + person.invoiceSummary, 0);
   const totalCurrentPeriod = earnings.reduce((sum, person) => sum + person.currentPeriod, 0);
-  const totalPending = earnings.reduce((sum, person) => sum + person.previousPeriod, 0);
 
   return (
     <div className="min-h-screen bg-background">
@@ -253,8 +248,8 @@ export default function Earnings() {
                     <span className="text-base font-bold text-white">{person.name[0]}</span>
                   </div>
                   <h3 className="text-sm font-bold mb-1">{person.name}</h3>
-                  <p className="text-[10px] text-muted-foreground mb-0.5">Total</p>
-                  <p className="text-base font-bold text-emerald-400">${person.invoiceTotal.toFixed(2)}</p>
+                  <p className="text-[10px] text-muted-foreground mb-0.5">Current Period</p>
+                  <p className="text-base font-bold text-emerald-400">${person.currentPeriod.toFixed(2)}</p>
                 </button>
               ))}
             </div>
@@ -268,7 +263,7 @@ export default function Earnings() {
                   {selectedPerson}'s Earnings
                 </h1>
                 <p className="text-muted-foreground">
-                  Current: {currentSheetName} | Pending: {previousSheetName}
+                  Pay Period: {currentSheetName}
                 </p>
               </div>
               <Button variant="outline" onClick={() => setSelectedPerson(null)}>
@@ -277,24 +272,13 @@ export default function Earnings() {
             </div>
 
         {/* Summary Cards - Only for selected person */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8 max-w-2xl">
           {(() => {
             const person = earnings.find(p => p.name === selectedPerson);
             if (!person) return null;
             
             return (
               <>
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Invoice Total</CardTitle>
-                  <DollarSign className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">${person.invoiceTotal.toFixed(2)}</div>
-                  <p className="text-xs text-muted-foreground mt-1">Current + Pending</p>
-                </CardContent>
-              </Card>
-
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Current Period</CardTitle>
@@ -308,27 +292,12 @@ export default function Earnings() {
 
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Pending Payment</CardTitle>
-                  <AlertCircle className="h-4 w-4 text-muted-foreground" />
+                  <CardTitle className="text-sm font-medium">Invoice Summary</CardTitle>
+                  <DollarSign className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">${person.previousPeriod.toFixed(2)}</div>
-                  <p className="text-xs text-muted-foreground mt-1">{previousSheetName} (OTW)</p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Earnings Trend</CardTitle>
-                  <TrendingUp className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">
-                    {person.previousPeriod > 0 
-                      ? `${person.currentPeriod > person.previousPeriod ? '+' : ''}${(((person.currentPeriod - person.previousPeriod) / person.previousPeriod) * 100).toFixed(0)}%`
-                      : 'N/A'}
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-1">vs last period</p>
+                  <div className="text-2xl font-bold">${person.invoiceSummary.toFixed(2)}</div>
+                  <p className="text-xs text-muted-foreground mt-1">With all extras included</p>
                 </CardContent>
               </Card>
               </>
@@ -336,42 +305,45 @@ export default function Earnings() {
           })()}
         </div>
 
-        {/* Period Comparison Chart */}
+        {/* Earnings Breakdown Chart */}
         {(() => {
           const person = earnings.find(p => p.name === selectedPerson);
           if (!person) return null;
           
-          const periods = [
-            { label: previousSheetName, amount: person.previousPeriod, color: 'from-amber-600 to-amber-400' },
-            { label: currentSheetName, amount: person.currentPeriod, color: 'from-blue-600 to-blue-400' }
+          const breakdown = [
+            { label: 'Current Period', amount: person.currentPeriod, color: 'from-blue-600 to-blue-400' },
+            { label: 'Invoice Total', amount: person.invoiceSummary, color: 'from-emerald-600 to-emerald-400' }
           ];
 
-          const maxAmount = Math.max(person.currentPeriod, person.previousPeriod, 1);
+          const maxAmount = Math.max(person.currentPeriod, person.invoiceSummary, 1);
 
           return (
             <Card className="mb-8">
               <CardHeader>
-                <CardTitle>Period Comparison</CardTitle>
+                <CardTitle>Earnings Breakdown</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="flex items-end justify-center gap-12 h-64">
-                  {periods.map((period, index) => {
-                    const heightPercent = (period.amount / maxAmount) * 100;
+                  {breakdown.map((item, index) => {
+                    const heightPercent = (item.amount / maxAmount) * 100;
                     return (
-                      <div key={index} className="w-32 flex flex-col items-center gap-3">
+                      <div key={index} className="w-40 flex flex-col items-center gap-3">
                         <div className="relative w-full flex items-end justify-center" style={{ height: '200px' }}>
                           <div 
-                            className={`w-full bg-gradient-to-t ${period.color} rounded-t transition-all hover:opacity-80 flex items-end justify-center pb-2`}
+                            className={`w-full bg-gradient-to-t ${item.color} rounded-t transition-all hover:opacity-80 flex items-end justify-center pb-2`}
                             style={{ height: `${Math.max(heightPercent, 15)}%` }}
                           >
-                            <span className="text-white font-bold text-sm">${period.amount.toFixed(2)}</span>
+                            <span className="text-white font-bold text-sm">${item.amount.toFixed(2)}</span>
                           </div>
                         </div>
-                        <span className="text-sm font-medium text-muted-foreground text-center">{period.label}</span>
+                        <span className="text-sm font-medium text-muted-foreground text-center">{item.label}</span>
                       </div>
                     );
                   })}
                 </div>
+                <p className="text-xs text-muted-foreground text-center mt-4">
+                  Invoice total includes all extras and bonuses
+                </p>
               </CardContent>
             </Card>
           );
