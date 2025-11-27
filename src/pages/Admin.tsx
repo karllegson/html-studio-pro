@@ -90,7 +90,7 @@ export default function AdminPage() {
       <Button
         variant="default"
         className="w-full justify-start mt-8 font-semibold text-base bg-black text-foreground border-2 border-neutral-800 shadow-md hover:bg-neutral-900 rounded-xl"
-        onClick={() => navigate('/')}
+        onClick={() => navigate('/dashboard')}
       >
         <Home className="mr-2" />
         Back to Dashboard

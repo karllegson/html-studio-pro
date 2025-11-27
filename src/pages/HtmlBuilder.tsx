@@ -1392,7 +1392,7 @@ const HtmlBuilder: React.FC = () => {
             <div className="min-h-screen w-full flex items-center justify-center bg-[radial-gradient(circle,rgba(60,60,80,0.08)_1px,transparent_1px)] [background-size:32px_32px] backdrop-blur-[0.5px]">
               <div className="text-center">
                 <p className="text-lg mb-4">Task not found</p>
-                <Button onClick={() => navigate('/')}>
+                <Button onClick={() => navigate('/dashboard')}>
                   Back to Dashboard
                 </Button>
               </div>
@@ -2138,7 +2138,7 @@ const HtmlBuilder: React.FC = () => {
                       variant="default"
                       onClick={async () => {
                         await saveChanges(); // Save all changes before navigating
-                        navigate('/');
+                        navigate('/dashboard');
                       }}
                       className="bg-card text-foreground border-2 border-amber-600/30 shadow-lg hover:shadow-xl hover:bg-secondary hover:border-amber-600/50 transition-all duration-200 transform hover:scale-105 rounded-2xl"
                     >

@@ -275,6 +275,57 @@
   scrollbar-width: none;  /* Firefox */
 }
 
+/* Hide scrollbar on mobile for homepage */
+@media (max-width: 768px) {
+  .hide-scrollbar-mobile {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+  }
+  
+  .hide-scrollbar-mobile::-webkit-scrollbar {
+    display: none;  /* Chrome, Safari and Opera */
+  }
+  
+  /* Hide scrollbar on html and body when homepage container has the class */
+  html.hide-scrollbar-mobile,
+  body.hide-scrollbar-mobile {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  html.hide-scrollbar-mobile::-webkit-scrollbar,
+  body.hide-scrollbar-mobile::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Mobile sidebar slide-in animation */
+@keyframes slideInFromLeft {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInFromRight {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.mobile-sidebar {
+  animation: slideInFromLeft 0.3s ease-out;
+}
+
+.mobile-sidebar-right {
+  animation: slideInFromRight 0.3s ease-out;
+}
+
 /* CodeMirror editor styles */
 .cm-editor {
   @apply bg-card/50 border border-border/50 rounded-lg;

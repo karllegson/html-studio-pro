@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { DollarSign, TrendingUp, Clock, AlertCircle, LogIn, LogOut, Menu, X, Loader2, RefreshCw } from 'lucide-react';
@@ -26,6 +26,7 @@ const avatarColors: Record<string, string> = {
 
 export default function Earnings() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -164,24 +165,40 @@ export default function Earnings() {
             <div className="hidden md:flex items-center gap-4 lg:gap-6">
               <button 
                 onClick={() => navigate('/')}
-                className="text-sm font-medium hover:text-primary transition-colors"
+                className={`text-sm font-medium transition-colors ${
+                  location.pathname === '/' 
+                    ? 'text-primary font-semibold' 
+                    : 'hover:text-primary'
+                }`}
               >
                 Home
               </button>
               <button 
                 onClick={() => navigate('/dashboard')}
-                className="text-sm font-medium hover:text-primary transition-colors"
+                className={`text-sm font-medium transition-colors ${
+                  location.pathname === '/dashboard' 
+                    ? 'text-primary font-semibold' 
+                    : 'hover:text-primary'
+                }`}
               >
                 Dashboard
               </button>
               <button 
-                className="text-sm font-medium hover:text-primary transition-colors"
+                className={`text-sm font-medium transition-colors ${
+                  location.pathname === '/tools' 
+                    ? 'text-primary font-semibold' 
+                    : 'hover:text-primary'
+                }`}
               >
                 Tools
               </button>
               <button 
                 onClick={() => navigate('/earnings')}
-                className="text-sm font-medium text-primary transition-colors"
+                className={`text-sm font-medium transition-colors ${
+                  location.pathname === '/earnings' 
+                    ? 'text-primary font-semibold' 
+                    : 'hover:text-primary'
+                }`}
               >
                 Earnings
               </button>
@@ -213,44 +230,104 @@ export default function Earnings() {
               </button>
             </div>
           </div>
+        </div>
+      </nav>
 
-          {/* Mobile Menu Dropdown */}
-          {mobileMenuOpen && (
-            <div className="md:hidden mt-4 pb-4 space-y-3 border-t pt-4">
-              <button 
-                onClick={() => {
-                  navigate('/');
-                  setMobileMenuOpen(false);
-                }}
-                className="block w-full text-left px-4 py-2 text-sm font-medium hover:bg-accent rounded-lg transition-colors"
-              >
-                Home
-              </button>
-              <button 
-                onClick={() => {
-                  navigate('/dashboard');
-                  setMobileMenuOpen(false);
-                }}
-                className="block w-full text-left px-4 py-2 text-sm font-medium hover:bg-accent rounded-lg transition-colors"
-              >
-                Dashboard
-              </button>
-              <button 
-                onClick={() => setMobileMenuOpen(false)}
-                className="block w-full text-left px-4 py-2 text-sm font-medium hover:bg-accent rounded-lg transition-colors"
-              >
-                Tools
-              </button>
-              <button 
-                onClick={() => {
-                  navigate('/earnings');
-                  setMobileMenuOpen(false);
-                }}
-                className="block w-full text-left px-4 py-2 text-sm font-medium text-primary hover:bg-accent rounded-lg transition-colors"
-              >
-                Earnings
-              </button>
-              <div className="pt-2">
+      {/* Mobile Menu Overlay */}
+      {mobileMenuOpen && (
+        <>
+          {/* Backdrop */}
+          <div 
+            className="fixed inset-0 bg-black/60 z-40 md:hidden transition-opacity duration-200"
+            onClick={() => setMobileMenuOpen(false)}
+          />
+          {/* Sidebar */}
+          <div className="fixed inset-y-0 right-0 w-72 bg-card border-l border-border z-50 md:hidden shadow-xl mobile-sidebar-right">
+            <div className="flex flex-col h-full">
+              {/* Header */}
+              <div className="flex items-center justify-between px-4 py-4 border-b border-border">
+                <div className="flex items-center gap-2 flex-1 min-w-0">
+                  <img src="/favicon.svg" alt="Logo" className="w-6 h-6 flex-shrink-0" />
+                  <span className="text-base font-bold whitespace-nowrap truncate">HTML Studio Pro</span>
+                </div>
+                <button
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="p-2 hover:bg-accent rounded-lg transition-colors flex-shrink-0 -mr-2"
+                  aria-label="Close menu"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              {/* Navigation Links */}
+              <nav className="flex-1 px-2 py-4 space-y-1 overflow-y-auto">
+                <button 
+                  onClick={() => {
+                    navigate('/');
+                    setMobileMenuOpen(false);
+                  }}
+                  className={`w-full text-left px-4 py-3 text-sm font-medium rounded-lg transition-colors flex items-center justify-between ${
+                    location.pathname === '/' 
+                      ? 'bg-primary/20 text-primary font-semibold' 
+                      : 'hover:bg-accent text-foreground'
+                  }`}
+                >
+                  <span>Home</span>
+                  {location.pathname === '/' && (
+                    <div className="w-1 h-6 bg-primary rounded-full" />
+                  )}
+                </button>
+                <button 
+                  onClick={() => {
+                    navigate('/dashboard');
+                    setMobileMenuOpen(false);
+                  }}
+                  className={`w-full text-left px-4 py-3 text-sm font-medium rounded-lg transition-colors flex items-center justify-between ${
+                    location.pathname === '/dashboard' 
+                      ? 'bg-primary/20 text-primary font-semibold' 
+                      : 'hover:bg-accent text-foreground'
+                  }`}
+                >
+                  <span>Dashboard</span>
+                  {location.pathname === '/dashboard' && (
+                    <div className="w-1 h-6 bg-primary rounded-full" />
+                  )}
+                </button>
+                <button 
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                  }}
+                  className={`w-full text-left px-4 py-3 text-sm font-medium rounded-lg transition-colors flex items-center justify-between ${
+                    location.pathname === '/tools' 
+                      ? 'bg-primary/20 text-primary font-semibold' 
+                      : 'hover:bg-accent text-foreground'
+                  }`}
+                >
+                  <span>Tools</span>
+                  {location.pathname === '/tools' && (
+                    <div className="w-1 h-6 bg-primary rounded-full" />
+                  )}
+                </button>
+                <button 
+                  onClick={() => {
+                    navigate('/earnings');
+                    setMobileMenuOpen(false);
+                  }}
+                  className={`w-full text-left px-4 py-3 text-sm font-medium rounded-lg transition-colors flex items-center justify-between ${
+                    location.pathname === '/earnings' 
+                      ? 'bg-primary/20 text-primary font-semibold' 
+                      : 'hover:bg-accent text-foreground'
+                  }`}
+                >
+                  <span>Earnings</span>
+                  {location.pathname === '/earnings' && (
+                    <div className="w-1 h-6 bg-primary rounded-full" />
+                  )}
+                </button>
+              </nav>
+
+              {/* Footer with Logout */}
+              <div className="p-4 border-t border-border">
                 <Button 
                   variant="outline" 
                   className="w-full justify-start" 
@@ -273,9 +350,9 @@ export default function Earnings() {
                 </Button>
               </div>
             </div>
-          )}
-        </div>
-      </nav>
+          </div>
+        </>
+      )}
 
       {/* Content */}
       <div className="p-4 sm:p-6 lg:p-8">

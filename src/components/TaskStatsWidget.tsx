@@ -118,14 +118,14 @@ export function TaskStatsWidget() {
           <div className="border rounded-lg overflow-hidden">
             <div className="max-h-none overflow-visible">
               <table className="w-full text-xs border-collapse">
-                <thead className="bg-muted sticky top-0">
+                <thead className="bg-muted sticky top-0 z-10">
                   <tr>
-                    <th className="text-left p-2 font-semibold border-r border-b">Status</th>
-                    <th className="text-left p-2 font-semibold border-r border-b">Company</th>
-                    <th className="text-left p-2 font-semibold border-r border-b">Type</th>
-                    <th className="text-left p-2 font-semibold border-r border-b">Price</th>
-                    <th className="text-left p-2 font-semibold border-r border-b">Author</th>
-                    <th className="text-center p-2 font-semibold border-b w-12">Link</th>
+                    <th className="text-left p-2 font-semibold border-t border-r border-b">Status</th>
+                    <th className="text-left p-2 font-semibold border-t border-r border-b">Company</th>
+                    <th className="text-left p-2 font-semibold border-t border-r border-b">Type</th>
+                    <th className="text-left p-2 font-semibold border-t border-r border-b">Price</th>
+                    <th className="text-left p-2 font-semibold border-t border-r border-b">Author</th>
+                    <th className="text-center p-2 font-semibold border-t border-b w-12">Link</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -155,24 +155,68 @@ export function TaskStatsWidget() {
                       statusTextClass = 'text-gray-300';
                     }
 
-                    // Check if this is the first task of a new batch (based on batch number change)
-                    // Also check if previous visible task had a different batch number
+                    // Check if this is the first task of a new batch (only show header if task has a batchNumber)
                     const visibleTasks = stats.tasks.filter((t) => {
                       const tStatusLower = t.status.toLowerCase();
                       return !(tStatusLower.includes('posted') || tStatusLower.includes('live') || tStatusLower.includes('don\'t') || tStatusLower.includes('dont'));
                     });
                     const visibleIndex = visibleTasks.findIndex(t => t === task);
-                    const isNewBatch = visibleIndex === 0 || task.batchNumber !== visibleTasks[visibleIndex - 1]?.batchNumber;
+                    const prevVisibleTask = visibleIndex > 0 ? visibleTasks[visibleIndex - 1] : null;
+                    // Only show batch header if:
+                    // 1. Task has a batchNumber (is part of a batch)
+                    // 2. It's the first task OR previous task had different/no batch number
+                    const isNewBatch = task.batchNumber !== undefined && 
+                                      (visibleIndex === 0 || prevVisibleTask?.batchNumber !== task.batchNumber);
+                    
+                    // Get the batch company name - prefer batchCompany, fallback to task company
+                    const batchCompanyName = task.batchCompany || task.company || 'Batch';
+                    
+                    // Debug: log first batch detection
+                    if (isNewBatch && visibleIndex === 0) {
+                      console.log('First batch detected:', {
+                        company: batchCompanyName,
+                        batchNumber: task.batchNumber,
+                        taskCompany: task.company,
+                        batchCompany: task.batchCompany
+                      });
+                    }
+                    
+                    // Check if we need a separator: previous task was in a batch, current task is not
+                    const needsSeparator = prevVisibleTask && 
+                                          prevVisibleTask.batchNumber !== undefined && 
+                                          task.batchNumber === undefined;
+                    
+                    // Debug separator detection
+                    if (needsSeparator) {
+                      console.log('Separator needed between:', prevVisibleTask.company, 'and', task.company);
+                    }
 
                     return (
                       <React.Fragment key={index}>
                         {isNewBatch && (
-                          <tr style={{ backgroundColor: '#3b82f6' }}>
-                            <td colSpan={6} style={{ backgroundColor: '#3b82f6' }} className="p-3 text-center text-sm font-bold text-white border-t-2 border-gray-600">
+                          <tr style={{ backgroundColor: '#3b82f6', position: 'relative', zIndex: 5 }}>
+                            <td colSpan={6} style={{ backgroundColor: '#3b82f6' }} className="p-3 text-center text-sm font-bold text-white border-t border-b border-gray-600">
                               <div className="flex items-center justify-center gap-2">
                                 <FileText className="h-4 w-4" />
-                                <span>{task.company} - Batch</span>
+                                <span>{batchCompanyName} - Batch</span>
                               </div>
+                            </td>
+                          </tr>
+                        )}
+                        {needsSeparator && (
+                          <tr>
+                            <td 
+                              colSpan={6} 
+                              style={{ 
+                                backgroundColor: '#4B5563',
+                                padding: '12px',
+                                height: '24px',
+                                borderTop: '1px solid #4B5563',
+                                borderBottom: '1px solid #4B5563'
+                              }}
+                              className="border-gray-600"
+                            >
+                              {/* Empty separator row */}
                             </td>
                           </tr>
                         )}

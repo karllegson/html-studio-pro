@@ -17,6 +17,7 @@ export interface SheetTask {
   author: string;
   notes: string;
   batchNumber?: number; // Batch grouping based on empty rows
+  batchCompany?: string; // Company name for the batch (from batch marker or first task)
 }
 
 export interface SheetTaskStats {
@@ -409,21 +410,76 @@ export async function fetchSheetTaskStats(): Promise<SheetTaskStats | null> {
     let inProgress = 0;
     let notStarted = 0;
     const tasks: SheetTask[] = [];
-    let currentBatch = 1;
+    let currentBatch: number | null = null;
+    let batchCounter = 1;
+    let batchCompanyMap: Record<number, string> = {}; // Store company name for each batch
+    
+    console.log('Starting batch detection...');
 
-    // Start from row 4 (index 4) since your data starts at row 5 in the sheet
-    // Skip header rows (row 3) and first rows
-    for (let i = 4; i < rows.length; i++) {
+    // Start from row 1 (index 1) to catch all batches, including the first one
+    // Row 0 is typically headers, but we'll check all rows to find batch markers
+    for (let i = 1; i < rows.length; i++) {
       const row = rows[i];
+      
+      if (!row) continue;
       
       // Column B (index 1) contains the Status
       const status = row[1]?.toLowerCase() || '';
+      // Column E (index 4) contains the Type
+      const type = row[4]?.toLowerCase() || '';
       
-      // Check if this is an empty row (batch separator)
-      if (!status) {
-        // Empty row means new batch starts next
-        currentBatch++;
+      // Debug: log first few rows to see what we're processing
+      if (i <= 10) {
+        console.log(`Row ${i + 1}: Status="${row[1] || ''}", Company="${row[2] || ''}", Type="${row[4] || ''}"`);
+      }
+      
+      // Skip header rows - if Status column contains "Status" or Type column contains "Type", it's likely a header
+      if (i <= 3 && (status.includes('status') || type.includes('type') || row[0]?.toLowerCase().includes('date'))) {
+        console.log(`Skipping header row ${i + 1}`);
         continue;
+      }
+      
+      // Check if Type column contains "Batch in Progress" FIRST - this indicates a new batch starts
+      // This check must come before empty row check because batch marker might have empty status/company
+      // Check for variations: "batch in progress", "Batch In Progress", "BATCH IN PROGRESS", "Batch In Pro..." (truncated), etc.
+      const typeNormalized = type.trim();
+      // More flexible matching - check if type contains both "batch" and "progress" (case insensitive)
+      // Also handle truncated versions like "Batch In Pro..."
+      const typeLower = typeNormalized.toLowerCase();
+      const hasBatch = typeLower.includes('batch');
+      const hasProgress = typeLower.includes('progress') || typeLower.includes('pro'); // Handle "Batch In Pro..." truncated
+      
+      if (hasBatch && hasProgress) {
+        // New batch detected - increment batch counter and set current batch
+        currentBatch = batchCounter;
+        // Try to get company name from this row (Company column is index 2)
+        const batchCompany = row[2]?.trim() || '';
+        if (batchCompany) {
+          batchCompanyMap[currentBatch] = batchCompany;
+          console.log(`Batch ${currentBatch} started at row ${i + 1}, company: "${batchCompany}", type: "${row[4]}"`);
+        } else {
+          console.log(`Batch ${currentBatch} started at row ${i + 1}, type: "${row[4]}" (no company in batch marker row)`);
+        }
+        batchCounter++;
+        continue; // Skip this row as it's just a batch marker
+      }
+      
+      // Debug: log rows that might be batch markers but weren't detected
+      if (typeNormalized && (typeLower.includes('batch') || typeLower.includes('progress') || typeLower.includes('pro'))) {
+        console.log(`Row ${i + 1}: Type "${row[4]}" might be a batch marker but didn't match - hasBatch: ${hasBatch}, hasProgress: ${hasProgress}`);
+      }
+      
+      // Check if this is an empty row - this marks the end of the current batch
+      // An empty row is one where key columns (Status, Company) are empty
+      const isEmptyRow = !status && (!row[0] || row[0].trim() === '') && (!row[2] || row[2].trim() === '');
+      
+      if (isEmptyRow) {
+        // Empty row marks the end of the current batch
+        if (currentBatch !== null) {
+          console.log(`Batch ${currentBatch} ended at row ${i + 1} (empty row)`);
+        }
+        currentBatch = null;
+        continue; // Skip empty rows
       }
 
       // Parse task data from columns:
@@ -439,8 +495,26 @@ export async function fetchSheetTaskStats(): Promise<SheetTaskStats | null> {
         htmlStudioLink: row[7] || '',
         author: row[8] || '',
         notes: row[9] || '',
-        batchNumber: currentBatch
+        batchNumber: currentBatch !== null ? currentBatch : undefined, // Only set batchNumber if in a batch
+        batchCompany: currentBatch !== null ? batchCompanyMap[currentBatch] : undefined // Store batch company name
       };
+      
+      // If task is in a batch and we don't have a company name for the batch yet, use this task's company
+      if (currentBatch !== null && task.company && !batchCompanyMap[currentBatch]) {
+        batchCompanyMap[currentBatch] = task.company;
+        console.log(`Batch ${currentBatch} company set to "${task.company}" from first task`);
+      }
+      
+      // Update task's batchCompany from the map (in case it was set from batch marker or first task)
+      if (currentBatch !== null && batchCompanyMap[currentBatch]) {
+        task.batchCompany = batchCompanyMap[currentBatch];
+      }
+      
+      if (currentBatch !== null) {
+        console.log(`Task "${task.company}" (row ${i + 1}) assigned to batch ${currentBatch}`);
+      } else {
+        console.log(`Task "${task.company}" (row ${i + 1}) is NOT in a batch (standalone task)`);
+      }
 
       tasks.push(task);
       
