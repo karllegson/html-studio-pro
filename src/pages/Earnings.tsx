@@ -6,7 +6,9 @@ import { DollarSign, TrendingUp, Clock, AlertCircle, LogIn, LogOut, Menu, X, Loa
 import { auth } from '@/firebase';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { LoginModal } from '@/components/LoginModal';
-import { fetchEarningsData, PersonEarnings as SheetPersonEarnings } from '@/utils/googleSheets';
+import { fetchEarningsData, PersonEarnings as SheetPersonEarnings, generatePayPeriods } from '@/utils/googleSheets';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { getSheetName } from '@/components/SheetNameConfig';
 
 interface PersonEarnings {
   name: string;
@@ -32,6 +34,8 @@ export default function Earnings() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentSheetName, setCurrentSheetName] = useState<string>('');
+  const [selectedPayPeriod, setSelectedPayPeriod] = useState<string>('');
+  const [availablePayPeriods, setAvailablePayPeriods] = useState<string[]>([]);
 
   useEffect(() => {
     document.title = 'Earnings - HTML Studio Pro';
@@ -45,12 +49,22 @@ export default function Earnings() {
     return () => unsubscribe();
   }, []);
 
-  // Load earnings data
-  const loadEarnings = async () => {
+  // Initialize pay periods
+  useEffect(() => {
+    const defaultSheet = getSheetName();
+    setCurrentSheetName(defaultSheet);
+    setSelectedPayPeriod(defaultSheet);
+    const periods = generatePayPeriods(defaultSheet);
+    setAvailablePayPeriods(periods);
+  }, []);
+
+  // Load earnings data for selected pay period
+  const loadEarnings = async (payPeriod?: string) => {
     setLoading(true);
     setError(null);
     
-    const data = await fetchEarningsData();
+    const targetPeriod = payPeriod || selectedPayPeriod;
+    const data = await fetchEarningsData(targetPeriod);
     
     if (data) {
       setEarnings(data.earnings);
@@ -62,14 +76,17 @@ export default function Earnings() {
     setLoading(false);
   };
 
+  // Load earnings when pay period changes
   useEffect(() => {
-    loadEarnings();
-    
-    // Auto-refresh every 5 minutes
-    const interval = setInterval(loadEarnings, 5 * 60 * 1000);
-    
-    return () => clearInterval(interval);
-  }, []);
+    if (selectedPayPeriod) {
+      loadEarnings(selectedPayPeriod);
+    }
+  }, [selectedPayPeriod]);
+
+  // Handle pay period selection
+  const handlePayPeriodChange = (period: string) => {
+    setSelectedPayPeriod(period);
+  };
 
   const handleAuthAction = async () => {
     if (isLoggedIn) {
@@ -220,21 +237,40 @@ export default function Earnings() {
         ) : error ? (
           <div className="text-center py-16">
             <p className="text-red-500 mb-4">{error}</p>
-            <Button variant="outline" onClick={loadEarnings}>
+            <Button variant="outline" onClick={() => loadEarnings(selectedPayPeriod)}>
               <RefreshCw className="mr-2 h-4 w-4" />
               Retry
             </Button>
           </div>
         ) : !selectedPerson ? (
           <div>
-            <div className="mb-8 flex items-center justify-between">
-              <div>
-                <h1 className="text-3xl sm:text-4xl font-bold text-foreground mb-2">Select Team Member</h1>
-                <p className="text-muted-foreground">Choose a team member to view their earnings</p>
+            <div className="mb-8">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h1 className="text-3xl sm:text-4xl font-bold text-foreground mb-2">Select Team Member</h1>
+                  <p className="text-muted-foreground">Choose a team member to view their earnings</p>
+                </div>
+                <Button variant="ghost" size="sm" onClick={() => loadEarnings(selectedPayPeriod)} disabled={loading}>
+                  <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+                </Button>
               </div>
-              <Button variant="ghost" size="sm" onClick={loadEarnings} disabled={loading}>
-                <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-              </Button>
+              
+              {/* Pay Period Selector */}
+              <div className="flex items-center gap-3">
+                <label className="text-sm font-medium text-muted-foreground">Pay Period:</label>
+                <Select value={selectedPayPeriod} onValueChange={handlePayPeriodChange}>
+                  <SelectTrigger className="w-[200px]">
+                    <SelectValue placeholder="Select period" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availablePayPeriods.map((period) => (
+                      <SelectItem key={period} value={period}>
+                        {period}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
             
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-xl mx-auto">
@@ -257,18 +293,37 @@ export default function Earnings() {
         ) : (
           <>
             {/* Header with Back Button */}
-            <div className="mb-8 flex items-center justify-between">
-              <div>
-                <h1 className="text-3xl sm:text-4xl font-bold text-foreground mb-2">
-                  {selectedPerson}'s Earnings
-                </h1>
-                <p className="text-muted-foreground">
-                  Pay Period: {currentSheetName}
-                </p>
+            <div className="mb-8">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h1 className="text-3xl sm:text-4xl font-bold text-foreground mb-2">
+                    {selectedPerson}'s Earnings
+                  </h1>
+                  <p className="text-muted-foreground">
+                    Pay Period: {currentSheetName}
+                  </p>
+                </div>
+                <Button variant="outline" onClick={() => setSelectedPerson(null)}>
+                  ← Back to Team
+                </Button>
               </div>
-              <Button variant="outline" onClick={() => setSelectedPerson(null)}>
-                ← Back to Team
-              </Button>
+              
+              {/* Pay Period Selector */}
+              <div className="flex items-center gap-3">
+                <label className="text-sm font-medium text-muted-foreground">View Period:</label>
+                <Select value={selectedPayPeriod} onValueChange={handlePayPeriodChange}>
+                  <SelectTrigger className="w-[200px]">
+                    <SelectValue placeholder="Select period" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availablePayPeriods.map((period) => (
+                      <SelectItem key={period} value={period}>
+                        {period}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
         {/* Summary Cards - Only for selected person */}

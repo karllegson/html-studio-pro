@@ -43,15 +43,40 @@ export interface EarningsData {
 }
 
 /**
- * Fetch earnings data from Google Sheets
+ * Generate list of available pay periods (e.g., Posting 022, Posting 021, etc.)
+ * Goes back 10 periods from current
+ */
+export function generatePayPeriods(currentSheetName: string): string[] {
+  const match = currentSheetName.match(/(.+\s)(\d+)$/);
+  if (!match) return [currentSheetName];
+  
+  const prefix = match[1]; // "Posting "
+  const currentNumber = parseInt(match[2]); // 22
+  const padding = match[2].length; // 3 for "022"
+  
+  const periods: string[] = [];
+  // Generate current and 9 previous periods
+  for (let i = 0; i < 10; i++) {
+    const number = currentNumber - i;
+    if (number > 0) {
+      periods.push(`${prefix}${number.toString().padStart(padding, '0')}`);
+    }
+  }
+  
+  return periods;
+}
+
+/**
+ * Fetch earnings data from Google Sheets for a specific pay period
  * Reads current period from earnings table (row 5)
  * Reads invoice summary from row 96
  */
-export async function fetchEarningsData(): Promise<EarningsData | null> {
+export async function fetchEarningsData(sheetName?: string): Promise<EarningsData | null> {
   try {
     const API_KEY = import.meta.env.VITE_GOOGLE_SHEETS_API_KEY;
     const SHEET_ID = import.meta.env.VITE_GOOGLE_SHEETS_SHEET_ID;
-    const currentSheetName = getSheetName(); // e.g., "Posting 022"
+    // Use provided sheet name or default to current from config
+    const targetSheetName = sheetName || getSheetName(); // e.g., "Posting 022"
 
     if (!API_KEY || !SHEET_ID) {
       console.warn('Google Sheets API credentials not configured');
@@ -59,7 +84,7 @@ export async function fetchEarningsData(): Promise<EarningsData | null> {
     }
 
     // Fetch current period earnings (row 5, columns L-O)
-    const currentRange = `${currentSheetName}!L5:O5`;
+    const currentRange = `${targetSheetName}!L5:O5`;
     const currentUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${currentRange}?key=${API_KEY}`;
     const currentResponse = await fetch(currentUrl);
     
@@ -79,7 +104,7 @@ export async function fetchEarningsData(): Promise<EarningsData | null> {
 
     // Fetch invoice summary from row 96
     // Format: "Invoice Sent: Len: $78 + $4 = $82, Sel: $25 + $5 = $30, Abi: $22 + $15 + $6 = $43"
-    const invoiceRange = `${currentSheetName}!A96:Z96`;
+    const invoiceRange = `${targetSheetName}!A96:Z96`;
     const invoiceUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${invoiceRange}?key=${API_KEY}`;
     const invoiceResponse = await fetch(invoiceUrl);
     
@@ -126,7 +151,7 @@ export async function fetchEarningsData(): Promise<EarningsData | null> {
           invoiceSummary: abiInvoice
         }
       ],
-      currentSheetName
+      currentSheetName: targetSheetName
     };
   } catch (error) {
     console.error('Error fetching earnings data:', error);
