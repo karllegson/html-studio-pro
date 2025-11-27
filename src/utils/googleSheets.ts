@@ -169,21 +169,16 @@ export async function fetchEarningsData(sheetName?: string): Promise<EarningsDat
     }
 
     // Always add Sel's extra to invoice summary if it exists
-    // Check if invoice summary already includes extra by comparing to current period
+    // For past periods, invoice summary might not include extras mentioned in row 7
     if (selExtra > 0) {
-      // If invoice summary equals current period, it probably doesn't include extra
-      if (selInvoice === selCurrent && selInvoice > 0) {
+      if (selInvoice > 0) {
+        // Invoice summary exists - add extra to it
+        // This handles cases where invoice shows base amount but extra is separate
         selInvoice = selInvoice + selExtra;
-      }
-      // If invoice summary is 0, use current + extra
-      else if (selInvoice === 0 && selCurrent > 0) {
+      } else if (selCurrent > 0) {
+        // No invoice summary found - use current + extra
         selInvoice = selCurrent + selExtra;
       }
-      // If invoice summary is less than current + extra, add the difference
-      else if (selInvoice > 0 && selInvoice < selCurrent + selExtra) {
-        selInvoice = selCurrent + selExtra;
-      }
-      // Otherwise, trust the invoice summary (it probably already includes extra)
     }
 
     // Fallback: If invoice summary not found, use current period + extras
