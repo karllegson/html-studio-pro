@@ -14,6 +14,7 @@ import NotFound from "./pages/NotFound";
 import Footer from '@/components/Footer';
 import AdminPage from './pages/Admin';
 import PreviewPage from './pages/PreviewPage';
+import Earnings from './pages/Earnings';
 
 const queryClient = new QueryClient();
 
@@ -37,26 +38,33 @@ const App: React.FC = () => {
       </div>
     );
   }
-  if (!user) return <Login />;
 
   return (
     <QueryClientProvider client={queryClient}>
       <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <div className="min-h-screen flex flex-col">
           <main className="flex-grow">
-            <TaskProvider user={user}>
-              <TooltipProvider>
-                <Routes>
-                  <Route path="/" element={<Home />} />
-                  <Route path="/dashboard" element={<Dashboard />} />
-                  <Route path="/builder/:taskId" element={<HtmlBuilder />} />
-                  <Route path="/builder/:taskId/preview" element={<PreviewPage />} />
-                  <Route path="/task/:taskId/images" element={<HtmlBuilder />} />
-                  <Route path="/admin" element={<AdminPage />} />
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-              </TooltipProvider>
-            </TaskProvider>
+            {user ? (
+              <TaskProvider user={user}>
+                <TooltipProvider>
+                  <Routes>
+                    <Route path="/" element={<Home />} />
+                    <Route path="/dashboard" element={<Dashboard />} />
+                    <Route path="/earnings" element={<Earnings />} />
+                    <Route path="/builder/:taskId" element={<HtmlBuilder />} />
+                    <Route path="/builder/:taskId/preview" element={<PreviewPage />} />
+                    <Route path="/task/:taskId/images" element={<HtmlBuilder />} />
+                    <Route path="/admin" element={<AdminPage />} />
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                </TooltipProvider>
+              </TaskProvider>
+            ) : (
+              <Routes>
+                <Route path="/" element={<Home />} />
+                <Route path="*" element={<Home />} />
+              </Routes>
+            )}
           </main>
           <Footer />
           <Toaster />

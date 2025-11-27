@@ -391,7 +391,7 @@ const Dashboard: React.FC = () => {
             Welcome to the Studio
           </h1>
           <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={handleLogout}>Log out</Button>
+            <Button variant="outline" onClick={() => navigate('/')}>Go back to Homepage</Button>
             <Button
               onClick={toggleSelectionMode}
               variant={isSelectionMode ? "secondary" : "outline"}

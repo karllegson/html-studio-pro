@@ -3,8 +3,11 @@ import { fetchSheetTaskStats, SheetTaskStats, SheetTask } from '@/utils/googleSh
 import { Loader2, RefreshCw, FileText, Clock, CheckCircle, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SheetNameConfig } from './SheetNameConfig';
+import { auth } from '@/firebase';
+import { onAuthStateChanged } from 'firebase/auth';
 
 export function TaskStatsWidget() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [stats, setStats] = useState<SheetTaskStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -33,6 +36,14 @@ export function TaskStatsWidget() {
     const interval = setInterval(loadStats, 5 * 60 * 1000);
     
     return () => clearInterval(interval);
+  }, []);
+
+  // Check authentication state
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setIsLoggedIn(!!user);
+    });
+    return () => unsubscribe();
   }, []);
 
   if (loading && !stats) {
@@ -77,31 +88,31 @@ export function TaskStatsWidget() {
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-4 mb-4">
+      <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-4">
         {/* Not Started (Left) */}
-        <div className="bg-red-500/10 rounded-lg p-4 text-center">
-          <FileText className="h-5 w-5 text-red-500 mx-auto mb-2" />
-          <div className="text-2xl font-bold text-red-500">{stats?.notStarted || 0}</div>
-          <div className="text-xs text-muted-foreground mt-1">Not Started</div>
+        <div className="bg-card border-2 border-red-500/20 rounded-lg p-2 sm:p-3 text-center">
+          <FileText className="h-4 w-4 sm:h-5 sm:w-5 text-red-400 mx-auto mb-1 sm:mb-2" />
+          <div className="text-2xl sm:text-3xl font-extrabold text-red-400 tracking-tight">{stats?.notStarted || 0}</div>
+          <div className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 sm:mt-1">Not Started</div>
         </div>
 
         {/* In Progress (Middle) */}
-        <div className="bg-yellow-500/10 rounded-lg p-4 text-center">
-          <Clock className="h-5 w-5 text-yellow-500 mx-auto mb-2" />
-          <div className="text-2xl font-bold text-yellow-500">{stats?.inProgress || 0}</div>
-          <div className="text-xs text-muted-foreground mt-1">In Progress</div>
+        <div className="bg-card border-2 border-amber-500/20 rounded-lg p-2 sm:p-3 text-center">
+          <Clock className="h-4 w-4 sm:h-5 sm:w-5 text-amber-400 mx-auto mb-1 sm:mb-2" />
+          <div className="text-2xl sm:text-3xl font-extrabold text-amber-400 tracking-tight">{stats?.inProgress || 0}</div>
+          <div className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 sm:mt-1">In Progress</div>
         </div>
 
         {/* Ready to Post (Right) */}
-        <div className="bg-green-500/10 rounded-lg p-4 text-center">
-          <CheckCircle className="h-5 w-5 text-green-500 mx-auto mb-2" />
-          <div className="text-2xl font-bold text-green-500">{stats?.ready || 0}</div>
-          <div className="text-xs text-muted-foreground mt-1">Ready to Post</div>
+        <div className="bg-card border-2 border-emerald-500/20 rounded-lg p-2 sm:p-3 text-center">
+          <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-emerald-400 mx-auto mb-1 sm:mb-2" />
+          <div className="text-2xl sm:text-3xl font-extrabold text-emerald-400 tracking-tight">{stats?.ready || 0}</div>
+          <div className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 sm:mt-1">Ready to Post</div>
         </div>
       </div>
 
-      {/* Task List - Table Style */}
-      {stats?.tasks && stats.tasks.length > 0 && (
+      {/* Task List - Table Style - Only show when logged in */}
+      {isLoggedIn && stats?.tasks && stats.tasks.length > 0 && (
         <div className="border-t pt-4">
           <h4 className="text-sm font-semibold mb-3">Task Details</h4>
           <div className="border rounded-lg overflow-hidden">
