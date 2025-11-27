@@ -127,25 +127,25 @@ export async function fetchEarningsData(sheetName?: string): Promise<EarningsDat
       const invoiceData = await invoiceResponse.json();
       const invoiceRows = invoiceData.values || [];
       
-      // Join all cells in row 96, handling cases where text might be split
-      const invoiceText = invoiceRows[0]?.join(' ') || '';
-      
-      // Also check if invoice summary might be in a single cell (like B96)
-      // Try to find any cell containing "Invoice" or person names
-      let fullInvoiceText = invoiceText;
+      // Find the cell containing "Invoice Sent" - it's usually in column B (index 1)
+      // But check all cells to be safe
+      let fullInvoiceText = '';
       for (let i = 0; i < invoiceRows[0]?.length; i++) {
         const cell = invoiceRows[0]?.[i] || '';
-        if (cell.toLowerCase().includes('invoice') || 
-            cell.toLowerCase().includes('len:') || 
-            cell.toLowerCase().includes('sel:') ||
-            cell.toLowerCase().includes('abi:') ||
-            cell.toLowerCase().includes('daniel:')) {
-          // If we find a cell with invoice info, use that and surrounding cells
-          const start = Math.max(0, i - 2);
-          const end = Math.min(invoiceRows[0].length, i + 10);
-          fullInvoiceText = invoiceRows[0].slice(start, end).join(' ');
+        const cellLower = cell.toLowerCase();
+        // Look for cell with "Invoice" or "Sent" - this is where the summary is
+        if (cellLower.includes('invoice') || cellLower.includes('sent')) {
+          // Found the invoice cell - use it and join with adjacent cells if needed
+          const start = Math.max(0, i - 1);
+          const end = Math.min(invoiceRows[0].length, i + 3);
+          fullInvoiceText = invoiceRows[0].slice(start, end).join(' ').trim();
           break;
         }
+      }
+      
+      // Fallback: if not found, join all cells
+      if (!fullInvoiceText) {
+        fullInvoiceText = invoiceRows[0]?.join(' ') || '';
       }
       
       // Parse invoice summary text - prioritize amount after "=" sign
@@ -156,9 +156,10 @@ export async function fetchEarningsData(sheetName?: string): Promise<EarningsDat
       // Pattern 2: Match "Name: $AMOUNT" (fallback if no = sign)
       const lenMatch = fullInvoiceText.match(/Len:\s*[^=]*=\s*\$(\d+)/i) || 
                       fullInvoiceText.match(/Len:\s*\$(\d+)/i);
-      // Use non-greedy match to ensure we capture the number AFTER "="
+      // Use explicit pattern to capture the number AFTER "=" sign
       // "Sel: $65 + $30 = $95" should capture 95, not 65
-      const selMatch = fullInvoiceText.match(/Sel:\s*.*?=\s*\$(\d+)/i) || 
+      // Match everything from "Sel:" up to and including "=", then capture the number
+      const selMatch = fullInvoiceText.match(/Sel:\s*[^=]*=\s*\$(\d+)/i) || 
                       fullInvoiceText.match(/Sel:\s*\$(\d+)/i);
       const danielMatch = fullInvoiceText.match(/Daniel:\s*[^=]*=\s*\$(\d+)/i) || 
                          fullInvoiceText.match(/Daniel:\s*\$(\d+)/i);
@@ -171,12 +172,24 @@ export async function fetchEarningsData(sheetName?: string): Promise<EarningsDat
       abiInvoice = abiMatch ? parseFloat(abiMatch[1]) : 0;
       
       // Debug: log what we parsed
-      console.log('Invoice text:', fullInvoiceText);
+      console.log('=== INVOICE PARSING DEBUG ===');
+      console.log('All cells in row 96:', invoiceRows[0]);
+      console.log('Full invoice text:', fullInvoiceText);
       console.log('Sel match result:', selMatch);
       if (selMatch) {
-        console.log('Sel captured:', selMatch[1], 'Full match:', selMatch[0]);
+        console.log('Sel captured group:', selMatch[1]);
+        console.log('Sel full match:', selMatch[0]);
+      } else {
+        console.log('❌ No match found for Sel!');
+        // Try to find Sel manually
+        const selIndex = fullInvoiceText.toLowerCase().indexOf('sel:');
+        if (selIndex >= 0) {
+          console.log('Found "Sel:" at index:', selIndex);
+          console.log('Text around Sel:', fullInvoiceText.substring(Math.max(0, selIndex - 10), selIndex + 50));
+        }
       }
-      console.log('Parsed - Len:', lenInvoice, 'Sel:', selInvoice, 'Daniel:', danielInvoice, 'Abi:', abiInvoice);
+      console.log('Parsed amounts - Len:', lenInvoice, 'Sel:', selInvoice, 'Daniel:', danielInvoice, 'Abi:', abiInvoice);
+      console.log('=== END DEBUG ===');
       
     }
 
