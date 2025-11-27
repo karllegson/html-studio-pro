@@ -83,8 +83,8 @@ export async function fetchEarningsData(sheetName?: string): Promise<EarningsDat
       return null;
     }
 
-    // Fetch current period earnings (row 5, columns L-O)
-    const currentRange = `${targetSheetName}!L5:O5`;
+    // Fetch current period earnings (row 5, columns L-O) and extras (row 7)
+    const currentRange = `${targetSheetName}!L5:O7`;
     const currentUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${currentRange}?key=${API_KEY}`;
     const currentResponse = await fetch(currentUrl);
     
@@ -102,9 +102,22 @@ export async function fetchEarningsData(sheetName?: string): Promise<EarningsDat
     const danielCurrent = parseFloat(currentRows[0]?.[2]?.replace('$', '') || '0');
     const abiCurrent = parseFloat(currentRows[0]?.[3]?.replace('$', '') || '0');
 
+    // Parse extras from row 7 (if present)
+    // Format: "Sel: $30 (from last" or similar
+    const extraText = currentRows[2]?.[1] || ''; // Row 7, column M
+    let selExtra = 0;
+    if (extraText) {
+      // Try to extract dollar amount from extra text
+      const extraMatch = extraText.match(/\$(\d+)/);
+      if (extraMatch) {
+        selExtra = parseFloat(extraMatch[1]);
+      }
+    }
+
     // Fetch invoice summary from row 96
     // Format: "Invoice Sent: Len: $78 + $4 = $82, Sel: $25 + $5 = $30, Abi: $22 + $15 + $6 = $43"
-    const invoiceRange = `${targetSheetName}!A96:Z96`;
+    // Also check a wider range in case it's in a different column
+    const invoiceRange = `${targetSheetName}!A96:AA96`;
     const invoiceUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${invoiceRange}?key=${API_KEY}`;
     const invoiceResponse = await fetch(invoiceUrl);
     
@@ -113,19 +126,79 @@ export async function fetchEarningsData(sheetName?: string): Promise<EarningsDat
     if (invoiceResponse.ok) {
       const invoiceData = await invoiceResponse.json();
       const invoiceRows = invoiceData.values || [];
+      
+      // Join all cells in row 96, handling cases where text might be split
       const invoiceText = invoiceRows[0]?.join(' ') || '';
       
-      // Parse invoice summary text
+      // Also check if invoice summary might be in a single cell (like B96)
+      // Try to find any cell containing "Invoice" or person names
+      let fullInvoiceText = invoiceText;
+      for (let i = 0; i < invoiceRows[0]?.length; i++) {
+        const cell = invoiceRows[0]?.[i] || '';
+        if (cell.toLowerCase().includes('invoice') || 
+            cell.toLowerCase().includes('len:') || 
+            cell.toLowerCase().includes('sel:') ||
+            cell.toLowerCase().includes('abi:') ||
+            cell.toLowerCase().includes('daniel:')) {
+          // If we find a cell with invoice info, use that and surrounding cells
+          const start = Math.max(0, i - 2);
+          const end = Math.min(invoiceRows[0].length, i + 10);
+          fullInvoiceText = invoiceRows[0].slice(start, end).join(' ');
+          break;
+        }
+      }
+      
+      // Parse invoice summary text - more flexible regex
       // Example: "Invoice Sent: Len: $78 + $4 = $82, Sel: $25 + $5 = $30, Abi: $22 + $15 + $6 = $43"
-      const lenMatch = invoiceText.match(/Len:\s*[^=]*=\s*\$(\d+)/i);
-      const selMatch = invoiceText.match(/Sel:\s*[^=]*=\s*\$(\d+)/i);
-      const danielMatch = invoiceText.match(/Daniel:\s*[^=]*=\s*\$(\d+)/i);
-      const abiMatch = invoiceText.match(/Abi:\s*[^=]*=\s*\$(\d+)/i);
+      // Also handles: "Len: $78 + $4 = $82" or "Len: $82" formats
+      // Try multiple patterns to catch different formats
+      const lenMatch = fullInvoiceText.match(/Len:\s*[^=,]*=\s*\$(\d+)/i) || 
+                      fullInvoiceText.match(/Len:\s*\$(\d+)/i);
+      const selMatch = fullInvoiceText.match(/Sel:\s*[^=,]*=\s*\$(\d+)/i) || 
+                      fullInvoiceText.match(/Sel:\s*\$(\d+)/i);
+      const danielMatch = fullInvoiceText.match(/Daniel:\s*[^=,]*=\s*\$(\d+)/i) || 
+                         fullInvoiceText.match(/Daniel:\s*\$(\d+)/i);
+      const abiMatch = fullInvoiceText.match(/Abi:\s*[^=,]*=\s*\$(\d+)/i) || 
+                      fullInvoiceText.match(/Abi:\s*\$(\d+)/i);
       
       lenInvoice = lenMatch ? parseFloat(lenMatch[1]) : 0;
       selInvoice = selMatch ? parseFloat(selMatch[1]) : 0;
       danielInvoice = danielMatch ? parseFloat(danielMatch[1]) : 0;
       abiInvoice = abiMatch ? parseFloat(abiMatch[1]) : 0;
+      
+    }
+
+    // Always add Sel's extra to invoice summary if it exists
+    // Check if invoice summary already includes extra by comparing to current period
+    if (selExtra > 0) {
+      // If invoice summary equals current period, it probably doesn't include extra
+      if (selInvoice === selCurrent && selInvoice > 0) {
+        selInvoice = selInvoice + selExtra;
+      }
+      // If invoice summary is 0, use current + extra
+      else if (selInvoice === 0 && selCurrent > 0) {
+        selInvoice = selCurrent + selExtra;
+      }
+      // If invoice summary is less than current + extra, add the difference
+      else if (selInvoice > 0 && selInvoice < selCurrent + selExtra) {
+        selInvoice = selCurrent + selExtra;
+      }
+      // Otherwise, trust the invoice summary (it probably already includes extra)
+    }
+
+    // Fallback: If invoice summary not found, use current period + extras
+    // This handles cases where invoice summary might not be in row 96 for past periods
+    if (selInvoice === 0 && selCurrent > 0) {
+      selInvoice = selCurrent + selExtra;
+    }
+    if (lenInvoice === 0 && lenCurrent > 0) {
+      lenInvoice = lenCurrent;
+    }
+    if (danielInvoice === 0 && danielCurrent > 0) {
+      danielInvoice = danielCurrent;
+    }
+    if (abiInvoice === 0 && abiCurrent > 0) {
+      abiInvoice = abiCurrent;
     }
 
     return {
