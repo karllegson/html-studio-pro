@@ -114,10 +114,10 @@ export async function fetchEarningsData(sheetName?: string): Promise<EarningsDat
       }
     }
 
-    // Fetch invoice summary from row 96
+    // Fetch invoice summary from row 96 (and nearby rows 95-97 in case it's shifted)
     // Format: "Invoice Sent: Len: $78 + $4 = $82, Sel: $25 + $5 = $30, Abi: $22 + $15 + $6 = $43"
-    // Also check a wider range in case it's in a different column
-    const invoiceRange = `${targetSheetName}!A96:AA96`;
+    // Check rows 95-97 to handle cases where the summary might be in a different row
+    const invoiceRange = `${targetSheetName}!A95:AA97`;
     const invoiceUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${invoiceRange}?key=${API_KEY}`;
     const invoiceResponse = await fetch(invoiceUrl);
     
@@ -127,32 +127,105 @@ export async function fetchEarningsData(sheetName?: string): Promise<EarningsDat
       const invoiceData = await invoiceResponse.json();
       const invoiceRows = invoiceData.values || [];
       
-      // Get the full invoice text from row 96
-      // The invoice summary is usually in a merged cell or spans multiple columns
-      // Join all non-empty cells to get the complete text
-      const allCells = invoiceRows[0] || [];
-      const nonEmptyCells = allCells.filter(cell => cell && cell.trim().length > 0);
-      let fullInvoiceText = nonEmptyCells.join(' ').trim();
+      // Find the row that contains the invoice summary (person names with dollar amounts)
+      // Usually row 96 (index 1), but check all rows
+      let invoiceRowIndex = -1;
+      let invoiceRow: string[] = [];
       
-      // If we can't find invoice text, try to find the cell with "Invoice" or person names
+      for (let rowIdx = 0; rowIdx < invoiceRows.length; rowIdx++) {
+        const row = invoiceRows[rowIdx] || [];
+        const rowText = row.join(' ').toLowerCase();
+        // Look for row with multiple person names and dollar signs
+        const personCount = (rowText.match(/(len|sel|daniel|abi):/g) || []).length;
+        const dollarCount = (rowText.match(/\$/g) || []).length;
+        if (personCount >= 2 && dollarCount >= 2) {
+          invoiceRowIndex = rowIdx;
+          invoiceRow = row;
+          break;
+        }
+      }
+      
+      // Fallback to row 96 (index 1) if no match found
+      if (invoiceRowIndex < 0) {
+        invoiceRowIndex = 1; // Row 96 (0-indexed: 0=95, 1=96, 2=97)
+        invoiceRow = invoiceRows[invoiceRowIndex] || [];
+      }
+      
+      // Get the full invoice text from the invoice row we found
+      // The invoice summary might be in a single cell (merged) or split across multiple cells
+      const allCells = invoiceRow;
+      
+      // Strategy 1: Find the cell containing "Invoice" or "Sent" - this is usually the main cell
+      let fullInvoiceText = '';
+      let invoiceCellIndex = -1;
+      
+      for (let i = 0; i < allCells.length; i++) {
+        const cell = allCells[i] || '';
+        const cellLower = cell.toLowerCase();
+        if (cellLower.includes('invoice') || cellLower.includes('sent')) {
+          invoiceCellIndex = i;
+          // This cell likely contains the full invoice text
+          fullInvoiceText = cell.trim();
+          break;
+        }
+      }
+      
+      // Strategy 2: If no "Invoice" or "Sent" found, look for cells with person names + dollar amounts
+      // This handles cases where the invoice summary doesn't have those keywords
       if (!fullInvoiceText || fullInvoiceText.length < 10) {
         for (let i = 0; i < allCells.length; i++) {
           const cell = allCells[i] || '';
           const cellLower = cell.toLowerCase();
-          if (cellLower.includes('invoice') || cellLower.includes('sent') || 
-              cellLower.includes('len:') || cellLower.includes('sel:')) {
-            // Found relevant cell - get it and surrounding cells
+          // Look for cell containing person names with dollar signs (e.g., "Len: $82, Sel: $95")
+          if ((cellLower.includes('len:') || cellLower.includes('sel:') || 
+               cellLower.includes('daniel:') || cellLower.includes('abi:')) &&
+              cell.includes('$')) {
+            invoiceCellIndex = i;
+            fullInvoiceText = cell.trim();
+            // Get surrounding cells in case it's split
             const start = Math.max(0, i - 1);
-            const end = Math.min(allCells.length, i + 5);
-            fullInvoiceText = allCells.slice(start, end).join(' ').trim();
+            const end = Math.min(allCells.length, i + 2);
+            const combined = allCells.slice(start, end).join(' ').trim();
+            // Use combined if it has more person names
+            const personCount = (combined.match(/(len|sel|daniel|abi):/gi) || []).length;
+            if (personCount > 1) {
+              fullInvoiceText = combined;
+            }
             break;
           }
         }
       }
       
-      // Final fallback: join all cells
-      if (!fullInvoiceText) {
-        fullInvoiceText = allCells.join(' ').trim();
+      // Strategy 3: If invoice cell found but text seems incomplete, get surrounding cells
+      if (invoiceCellIndex >= 0 && fullInvoiceText.length < 50) {
+        const start = Math.max(0, invoiceCellIndex - 1);
+        const end = Math.min(allCells.length, invoiceCellIndex + 3);
+        const expanded = allCells.slice(start, end).join(' ').trim();
+        // Use expanded if it has more content
+        if (expanded.length > fullInvoiceText.length) {
+          fullInvoiceText = expanded;
+        }
+      }
+      
+      // Strategy 4: If still no good match, join all cells that contain dollar signs and person names
+      if (!fullInvoiceText || !fullInvoiceText.includes('$') || 
+          !fullInvoiceText.match(/(len|sel|daniel|abi):/i)) {
+        const relevantCells = allCells.filter(cell => {
+          if (!cell) return false;
+          const cellLower = cell.toLowerCase();
+          return cell.includes('$') && 
+                 (cellLower.includes('len:') || cellLower.includes('sel:') || 
+                  cellLower.includes('daniel:') || cellLower.includes('abi:'));
+        });
+        if (relevantCells.length > 0) {
+          fullInvoiceText = relevantCells.join(' ').trim();
+        }
+      }
+      
+      // Strategy 5: Final fallback - join all non-empty cells
+      if (!fullInvoiceText || fullInvoiceText.length < 10) {
+        const nonEmptyCells = allCells.filter(cell => cell && cell.trim().length > 0);
+        fullInvoiceText = nonEmptyCells.join(' ').trim();
       }
       
       // Parse invoice summary text - prioritize amount after "=" sign
@@ -163,7 +236,7 @@ export async function fetchEarningsData(sheetName?: string): Promise<EarningsDat
       const extractAmount = (text: string, name: string): number => {
         // First try to match "Name: ... = $TOTAL" (with = sign)
         // Pattern: "Name:" followed by anything (non-greedy) up to "=", then capture the number after "$"
-        // Use .*? (non-greedy) instead of [^=]* to handle edge cases
+        // Use .*? (non-greedy) to match up to the first "=", then capture the number
         const withEquals = new RegExp(`${name}:\\s*.*?=\\s*\\$(\\d+)`, 'i');
         const matchWithEquals = text.match(withEquals);
         if (matchWithEquals && matchWithEquals[1]) {
@@ -173,7 +246,18 @@ export async function fetchEarningsData(sheetName?: string): Promise<EarningsDat
           }
         }
         
-        // Fallback: match "Name: $AMOUNT" (no = sign)
+        // Alternative pattern: Match "Name: $X + $Y = $TOTAL" more explicitly
+        // This handles cases where the pattern might be slightly different
+        const explicitPattern = new RegExp(`${name}:\\s*\\$\\d+\\s*\\+\\s*\\$\\d+\\s*=\\s*\\$(\\d+)`, 'i');
+        const explicitMatch = text.match(explicitPattern);
+        if (explicitMatch && explicitMatch[1]) {
+          const amount = parseFloat(explicitMatch[1]);
+          if (amount > 0) {
+            return amount;
+          }
+        }
+        
+        // Fallback: match "Name: $AMOUNT" (no = sign) - get the FIRST amount
         const withoutEquals = new RegExp(`${name}:\\s*\\$(\\d+)`, 'i');
         const matchWithoutEquals = text.match(withoutEquals);
         if (matchWithoutEquals && matchWithoutEquals[1]) {
@@ -184,31 +268,62 @@ export async function fetchEarningsData(sheetName?: string): Promise<EarningsDat
       };
       
       lenInvoice = extractAmount(fullInvoiceText, 'Len');
-      selInvoice = extractAmount(fullInvoiceText, 'Sel');
       danielInvoice = extractAmount(fullInvoiceText, 'Daniel');
       abiInvoice = extractAmount(fullInvoiceText, 'Abi');
       
-      lenInvoice = extractAmount(fullInvoiceText, 'Len');
-      selInvoice = extractAmount(fullInvoiceText, 'Sel');
-      danielInvoice = extractAmount(fullInvoiceText, 'Daniel');
-      abiInvoice = extractAmount(fullInvoiceText, 'Abi');
+      // Special handling for Sel - find all dollar amounts after "Sel:" and take the LAST one
+      // This works for formats like "Sel: $65 + $30 = $95" - the last amount is after =
+      const selIndex = fullInvoiceText.toLowerCase().indexOf('sel:');
+      if (selIndex >= 0) {
+        // Get text starting from "Sel:" up to the next person or end
+        const selText = fullInvoiceText.substring(selIndex);
+        // Find where Sel's section ends (next person name or comma before next person)
+        const nextPersonMatch = selText.match(/,\s*(Len|Daniel|Abi):/i);
+        const selSection = nextPersonMatch ? selText.substring(0, nextPersonMatch.index) : selText;
+        
+        // Find ALL dollar amounts in Sel's section
+        const allAmounts = selSection.match(/\$(\d+)/g);
+        if (allAmounts && allAmounts.length > 0) {
+          // Get the LAST amount (should be after = sign)
+          const lastAmount = allAmounts[allAmounts.length - 1];
+          selInvoice = parseFloat(lastAmount.replace('$', ''));
+        } else {
+          // Fallback to helper function
+          selInvoice = extractAmount(fullInvoiceText, 'Sel');
+        }
+      } else {
+        // No "Sel:" found, use helper function
+        selInvoice = extractAmount(fullInvoiceText, 'Sel');
+      }
       
       // Debug: log what we parsed
       console.log('=== INVOICE PARSING DEBUG ===');
-      console.log('All cells in row 96:', invoiceRows[0]);
+      console.log('Sheet:', targetSheetName);
+      console.log('Invoice row index (95=0, 96=1, 97=2):', invoiceRowIndex);
+      console.log('All cells in invoice row:', invoiceRow);
+      console.log('Invoice cell index:', invoiceCellIndex);
       console.log('Full invoice text:', fullInvoiceText);
+      console.log('Full invoice text length:', fullInvoiceText.length);
       
-      // Test Sel extraction specifically
-      const selWithEquals = fullInvoiceText.match(/Sel:\s*[^=]*=\s*\$(\d+)/i);
-      const selWithoutEquals = fullInvoiceText.match(/Sel:\s*\$(\d+)/i);
-      console.log('Sel match with =:', selWithEquals);
-      console.log('Sel match without =:', selWithoutEquals);
+      // Test Sel extraction specifically (reuse selIndex from above)
+      if (selIndex >= 0) {
+        const selText = fullInvoiceText.substring(selIndex);
+        const nextPersonMatch = selText.match(/,\s*(Len|Daniel|Abi):/i);
+        const selSection = nextPersonMatch ? selText.substring(0, nextPersonMatch.index) : selText;
+        const allAmounts = selSection.match(/\$(\d+)/g);
+        
+        console.log('Sel section text:', selSection);
+        console.log('All amounts found:', allAmounts);
+        console.log('Last amount (used):', allAmounts ? allAmounts[allAmounts.length - 1] : 'none');
+      }
       console.log('Sel final amount:', selInvoice);
       
-      // Show text around Sel if amount is wrong
-      if (selInvoice !== 95 && fullInvoiceText.toLowerCase().includes('sel:')) {
+      // Show text around Sel if amount seems wrong
+      if (fullInvoiceText.toLowerCase().includes('sel:')) {
         const selIndex = fullInvoiceText.toLowerCase().indexOf('sel:');
-        console.log('Text around Sel:', fullInvoiceText.substring(Math.max(0, selIndex - 5), selIndex + 60));
+        const contextStart = Math.max(0, selIndex - 10);
+        const contextEnd = Math.min(fullInvoiceText.length, selIndex + 80);
+        console.log('Text around Sel (index', selIndex, '):', fullInvoiceText.substring(contextStart, contextEnd));
       }
       
       console.log('Parsed amounts - Len:', lenInvoice, 'Sel:', selInvoice, 'Daniel:', danielInvoice, 'Abi:', abiInvoice);

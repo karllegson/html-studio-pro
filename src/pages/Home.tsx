@@ -46,12 +46,17 @@ export default function Home() {
             {/* Logo */}
             <div className="flex items-center gap-2 sm:gap-3 cursor-pointer" onClick={() => navigate('/')}>
               <img src="/favicon.svg" alt="Logo" className="w-6 h-6 sm:w-8 sm:h-8" />
-              <span className="text-base sm:text-xl font-bold hidden sm:inline">HTML Studio Pro</span>
-              <span className="text-base font-bold sm:hidden">Studio</span>
+              <span className="text-base sm:text-xl font-bold">HTML Studio Pro</span>
             </div>
             
             {/* Nav Links - Hidden on mobile, shown on tablet+ */}
             <div className="hidden md:flex items-center gap-4 lg:gap-6">
+              <button 
+                onClick={() => navigate('/')}
+                className="text-sm font-medium hover:text-primary transition-colors"
+              >
+                Home
+              </button>
               <button 
                 onClick={() => navigate('/dashboard')}
                 className="text-sm font-medium hover:text-primary transition-colors"
@@ -62,11 +67,6 @@ export default function Home() {
                 className="text-sm font-medium hover:text-primary transition-colors"
               >
                 Tools
-              </button>
-              <button 
-                className="text-sm font-medium hover:text-primary transition-colors"
-              >
-                Stats
               </button>
               <button 
                 onClick={() => navigate('/earnings')}
@@ -108,6 +108,15 @@ export default function Home() {
             <div className="md:hidden mt-4 pb-4 space-y-3 border-t pt-4">
               <button 
                 onClick={() => {
+                  navigate('/');
+                  setMobileMenuOpen(false);
+                }}
+                className="block w-full text-left px-4 py-2 text-sm font-medium hover:bg-accent rounded-lg transition-colors"
+              >
+                Home
+              </button>
+              <button 
+                onClick={() => {
                   navigate('/dashboard');
                   setMobileMenuOpen(false);
                 }}
@@ -120,12 +129,6 @@ export default function Home() {
                 className="block w-full text-left px-4 py-2 text-sm font-medium hover:bg-accent rounded-lg transition-colors"
               >
                 Tools
-              </button>
-              <button 
-                onClick={() => setMobileMenuOpen(false)}
-                className="block w-full text-left px-4 py-2 text-sm font-medium hover:bg-accent rounded-lg transition-colors"
-              >
-                Stats
               </button>
               <button 
                 onClick={() => {

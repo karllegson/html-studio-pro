@@ -36,6 +36,7 @@ export default function Earnings() {
   const [currentSheetName, setCurrentSheetName] = useState<string>('');
   const [selectedPayPeriod, setSelectedPayPeriod] = useState<string>('');
   const [availablePayPeriods, setAvailablePayPeriods] = useState<string[]>([]);
+  const [monthlyEarnings, setMonthlyEarnings] = useState<{ period: string; amount: number }[]>([]);
 
   useEffect(() => {
     document.title = 'Earnings - HTML Studio Pro';
@@ -88,6 +89,54 @@ export default function Earnings() {
     setSelectedPayPeriod(period);
   };
 
+  // Load monthly earnings for the past year
+  const loadMonthlyEarnings = async (personName: string) => {
+    if (!availablePayPeriods.length) return;
+    
+    const monthlyData: { period: string; amount: number }[] = [];
+    
+    // Fetch earnings for the last 12 pay periods
+    const periodsToFetch = availablePayPeriods.slice(0, 12);
+    
+    for (const period of periodsToFetch) {
+      try {
+        const data = await fetchEarningsData(period);
+        if (data) {
+          const person = data.earnings.find(p => p.name === personName);
+          // Include all periods, even if amount is 0, to show complete timeline
+          monthlyData.push({
+            period: period.replace('Posting ', ''), // Just show the number
+            amount: person ? person.invoiceSummary : 0
+          });
+        } else {
+          // If data fetch failed, still include the period with 0 amount
+          monthlyData.push({
+            period: period.replace('Posting ', ''),
+            amount: 0
+          });
+        }
+      } catch (error) {
+        console.error(`Error fetching earnings for ${period}:`, error);
+        // Include period even if fetch failed
+        monthlyData.push({
+          period: period.replace('Posting ', ''),
+          amount: 0
+        });
+      }
+    }
+    
+    // Reverse to show oldest to newest
+    setMonthlyEarnings(monthlyData.reverse());
+  };
+
+  // Load monthly earnings when person is selected
+  useEffect(() => {
+    if (selectedPerson && availablePayPeriods.length > 0 && !loading) {
+      loadMonthlyEarnings(selectedPerson);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedPerson, availablePayPeriods.length]);
+
   const handleAuthAction = async () => {
     if (isLoggedIn) {
       await signOut(auth);
@@ -108,12 +157,17 @@ export default function Earnings() {
             {/* Logo */}
             <div className="flex items-center gap-2 sm:gap-3 cursor-pointer" onClick={() => navigate('/')}>
               <img src="/favicon.svg" alt="Logo" className="w-6 h-6 sm:w-8 sm:h-8" />
-              <span className="text-base sm:text-xl font-bold hidden sm:inline">HTML Studio Pro</span>
-              <span className="text-base font-bold sm:hidden">Studio</span>
+              <span className="text-base sm:text-xl font-bold">HTML Studio Pro</span>
             </div>
             
             {/* Nav Links - Hidden on mobile, shown on tablet+ */}
             <div className="hidden md:flex items-center gap-4 lg:gap-6">
+              <button 
+                onClick={() => navigate('/')}
+                className="text-sm font-medium hover:text-primary transition-colors"
+              >
+                Home
+              </button>
               <button 
                 onClick={() => navigate('/dashboard')}
                 className="text-sm font-medium hover:text-primary transition-colors"
@@ -124,11 +178,6 @@ export default function Earnings() {
                 className="text-sm font-medium hover:text-primary transition-colors"
               >
                 Tools
-              </button>
-              <button 
-                className="text-sm font-medium hover:text-primary transition-colors"
-              >
-                Stats
               </button>
               <button 
                 onClick={() => navigate('/earnings')}
@@ -170,6 +219,15 @@ export default function Earnings() {
             <div className="md:hidden mt-4 pb-4 space-y-3 border-t pt-4">
               <button 
                 onClick={() => {
+                  navigate('/');
+                  setMobileMenuOpen(false);
+                }}
+                className="block w-full text-left px-4 py-2 text-sm font-medium hover:bg-accent rounded-lg transition-colors"
+              >
+                Home
+              </button>
+              <button 
+                onClick={() => {
                   navigate('/dashboard');
                   setMobileMenuOpen(false);
                 }}
@@ -182,12 +240,6 @@ export default function Earnings() {
                 className="block w-full text-left px-4 py-2 text-sm font-medium hover:bg-accent rounded-lg transition-colors"
               >
                 Tools
-              </button>
-              <button 
-                onClick={() => setMobileMenuOpen(false)}
-                className="block w-full text-left px-4 py-2 text-sm font-medium hover:bg-accent rounded-lg transition-colors"
-              >
-                Stats
               </button>
               <button 
                 onClick={() => {
@@ -327,77 +379,91 @@ export default function Earnings() {
             </div>
 
         {/* Summary Cards - Only for selected person */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8 max-w-2xl">
+        <div className="flex gap-3 mb-8 max-w-xl">
           {(() => {
             const person = earnings.find(p => p.name === selectedPerson);
             if (!person) return null;
             
+            // Check if viewing current period or past period
+            const currentPeriod = getSheetName();
+            const isCurrentPeriod = selectedPayPeriod === currentPeriod;
+            
             return (
               <>
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Current Period</CardTitle>
-                  <Clock className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">${person.currentPeriod.toFixed(2)}</div>
-                  <p className="text-xs text-muted-foreground mt-1">{currentSheetName}</p>
-                </CardContent>
-              </Card>
+              {isCurrentPeriod ? (
+                <>
+                  <Card className="flex-1">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 pt-3 px-3">
+                      <CardTitle className="text-xs font-medium">Current Period</CardTitle>
+                      <Clock className="h-3 w-3 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent className="px-3 pb-3">
+                      <div className="text-xl font-bold">${person.currentPeriod.toFixed(2)}</div>
+                      <p className="text-[10px] text-muted-foreground mt-0.5">{currentSheetName}</p>
+                    </CardContent>
+                  </Card>
 
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Invoice Summary</CardTitle>
-                  <DollarSign className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">${person.invoiceSummary.toFixed(2)}</div>
-                  <p className="text-xs text-muted-foreground mt-1">With all extras included</p>
-                </CardContent>
-              </Card>
+                  <Card className="flex-1">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 pt-3 px-3">
+                      <CardTitle className="text-xs font-medium">Invoice Summary</CardTitle>
+                      <DollarSign className="h-3 w-3 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent className="px-3 pb-3">
+                      <div className="text-xl font-bold">${person.invoiceSummary.toFixed(2)}</div>
+                      <p className="text-[10px] text-muted-foreground mt-0.5">With all extras included</p>
+                    </CardContent>
+                  </Card>
+                </>
+              ) : (
+                <Card className="flex-1">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 pt-3 px-3">
+                    <CardTitle className="text-xs font-medium">Invoice Total</CardTitle>
+                    <DollarSign className="h-3 w-3 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent className="px-3 pb-3">
+                    <div className="text-xl font-bold">${person.invoiceSummary.toFixed(2)}</div>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">{selectedPayPeriod} - With all extras included</p>
+                  </CardContent>
+                </Card>
+              )}
               </>
             );
           })()}
         </div>
 
-        {/* Earnings Breakdown Chart */}
+        {/* Monthly Earnings Chart */}
         {(() => {
           const person = earnings.find(p => p.name === selectedPerson);
-          if (!person) return null;
-          
-          const breakdown = [
-            { label: 'Current Period', amount: person.currentPeriod, color: 'from-blue-600 to-blue-400' },
-            { label: 'Invoice Total', amount: person.invoiceSummary, color: 'from-emerald-600 to-emerald-400' }
-          ];
+          if (!person || monthlyEarnings.length === 0) return null;
 
-          const maxAmount = Math.max(person.currentPeriod, person.invoiceSummary, 1);
+          const maxAmount = Math.max(...monthlyEarnings.map(m => m.amount), 1);
 
           return (
             <Card className="mb-8">
               <CardHeader>
-                <CardTitle>Earnings Breakdown</CardTitle>
+                <CardTitle>Earnings Per Month (Past Year)</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="flex items-end justify-center gap-12 h-64">
-                  {breakdown.map((item, index) => {
-                    const heightPercent = (item.amount / maxAmount) * 100;
+                <div className="flex items-end justify-between gap-2 sm:gap-4 h-64 overflow-x-auto pb-4">
+                  {monthlyEarnings.map((data, index) => {
+                    const heightPercent = (data.amount / maxAmount) * 100;
                     return (
-                      <div key={index} className="w-40 flex flex-col items-center gap-3">
+                      <div key={index} className="flex-1 min-w-[60px] sm:min-w-[80px] flex flex-col items-center gap-2">
                         <div className="relative w-full flex items-end justify-center" style={{ height: '200px' }}>
                           <div 
-                            className={`w-full bg-gradient-to-t ${item.color} rounded-t transition-all hover:opacity-80 flex items-end justify-center pb-2`}
-                            style={{ height: `${Math.max(heightPercent, 15)}%` }}
+                            className="w-full bg-gradient-to-t from-blue-600 to-blue-400 rounded-t transition-all hover:opacity-80 flex items-end justify-center pb-2"
+                            style={{ height: `${Math.max(heightPercent, 10)}%`, minHeight: '30px' }}
                           >
-                            <span className="text-white font-bold text-sm">${item.amount.toFixed(2)}</span>
+                            <span className="text-white font-bold text-xs sm:text-sm">${data.amount.toFixed(0)}</span>
                           </div>
                         </div>
-                        <span className="text-sm font-medium text-muted-foreground text-center">{item.label}</span>
+                        <span className="text-xs font-medium text-muted-foreground text-center">{data.period}</span>
                       </div>
                     );
                   })}
                 </div>
                 <p className="text-xs text-muted-foreground text-center mt-4">
-                  Invoice total includes all extras and bonuses
+                  Showing invoice totals from the past {monthlyEarnings.length} pay periods
                 </p>
               </CardContent>
             </Card>
