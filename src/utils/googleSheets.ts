@@ -148,17 +148,21 @@ export async function fetchEarningsData(sheetName?: string): Promise<EarningsDat
         }
       }
       
-      // Parse invoice summary text - more flexible regex
-      // Example: "Invoice Sent: Len: $78 + $4 = $82, Sel: $25 + $5 = $30, Abi: $22 + $15 + $6 = $43"
-      // Also handles: "Len: $78 + $4 = $82" or "Len: $82" formats
-      // Try multiple patterns to catch different formats
-      const lenMatch = fullInvoiceText.match(/Len:\s*[^=,]*=\s*\$(\d+)/i) || 
+      // Parse invoice summary text - prioritize amount after "=" sign
+      // Example: "Invoice Sent: Len: $78 + $4 = $82, Sel: $65 + $30 = $95, Abi: $22 + $15 + $6 = $43"
+      // Format: "Name: $X [+ $Y] = $TOTAL" - we want the TOTAL after "="
+      
+      // Pattern 1: Match "Name: ... = $TOTAL" (captures total after =)
+      // Pattern 2: Match "Name: $AMOUNT" (fallback if no = sign)
+      const lenMatch = fullInvoiceText.match(/Len:\s*[^=]*=\s*\$(\d+)/i) || 
                       fullInvoiceText.match(/Len:\s*\$(\d+)/i);
-      const selMatch = fullInvoiceText.match(/Sel:\s*[^=,]*=\s*\$(\d+)/i) || 
+      // Use non-greedy match to ensure we capture the number AFTER "="
+      // "Sel: $65 + $30 = $95" should capture 95, not 65
+      const selMatch = fullInvoiceText.match(/Sel:\s*.*?=\s*\$(\d+)/i) || 
                       fullInvoiceText.match(/Sel:\s*\$(\d+)/i);
-      const danielMatch = fullInvoiceText.match(/Daniel:\s*[^=,]*=\s*\$(\d+)/i) || 
+      const danielMatch = fullInvoiceText.match(/Daniel:\s*[^=]*=\s*\$(\d+)/i) || 
                          fullInvoiceText.match(/Daniel:\s*\$(\d+)/i);
-      const abiMatch = fullInvoiceText.match(/Abi:\s*[^=,]*=\s*\$(\d+)/i) || 
+      const abiMatch = fullInvoiceText.match(/Abi:\s*[^=]*=\s*\$(\d+)/i) || 
                       fullInvoiceText.match(/Abi:\s*\$(\d+)/i);
       
       lenInvoice = lenMatch ? parseFloat(lenMatch[1]) : 0;
@@ -166,20 +170,18 @@ export async function fetchEarningsData(sheetName?: string): Promise<EarningsDat
       danielInvoice = danielMatch ? parseFloat(danielMatch[1]) : 0;
       abiInvoice = abiMatch ? parseFloat(abiMatch[1]) : 0;
       
+      // Debug: log what we parsed
+      console.log('Invoice text:', fullInvoiceText);
+      console.log('Sel match result:', selMatch);
+      if (selMatch) {
+        console.log('Sel captured:', selMatch[1], 'Full match:', selMatch[0]);
+      }
+      console.log('Parsed - Len:', lenInvoice, 'Sel:', selInvoice, 'Daniel:', danielInvoice, 'Abi:', abiInvoice);
+      
     }
 
-    // Always add Sel's extra to invoice summary if it exists
-    // For past periods, invoice summary might not include extras mentioned in row 7
-    if (selExtra > 0) {
-      if (selInvoice > 0) {
-        // Invoice summary exists - add extra to it
-        // This handles cases where invoice shows base amount but extra is separate
-        selInvoice = selInvoice + selExtra;
-      } else if (selCurrent > 0) {
-        // No invoice summary found - use current + extra
-        selInvoice = selCurrent + selExtra;
-      }
-    }
+    // Note: Invoice summary already includes extras (e.g., "Sel: $65 + $30 = $95")
+    // So we don't need to add extra separately - the regex captures the total after "="
 
     // Fallback: If invoice summary not found, use current period + extras
     // This handles cases where invoice summary might not be in row 96 for past periods
