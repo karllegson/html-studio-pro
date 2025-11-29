@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { TaskStatus, TaskType, Task } from '@/types';
-import { Copy, Plus, Trash2, CheckSquare, X, Menu, LogIn, LogOut } from 'lucide-react';
+import { Copy, Plus, Trash2, CheckSquare, X, Menu, LogIn, LogOut, ArrowLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { format } from 'date-fns';
@@ -61,6 +61,14 @@ const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
+  
+  // Check if app is in standalone mode (PWA)
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || 
+                       (window.navigator as any).standalone === true ||
+                       document.referrer.includes('android-app://');
+  
+  // Show back button only in standalone mode and if not on home page
+  const canGoBack = isStandalone && location.pathname !== '/';
   
   // State for multi-select and delete confirmation
   const [selectedTasks, setSelectedTasks] = useState<string[]>([]);
@@ -401,10 +409,22 @@ const Dashboard: React.FC = () => {
       <nav className="border-b">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 sm:py-4">
           <div className="flex items-center justify-between w-full">
-            {/* Logo */}
-            <div className="flex items-center gap-2 sm:gap-3 cursor-pointer" onClick={() => navigate('/')}>
-              <img src="/favicon.svg" alt="Logo" className="w-6 h-6 sm:w-8 sm:h-8" />
-              <span className="text-base sm:text-xl font-bold">HTML Studio Pro</span>
+            {/* Left side: Back button (if can go back) and Logo */}
+            <div className="flex items-center gap-2 sm:gap-3">
+              {canGoBack && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => navigate(-1)}
+                  className="h-8 w-8 sm:h-9 sm:w-9"
+                >
+                  <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5" />
+                </Button>
+              )}
+              <div className="flex items-center gap-2 sm:gap-3 cursor-pointer" onClick={() => navigate('/')}>
+                <img src="/favicon.svg" alt="Logo" className="w-6 h-6 sm:w-8 sm:h-8" />
+                <span className="text-base sm:text-xl font-bold">HTML Studio Pro</span>
+              </div>
             </div>
             
             {/* Nav Links - Hidden on mobile, shown on tablet+ */}

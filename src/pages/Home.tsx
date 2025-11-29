@@ -1,5 +1,5 @@
 import { useNavigate, useLocation } from 'react-router-dom';
-import { FileText, Upload, LogIn, LogOut, Menu, X } from 'lucide-react';
+import { FileText, Upload, LogIn, LogOut, Menu, X, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useEffect, useState } from 'react';
 import { TaskStatsWidget } from '@/components/TaskStatsWidget';
@@ -14,6 +14,14 @@ export default function Home() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  
+  // Check if app is in standalone mode (PWA)
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || 
+                       (window.navigator as any).standalone === true ||
+                       document.referrer.includes('android-app://');
+  
+  // Show back button only in standalone mode and if not on home page
+  const canGoBack = isStandalone && location.pathname !== '/';
 
   // Set page title
   useEffect(() => {
@@ -70,10 +78,22 @@ export default function Home() {
       <nav className="border-b">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 sm:py-4">
           <div className="flex items-center justify-between w-full">
-            {/* Logo */}
-            <div className="flex items-center gap-2 sm:gap-3 cursor-pointer" onClick={() => navigate('/')}>
-              <img src="/favicon.svg" alt="Logo" className="w-6 h-6 sm:w-8 sm:h-8" />
-              <span className="text-base sm:text-xl font-bold">HTML Studio Pro</span>
+            {/* Left side: Back button (if can go back) and Logo */}
+            <div className="flex items-center gap-2 sm:gap-3">
+              {canGoBack && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => navigate(-1)}
+                  className="h-8 w-8 sm:h-9 sm:w-9"
+                >
+                  <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5" />
+                </Button>
+              )}
+              <div className="flex items-center gap-2 sm:gap-3 cursor-pointer" onClick={() => navigate('/')}>
+                <img src="/favicon.svg" alt="Logo" className="w-6 h-6 sm:w-8 sm:h-8" />
+                <span className="text-base sm:text-xl font-bold">HTML Studio Pro</span>
+              </div>
             </div>
             
             {/* Nav Links - Hidden on mobile, shown on tablet+ */}
