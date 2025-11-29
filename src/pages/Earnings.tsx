@@ -164,20 +164,20 @@ export default function Earnings() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 sm:py-4">
           <div className="flex items-center justify-between w-full">
             {/* Left side: Back button (if can go back) and Logo */}
-            <div className="flex items-center gap-2 sm:gap-3">
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
               {canGoBack && (
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={() => navigate(-1)}
-                  className="h-8 w-8 sm:h-9 sm:w-9"
+                  className="h-8 w-8 sm:h-9 sm:w-9 flex-shrink-0"
                 >
                   <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5" />
                 </Button>
               )}
-              <div className="flex items-center gap-2 sm:gap-3 cursor-pointer" onClick={() => navigate('/')}>
-                <img src="/favicon.svg" alt="Logo" className="w-6 h-6 sm:w-8 sm:h-8" />
-                <span className="text-base sm:text-xl font-bold">HTML Studio Pro</span>
+              <div className="flex items-center gap-2 sm:gap-3 cursor-pointer min-w-0 flex-shrink-0" onClick={() => navigate('/')}>
+                <img src="/favicon.svg" alt="Logo" className="w-6 h-6 sm:w-8 sm:h-8 flex-shrink-0" />
+                <span className="text-base sm:text-xl font-bold whitespace-nowrap truncate">HTML Studio Pro</span>
               </div>
             </div>
             
