@@ -78,7 +78,7 @@ export default function Home() {
       {/* Navbar */}
       <nav className="border-b">
         <div className={cn("max-w-6xl mx-auto px-4 sm:px-6 py-3 sm:py-4", canGoBack && "relative")}>
-          <div className="flex items-center justify-between w-full">
+          <div className={cn("flex items-center w-full", canGoBack ? "justify-between" : "justify-start")}>
             {/* Left side: Back button (if can go back) */}
             <div className="flex items-center">
               {canGoBack && (
@@ -93,7 +93,7 @@ export default function Home() {
               )}
             </div>
             
-            {/* Logo - centered if back button appears, otherwise left */}
+            {/* Logo - on homepage: left normally, center when back button appears */}
             <div className={cn(
               "flex items-center gap-2 sm:gap-3 cursor-pointer flex-shrink-0",
               canGoBack && "absolute left-1/2 transform -translate-x-1/2"
