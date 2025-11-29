@@ -78,9 +78,9 @@ export default function Home() {
       {/* Navbar */}
       <nav className="border-b">
         <div className={cn("max-w-6xl mx-auto px-4 sm:px-6 py-3 sm:py-4", canGoBack && "relative")}>
-          <div className={cn("flex items-center w-full", canGoBack ? "justify-between" : "justify-start")}>
-            {/* Left side: Back button (if can go back) */}
-            <div className="flex items-center">
+          <div className="flex items-center justify-between w-full">
+            {/* Left side: Back button (if can go back) and Logo */}
+            <div className="flex items-center gap-2 sm:gap-3">
               {canGoBack && (
                 <Button
                   variant="ghost"
@@ -91,15 +91,14 @@ export default function Home() {
                   <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5" />
                 </Button>
               )}
-            </div>
-            
-            {/* Logo - on homepage: left normally, center when back button appears */}
-            <div className={cn(
-              "flex items-center gap-2 sm:gap-3 cursor-pointer flex-shrink-0",
-              canGoBack && "absolute left-1/2 transform -translate-x-1/2"
-            )} onClick={() => navigate('/')}>
-              <img src="/favicon.svg" alt="Logo" className="w-6 h-6 sm:w-8 sm:h-8 flex-shrink-0" />
-              <span className="text-base sm:text-xl font-bold whitespace-nowrap">HTML Studio Pro</span>
+              {/* Logo - on homepage: left normally, center when back button appears */}
+              <div className={cn(
+                "flex items-center gap-2 sm:gap-3 cursor-pointer flex-shrink-0",
+                canGoBack && "absolute left-1/2 transform -translate-x-1/2"
+              )} onClick={() => navigate('/')}>
+                <img src="/favicon.svg" alt="Logo" className="w-6 h-6 sm:w-8 sm:h-8 flex-shrink-0" />
+                <span className="text-base sm:text-xl font-bold whitespace-nowrap">HTML Studio Pro</span>
+              </div>
             </div>
             
             {/* Nav Links - Hidden on mobile, shown on tablet+ */}
