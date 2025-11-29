@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import { DollarSign, TrendingUp, Clock, AlertCircle, LogIn, LogOut, Menu, X, Loader2, RefreshCw, ArrowLeft } from 'lucide-react';
 import { auth } from '@/firebase';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
@@ -161,10 +162,10 @@ export default function Earnings() {
     <div className="min-h-screen bg-background">
       {/* Navbar */}
       <nav className="border-b">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 sm:py-4">
+        <div className={cn("max-w-6xl mx-auto px-4 sm:px-6 py-3 sm:py-4", canGoBack && "relative")}>
           <div className="flex items-center justify-between w-full">
-            {/* Left side: Back button (if can go back) and Logo */}
-            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+            {/* Left side: Back button (if can go back) */}
+            <div className="flex items-center">
               {canGoBack && (
                 <Button
                   variant="ghost"
@@ -175,10 +176,15 @@ export default function Earnings() {
                   <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5" />
                 </Button>
               )}
-              <div className="flex items-center gap-2 sm:gap-3 cursor-pointer min-w-0 flex-shrink-0" onClick={() => navigate('/')}>
-                <img src="/favicon.svg" alt="Logo" className="w-6 h-6 sm:w-8 sm:h-8 flex-shrink-0" />
-                <span className="text-base sm:text-xl font-bold whitespace-nowrap truncate">HTML Studio Pro</span>
-              </div>
+            </div>
+            
+            {/* Logo - centered if back button appears, otherwise left */}
+            <div className={cn(
+              "flex items-center gap-2 sm:gap-3 cursor-pointer flex-shrink-0",
+              canGoBack && "absolute left-1/2 transform -translate-x-1/2"
+            )} onClick={() => navigate('/')}>
+              <img src="/favicon.svg" alt="Logo" className="w-6 h-6 sm:w-8 sm:h-8 flex-shrink-0" />
+              <span className="text-base sm:text-xl font-bold whitespace-nowrap">HTML Studio Pro</span>
             </div>
             
             {/* Nav Links - Hidden on mobile, shown on tablet+ */}
